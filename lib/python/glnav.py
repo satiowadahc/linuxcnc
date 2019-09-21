@@ -2,11 +2,26 @@ from minigl import *
 import math
 import array, itertools
 
+# PY3 NotImplemented error (caught in axis.py)
+
 def use_pango_font(font, start, count, will_call_prepost=False):
-    import pango, cairo, pangocairo
+
+#PY3note: python2 usage was:
+#   import pango, cairo, pangocairo
+
+#PY3wip testing: (changes not sufficient, no pangocairo yet)
+    import cairo
+    import gi
+    import gi.repository
+    gi.require_version('Pango', '1.0')
+    gi.require_version('PangoCairo', '1.0')
+    from gi.repository import Pango as pango
+    from gi.repository import PangoCairo as pangocairo
     fontDesc = pango.FontDescription(font)
     a = array.array('b', itertools.repeat(0, 256*256))
     surface = cairo.ImageSurface.create_for_data(a, cairo.FORMAT_A8, 256, 256)
+#PY3problem:
+# 'gi.repository.PangoCairo' object has no attribute 'CairoContet'
     context = pangocairo.CairoContext(cairo.Context(surface))
     layout = context.create_layout()
     fontmap = pangocairo.cairo_font_map_get_default()
@@ -31,7 +46,7 @@ def use_pango_font(font, start, count, will_call_prepost=False):
 
     base = glGenLists(count)
     for i in range(count):
-        ch = unichr(start+i)
+        ch = chr(start+i)
         layout.set_text(ch)
         w, h = layout.get_size()
         context.save()
@@ -106,7 +121,7 @@ def glRotateScene(w, s, xcenter, ycenter, zcenter, x, y, mousex, mousey):
     w.lon = lon
 
 def sub(x, y):
-    return map(lambda a, b: a-b, x, y)
+    return list(map(lambda a, b: a-b, x, y))
 
 def dot(x, y):
     t = 0
@@ -115,8 +130,8 @@ def dot(x, y):
     return t
 
 def glDistFromLine(x, p1, p2):
-    f = map(lambda x, y: x-y, p2, p1)
-    g = map(lambda x, y: x-y, x, p1)
+    f = list(map(lambda x, y: x-y, p2, p1))
+    g = list(map(lambda x, y: x-y, x, p1))
     return dot(g, g) - dot(f, g)**2/dot(f, f)
 
 def v3distsq(a,b):

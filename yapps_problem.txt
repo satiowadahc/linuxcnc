@@ -1,0 +1,56 @@
+tl;dr stretch /usr/bin/yapps
+      wont work with a default python3 config
+#------------------------------------------------------
+Hack solution:
+
+
+
+Notes:
+#------------------------------------------------------
+STRETCH packages for yapps
+$ dpkg -l '*yapp*'
+ii  yapps2         2.1.1-17.5 all Yet Another Python Parser System
+ii  yapps2-runtime 2.1.1-17.5 all Yet Another Python Parser System
+
+$ dpkg -L yapps2-runtime
+/usr/lib/python2.7/dist-packages/yapps/__init__.py
+/usr/lib/python2.7/dist-packages/yapps/runtime.py
+
+$ dpkg -L yapps2 (excerpts):
+/usr/bin/yapps
+/usr/lib/python2.7/dist-packages/python_yapps-2.1.1.egg-info
+/usr/lib/python2.7/dist-packages/yapps
+/usr/lib/python2.7/dist-packages/yapps/grammar.py
+/usr/lib/python2.7/dist-packages/yapps/parsetree.py
+
+$ head /usr/bin/yapps
+#!/usr/bin/python  #<!!!!!!!!!!!!!!!!!!!!!!!!!
+
+problem: invokes python which will be python3
+for a system with python3 as default
+but the package is only python2 (2.7)
+
+#------------------------------------------------------
+BUSTER packages for yapps
+$ dpkg -L python3-yapps (excerpts, no bin in this package)
+/usr/lib/python3/dist-packages/Yapps2-2.2.1.egg-info
+/usr/lib/python3/dist-packages/Yapps2-2.2.1.egg-info/PKG-INFO
+/usr/lib/python3/dist-packages/Yapps2-2.2.1.egg-info/dependency_links.txt
+/usr/lib/python3/dist-packages/Yapps2-2.2.1.egg-info/entry_points.txt
+/usr/lib/python3/dist-packages/Yapps2-2.2.1.egg-info/top_level.txt
+/usr/lib/python3/dist-packages/yapps/__init__.py
+/usr/lib/python3/dist-packages/yapps/cli_tool.py
+/usr/lib/python3/dist-packages/yapps/grammar.py
+/usr/lib/python3/dist-packages/yapps/parsetree.py
+/usr/lib/python3/dist-packages/yapps/runtime.py
+
+$ dpkg -L yapps2-runtime
+/usr/lib/python2.7/dist-packages/yapps/__init__.py
+/usr/lib/python2.7/dist-packages/yapps/runtime.py
+
+$ dpkg -L yapps2
+/usr/bin/yapps2
+
+$ head /usr/bin/yapps2
+#!/usr/bin/python3  #<!!!!!!!!!!!!!!!!!!!!!!!!!
+#------------------------------------------------------
