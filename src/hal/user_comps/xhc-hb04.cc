@@ -1,9 +1,12 @@
 /*
    XHC-HB04 Wireless MPG pendant LinuxCNC HAL module for LinuxCNC
 
+	 modified for XHC-WHB04
+
    Copyright (C) 2013 Frederic Rible (frible@teaser.fr)
    Copyright (C) 2013 Rene Hopf (renehopf@mac.com)
    Copyright (C) 2014 Marius Alksnys (marius.alksnys@gmail.com)
+	 Copyright (C) 2019 Chad Woitas (cwoitas@rmd-engineering.com) for RMD Engineering
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -57,6 +60,16 @@ typedef enum {
 	axis_feed = 0x15
 } xhc_axis_t;
 
+typedef enum {
+  step_2 = 0x0D,
+	step_5 = 0x0E,
+	step_10 = 0x0F,
+	step_30 = 0x10,
+	step_60 = 0x1A,
+	step_100 = 0x1B,
+	step_lead = 0x9B
+} xhc_step_t;
+
 #define NB_MAX_BUTTONS 32
 
 #define STEPSIZE_BYTE 35
@@ -69,35 +82,7 @@ typedef enum {
 #define DISPLAY_HEIGHT_UNKNOWN_40   0x40
 #define DISPLAY_HEIGHT_UNKNOWN_80   0x80
 
-#define STEPSIZE_DISPLAY_0          0x00
-#define STEPSIZE_DISPLAY_1          0x01
-#define STEPSIZE_DISPLAY_5          0x02
-#define STEPSIZE_DISPLAY_10         0x03
-#define STEPSIZE_DISPLAY_20         0x04
-#define STEPSIZE_DISPLAY_30         0x05
-#define STEPSIZE_DISPLAY_40         0x06
-#define STEPSIZE_DISPLAY_50         0x07
-#define STEPSIZE_DISPLAY_100        0x08
-#define STEPSIZE_DISPLAY_500        0x09
-#define STEPSIZE_DISPLAY_1000       0x0A
-#define STEPSIZE_DISPLAY_P6         0x0B
-#define STEPSIZE_DISPLAY_UNKNOWN_0C 0x0C
-#define STEPSIZE_DISPLAY_UNKNOWN_0D 0x0D
-#define STEPSIZE_DISPLAY_UNKNOWN_0E 0x0E
-#define STEPSIZE_DISPLAY_UNKNOWN_0F 0x0F
 
-// guard for maximum number of items in a stepsize_sequence
-#define MAX_STEPSIZE_SEQUENCE 10
-
-// alternate stepsize sequences (use STEPSIZE_DISPLAY_*), terminate with 0:
-static const int  stepsize_sequence_1[MAX_STEPSIZE_SEQUENCE +1] = {1,10,100,1000, 0}; // default
-static const int  stepsize_sequence_2[MAX_STEPSIZE_SEQUENCE +1] = {1, 5, 10, 20,         0};
-static const int  stepsize_sequence_3[MAX_STEPSIZE_SEQUENCE +1] = {1,10,100,             0};
-static const int  stepsize_sequence_4[MAX_STEPSIZE_SEQUENCE +1] = {1, 5, 10, 20,  50,100,0};
-static const int  stepsize_sequence_5[MAX_STEPSIZE_SEQUENCE +1] = {1,10, 50,100,1000,    0};
-static const int* stepsize_sequence = stepsize_sequence_1; // use the default
-static int stepsize_idx = 0; // start at initial (zeroth) sequence
-static int stepsize_last_idx  =  0; //calculated`
 
 
 typedef struct {
@@ -109,7 +94,7 @@ typedef struct {
 
 	hal_bit_t *button_pin[NB_MAX_BUTTONS];
 
-    hal_bit_t *jog_enable_off;
+  hal_bit_t *jog_enable_off;
 	hal_bit_t *jog_enable_x;
 	hal_bit_t *jog_enable_y;
 	hal_bit_t *jog_enable_z;
@@ -125,9 +110,13 @@ typedef struct {
 	hal_bit_t *jog_plus_x, *jog_plus_y, *jog_plus_z, *jog_plus_a;
 	hal_bit_t *jog_minus_x, *jog_minus_y, *jog_minus_z, *jog_minus_a;
 
-	hal_bit_t *stepsize_up;
-	hal_bit_t *stepsize_down;
-	hal_s32_t *stepsize;
+	hal_bit_t *stepsize_0;
+	hal_bit_t *stepsize_1;
+	hal_bit_t *stepsize_2;
+	hal_bit_t *stepsize_3;
+	hal_bit_t *stepsize_4;
+	hal_bit_t *stepsize_5;
+	hal_bit_t *stepsize_6;
 	hal_bit_t *sleeping;
 	hal_bit_t *connected;
 	hal_bit_t *require_pendant;
@@ -154,6 +143,7 @@ typedef struct {
 typedef struct {
 	xhc_hal_t *hal;
 	xhc_axis_t axis;
+	xhc_step_t step;
 	xhc_button_t buttons[NB_MAX_BUTTONS];
 	unsigned char button_code;
 
@@ -220,38 +210,18 @@ void xhc_display_encode(xhc_t *xhc, unsigned char *data, int len)
 
 	memset(buf, 0, sizeof(buf));
 
-	*p++ = 0xFE;
-	*p++ = 0xFD;
-	*p++ = 0x0C;
+	*p++ = 0xFE; //Header 1byte
+	*p++ = 0xFD; //Header 1byte
+	*p++ = 0x00; //seed 1 byte
+  *p++ = 0x00; //continous display indicator & flags
 
-	if (xhc->axis == axis_a) p += xhc_encode_float(round(1000 * *(xhc->hal->a_wc)) / 1000, p);
-	else p += xhc_encode_float(round(1000 * *(xhc->hal->x_wc)) / 1000, p);
-	p += xhc_encode_float(round(1000 * *(xhc->hal->y_wc)) / 1000, p);
-	p += xhc_encode_float(round(1000 * *(xhc->hal->z_wc)) / 1000, p);
 	if (xhc->axis == axis_a) p += xhc_encode_float(round(1000 * *(xhc->hal->a_mc)) / 1000, p);
-	else p += xhc_encode_float(round(1000 * *(xhc->hal->x_mc)) / 1000, p);
+	p += xhc_encode_float(round(1000 * *(xhc->hal->x_mc)) / 1000, p);
 	p += xhc_encode_float(round(1000 * *(xhc->hal->y_mc)) / 1000, p);
 	p += xhc_encode_float(round(1000 * *(xhc->hal->z_mc)) / 1000, p);
-	p += xhc_encode_s16(round(100.0 * *(xhc->hal->feedrate_override)), p);
-	p += xhc_encode_s16(round(100.0 * *(xhc->hal->spindle_override)), p);
 	p += xhc_encode_s16(round(60.0 * *(xhc->hal->feedrate)), p);
 	p += xhc_encode_s16(round(60.0 * *(xhc->hal->spindle_rps)), p);
 
-	switch (*(xhc->hal->stepsize)) {
-	case    0: buf[STEPSIZE_BYTE] = STEPSIZE_DISPLAY_0; break;
-	case    1: buf[STEPSIZE_BYTE] = STEPSIZE_DISPLAY_1; break;
-	case    5: buf[STEPSIZE_BYTE] = STEPSIZE_DISPLAY_5; break;
-	case   10: buf[STEPSIZE_BYTE] = STEPSIZE_DISPLAY_10; break;
-	case   20: buf[STEPSIZE_BYTE] = STEPSIZE_DISPLAY_20; break;
-	case   30: buf[STEPSIZE_BYTE] = STEPSIZE_DISPLAY_30; break;
-	case   40: buf[STEPSIZE_BYTE] = STEPSIZE_DISPLAY_40; break;
-	case   50: buf[STEPSIZE_BYTE] = STEPSIZE_DISPLAY_50; break;
-	case  100: buf[STEPSIZE_BYTE] = STEPSIZE_DISPLAY_100; break;
-	case  500: buf[STEPSIZE_BYTE] = STEPSIZE_DISPLAY_500; break;
-	case 1000: buf[STEPSIZE_BYTE] = STEPSIZE_DISPLAY_1000; break;
-	default:   //stepsize not supported on the display:
-			   buf[STEPSIZE_BYTE] = STEPSIZE_DISPLAY_0; break;
-	}
 
     buf[FLAGS_BYTE] = 0;
     if (*(xhc->hal->inch_icon)) {
@@ -303,8 +273,6 @@ void linuxcnc_simu(xhc_t *xhc)
 	static int last_jog_counts;
 	xhc_hal_t *hal = xhc->hal;
 
-	// for simu, always step up
-	*(hal->stepsize_up) = (xhc->button_step && xhc->button_code == xhc->button_step);
 
 	if (*(hal->jog_counts) != last_jog_counts) {
 		int delta_int = *(hal->jog_counts) - last_jog_counts;
@@ -391,41 +359,6 @@ void compute_velocity(xhc_t *xhc)
 	}
 }
 
-void handle_step(xhc_t *xhc)
-{
-	int _inc_step_status = STEP_NONE;
-	int _stepsize = *(xhc->hal->stepsize);	// Use a local variable to avoid STEP display as 0 on pendant during transitions
-
-	if (*(xhc->hal->stepsize_up)) {
-	       _inc_step_status = STEP_UP;
-	   if (*(xhc->hal->stepsize_down)) {
-	       _inc_step_status = STEP_NONE; // none if both pressed
-	   }
-	} else if (*(xhc->hal->stepsize_down)) {
-	      _inc_step_status = STEP_DOWN;
-	} else {
-	      _inc_step_status = STEP_NONE;
-	}
-
-	if (_inc_step_status  !=  xhc->old_inc_step_status) {
-	    if (_inc_step_status == STEP_UP) {
-	        stepsize_idx++;
-	        // restart idx when 0 terminator reached:
-	        if (stepsize_sequence[stepsize_idx] == 0) stepsize_idx = 0;
-	    }
-	    if (_inc_step_status == STEP_DOWN) {
-	        stepsize_idx--;
-	        // restart at stepsize_last_idx when stepsize_idx < 0
-	        if (stepsize_idx < 0) stepsize_idx = stepsize_last_idx;
-	    }
-	    _stepsize = stepsize_sequence[stepsize_idx];
-	}
-
-	xhc->old_inc_step_status = _inc_step_status;
-
-	*(xhc->hal->stepsize) = _stepsize;
-	*(xhc->hal->jog_scale) = *(xhc->hal->stepsize) * 0.001f;
-}
 
 void cb_response_in(struct libusb_transfer *transfer)
 {
@@ -435,16 +368,24 @@ void cb_response_in(struct libusb_transfer *transfer)
 	if (transfer->actual_length > 0) {
 		if (simu_mode) hexdump(in_buf, transfer->actual_length);
 
-		xhc.button_code = in_buf[1];
-		xhc.axis = (xhc_axis_t)in_buf[3];
+		xhc.button_code = in_buf[2];//CHAD: default 1
+		xhc.axis = (xhc_axis_t)in_buf[5];//CHAD: deault 3
+		xhc.step = (xhc_step_t)in_buf[4];
 
-		*(xhc.hal->jog_counts) += ((signed char)in_buf[4]);
+		*(xhc.hal->jog_counts) += ((signed char)in_buf[6]); //CHAD: default 4
 		*(xhc.hal->jog_counts_neg) = - *(xhc.hal->jog_counts);
 		*(xhc.hal->jog_enable_off) = (xhc.axis == axis_off);
 		*(xhc.hal->jog_enable_x) = (xhc.axis == axis_x);
 		*(xhc.hal->jog_enable_y) = (xhc.axis == axis_y);
 		*(xhc.hal->jog_enable_z) = (xhc.axis == axis_z);
 		*(xhc.hal->jog_enable_a) = (xhc.axis == axis_a);
+		*(xhc.hal->stepsize_0) = (xhc.step == step_2);
+		*(xhc.hal->stepsize_1) = (xhc.step == step_5);
+		*(xhc.hal->stepsize_2) = (xhc.step == step_10);
+		*(xhc.hal->stepsize_3) = (xhc.step == step_30);
+		*(xhc.hal->stepsize_4) = (xhc.step == step_60);
+		*(xhc.hal->stepsize_5) = (xhc.step == step_100);
+		*(xhc.hal->stepsize_6) = (xhc.step == step_lead);
 		*(xhc.hal->jog_enable_feedrate) = (xhc.axis == axis_feed);
 		*(xhc.hal->jog_enable_spindle) = (xhc.axis == axis_spindle);
 
@@ -474,7 +415,7 @@ void cb_response_in(struct libusb_transfer *transfer)
 			}
 		}
 		if (simu_mode) {
-			if ((signed char)in_buf[4] != 0) printf(" delta %+3d",(signed char)in_buf[4]);
+			if ((signed char)in_buf[6] != 0) printf(" delta %+3d",(signed char)in_buf[6]); //CHAD: default 4
 			printf("\n");
 		}
 
@@ -638,9 +579,13 @@ static void hal_setup()
 
     r |= _hal_pin_bit_newf(HAL_OUT, &(xhc.hal->sleeping), hal_comp_id, "%s.sleeping", modname);
     r |= _hal_pin_bit_newf(HAL_OUT, &(xhc.hal->connected), hal_comp_id, "%s.connected", modname);
-    r |= _hal_pin_bit_newf(HAL_IN,  &(xhc.hal->stepsize_up), hal_comp_id, "%s.stepsize-up", modname);
-    r |= _hal_pin_bit_newf(HAL_IN,  &(xhc.hal->stepsize_down), hal_comp_id, "%s.stepsize-down", modname);
-    r |= _hal_pin_s32_newf(HAL_OUT, &(xhc.hal->stepsize), hal_comp_id, "%s.stepsize", modname);
+    r |= _hal_pin_bit_newf(HAL_OUT, &(xhc.hal->stepsize_0), hal_comp_id, "%s.stepsize0", modname);
+		r |= _hal_pin_bit_newf(HAL_OUT, &(xhc.hal->stepsize_1), hal_comp_id, "%s.stepsize1", modname);
+		r |= _hal_pin_bit_newf(HAL_OUT, &(xhc.hal->stepsize_2), hal_comp_id, "%s.stepsize2", modname);
+		r |= _hal_pin_bit_newf(HAL_OUT, &(xhc.hal->stepsize_3), hal_comp_id, "%s.stepsize3", modname);
+		r |= _hal_pin_bit_newf(HAL_OUT, &(xhc.hal->stepsize_4), hal_comp_id, "%s.stepsize4", modname);
+		r |= _hal_pin_bit_newf(HAL_OUT, &(xhc.hal->stepsize_5), hal_comp_id, "%s.stepsize5", modname);
+		r |= _hal_pin_bit_newf(HAL_OUT, &(xhc.hal->stepsize_6), hal_comp_id, "%s.stepsize6", modname);
     r |= _hal_pin_bit_newf(HAL_OUT, &(xhc.hal->require_pendant), hal_comp_id, "%s.require_pendant", modname);
     r |= _hal_pin_bit_newf(HAL_IN,  &(xhc.hal->inch_icon), hal_comp_id, "%s.inch-icon", modname);
 
@@ -699,19 +644,13 @@ int read_ini_file(char *filename)
 
 static void Usage(char *name)
 {
-	fprintf(stderr, "%s version %s by Frederic RIBLE (frible@teaser.fr)\n", name, PACKAGE_VERSION);
+	fprintf(stderr, "%s version %s modified by Chad Woitas\n", name, PACKAGE_VERSION);
     fprintf(stderr, "\n");
     fprintf(stderr, "Usage: %s [-I button-cfg-file] [-h] [-H] [-s n]\n", name);
     fprintf(stderr, " -I button-cfg-file: configuration file defining the MPG keyboard layout\n");
     fprintf(stderr, " -h: usage (this)\n");
     fprintf(stderr, " -H: run in real-time HAL mode (run in simulation mode by default)\n");
     fprintf(stderr, " -x: wait for pendant detection before creating HAL pins\n");
-    fprintf(stderr, " -s: step sequence (multiplied by 0.001 unit):\n");
-    fprintf(stderr, "     1: 1,10,100,1000 (default)\n");
-    fprintf(stderr, "     2: 1,5,10,20\n");
-    fprintf(stderr, "     3: 1,10,100\n");
-    fprintf(stderr, "     4: 1,5,10,20,50,100\n");
-    fprintf(stderr, "     5: 1,10,50,100,1000\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Configuration file section format:\n");
     fprintf(stderr, "[XHC-HB04]\n");
@@ -747,20 +686,7 @@ int main (int argc,char **argv)
         case 'H':
         	simu_mode = false;
         	break;
-        case 's':
-            switch (optarg[0]) {
-              case '1': stepsize_sequence = stepsize_sequence_1;break;
-              case '2': stepsize_sequence = stepsize_sequence_2;break;
-              case '3': stepsize_sequence = stepsize_sequence_3;break;
-              case '4': stepsize_sequence = stepsize_sequence_4;break;
-              case '5': stepsize_sequence = stepsize_sequence_5;break;
-              default:
-                printf("Unknown sequence: %s\n\n",optarg);
-                Usage(argv[0]);
-                exit(EXIT_FAILURE);
-                break;
-            }
-            break;
+
         case 'x':
         	wait_for_pendant_before_HAL = true;
         	break;
@@ -770,11 +696,6 @@ int main (int argc,char **argv)
         }
     }
 
-    // compute the last valid idx for use with stepsize-down
-    for (idx=0; idx < MAX_STEPSIZE_SEQUENCE; idx++) {
-       if (stepsize_sequence[idx] == 0) break;
-    }
-    stepsize_last_idx  =  idx - 1;
 
 	hal_setup();
 
@@ -810,7 +731,6 @@ int main (int argc,char **argv)
 		*(xhc.hal->connected) = 0;
 		wait_secs = 0;
 		*(xhc.hal->require_pendant) = wait_for_pendant_before_HAL;
-		*(xhc.hal->stepsize) = stepsize_sequence[0];
 
 		do {
 			cnt = libusb_get_device_list(ctx, &devs);
@@ -819,7 +739,7 @@ int main (int argc,char **argv)
 				return 1;
 			}
 
-			dev_handle = libusb_open_device_with_vid_pid(ctx, 0x10CE, 0xEB70);
+			dev_handle = libusb_open_device_with_vid_pid(ctx, 0x10CE, 0xEB93);
 			libusb_free_device_list(devs, 1);
 			if (dev_handle == NULL) {
 				if (wait_for_pendant_before_HAL) {
@@ -872,7 +792,7 @@ int main (int argc,char **argv)
 				r = libusb_handle_events_timeout(ctx, &tv);
 				compute_velocity(&xhc);
 			    if (simu_mode) linuxcnc_simu(&xhc);
-				handle_step(&xhc);
+
 				xhc_set_display(dev_handle, &xhc);
 			}
 			*(xhc.hal->connected) = 0;
