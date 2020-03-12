@@ -1,2 +1,3 @@
 libncurses 5 libncurses5 (>= 5.0)
+libcjson 0 libcjson
 libpth 20 libpth2 | libpth20

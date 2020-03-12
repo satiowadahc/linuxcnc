@@ -66,6 +66,13 @@ $(call TOOBJSDEPS, $(XHC_HB04_SRC)) : EXTRAFLAGS += $(LIBUSB10_CFLAGS)
 TARGETS += ../bin/xhc-hb04
 endif # HAVE_LIBUSB10
 
+RMDTEENSYSRC = hal/user_comps/rmdteensyhal.cc
+USERSRCS += $(RMDTEENSYSRC)
+../bin/rmdteensyhal: $(call TOOBJS, $(RMDTEENSYSRC)) ../lib/liblinuxcnchal.so.0 ../lib/liblinuxcncini.so.0
+	$(ECHO) Linking $(notdir $@)
+	$(Q)$(CC) $(LDFLAGS) -o $@ $^ -lm -lstdc++ -lcjson
+TARGETS += ../bin/rmdteensyhal
+
 $(patsubst ./hal/user_comps/%,../include/%,$(wildcard ./hal/user_comps/*.h)): ../include/%.h: ./hal/user_comps/%.h
 	cp $^ $@
 $(patsubst ./hal/user_comps/%,../include/%,$(wildcard ./hal/user_comps/*.hh)): ../include/%.hh: ./hal/user_comps/%.hh
