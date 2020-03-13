@@ -241,7 +241,7 @@ void read_until_newline(int fd, char* out, int outsize){
 
     //Find the string
     while(pos < outsize){
-    	if(read(fd, buf+pos, 1)>0){printf("\n.");}
+    	if(read(fd, buf+pos, 1)>0){
     	if(buf[pos]=='{'){
     		start_string=true;
     		start = pos;
@@ -251,7 +251,8 @@ void read_until_newline(int fd, char* out, int outsize){
     		end = pos;
     		break;
     	}
-      pos++;
+			pos++;
+			}
     }
 
     //Check we found a start and end
@@ -290,9 +291,10 @@ int main (int argc,char **argv){
 	// *********** Run Time Vars ***************
 	bool hal_ready_done = false;
 	char strbuf[512];
+	char* intConvert;
 	cJSON *json;
 	const cJSON *sensReading = NULL;
-	
+
 	memset(&teensy, 0, sizeof(teensy));
 	// *********** OPEN PORT  ******************
 	//TODO Get from INI
@@ -303,39 +305,196 @@ int main (int argc,char **argv){
 			printf ("error %d opening %s: %s", errno, portname, strerror (errno));
 			return -1;
 	}
-	else{printf("TEENSY: Serial Opened successfully");}
+	else{printf("RMDTEENSY: Serial Opened successfully\n");}
 	//TODO enable reconnect options
 
 	// ************ HAL Setup ******************
 	hal_setup();
-	printf("TEENSY: Loaded Hal");
+	printf("RMDTEENSY: Loaded Hal\n");
 	// *********** HAL READY  ******************
     if (!hal_ready_done) {
     	hal_ready(hal_comp_id);
     	hal_ready_done = true;
-	printf("TEENSY: Hal ready");
+	printf("RMDTEENSY: Hal ready\n");
     }
 
     // *********** MAIN LOOP *******************
 
     do {
       read_until_newline(fd, strbuf, sizeof(strbuf));
-      printf("\n TEENSYDBG: main: %s", strbuf);
+      // printf("\n TEENSYDBG1: main: %s \n", strbuf);
       json = cJSON_Parse(strbuf);
-      //printf("\n\nTEENSYDBG: %s", cJSON_Print(json));
+			if (json != NULL){
+      	// printf("\n\nTEENSYDBG2: %s\n", cJSON_Print(json));
 
-      for(int i=1; i<=9; i++){
-		  sensReading = cJSON_GetObjectItemCaseSensitive(json, "1-x");
-		  if (cJSON_IsString(sensReading) && (sensReading->valuestring != NULL))
-		  {
-			  printf("Found Measurement, %d", sensReading->valueint);
-			  *(teensy.hal->x1) = sensReading->valueint;
+			  sensReading = cJSON_GetObjectItemCaseSensitive(json, "1-x");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->x1) = atof(intConvert);
+			  }
 
-		  }
-      }
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "1-y");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->y1) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "1-z");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->z1) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "2-x");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->x2) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "2-y");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->y2) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "2-z");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->z2) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "3-x");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->x3) = atof(intConvert);
+			  }
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "3-y");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->y3) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "3-z");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->z3) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "4-x");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->x4) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "4-y");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->y4) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "4-z");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->z4) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "5-x");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->x5) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "5-y");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->y5) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "5-z");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->z5) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "6-x");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->x6) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "6-y");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->y6) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "6-z");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->z6) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "7-x");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->x7) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "7-y");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->y7) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "7-z");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->z7) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "8-x");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->x8) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "8-y");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->y8) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "8-z");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->z8) = atof(intConvert);
+				}
+
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "9-x");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->x9) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "9-y");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->y9) = atof(intConvert);
+				}
+
+				sensReading = cJSON_GetObjectItemCaseSensitive(json, "9-z");
+				if(sensReading->valuestring != NULL){
+					intConvert = sensReading->valuestring;
+					*(teensy.hal->z9) = atof(intConvert);
+				}
+
+		}
     	sleep(1);
     } while (1);
 
+		hal_exit(hal_comp_id);
     // *********** Disconnect *******************
     // TODO: Shutdown
     return 0;
