@@ -70,13 +70,6 @@ extern "C" const char * iniFind(FILE *fp, const char *tag, const char *section){
     return(f.Find(tag, section));
 }
 
-//Get the Data from the teensy and update our objects
-void callback_response_in(){
-	//This is the complicated part
-
-
-}
-
 static int hal_pin_simu(char *pin_name, void **ptr, int s){
 	printf("Creating pin: %s\n", pin_name);
 	*ptr = calloc(s, 1);
@@ -233,7 +226,7 @@ void set_blocking (int fd, int should_block){
 
 void read_until_newline(int fd, char* out, int outsize){
     int pos = 0;
-	char buf[512] = {0};
+	  char buf[512] = {0};
     int start = 0;
     int end = 0;
     bool start_string = false;
@@ -306,7 +299,6 @@ int main (int argc,char **argv){
 			return -1;
 	}
 	else{printf("RMDTEENSY: Serial Opened successfully\n");}
-	//TODO enable reconnect options
 
 	// ************ HAL Setup ******************
 	hal_setup();
@@ -363,23 +355,26 @@ int main (int argc,char **argv){
 					*(teensy.hal->z2) = atof(intConvert);
 				}
 
-				sensReading = cJSON_GetObjectItemCaseSensitive(json, "3-x");
-				if(sensReading->valuestring != NULL){
-					intConvert = sensReading->valuestring;
-					*(teensy.hal->x3) = atof(intConvert);
-			  }
-
-				sensReading = cJSON_GetObjectItemCaseSensitive(json, "3-y");
-				if(sensReading->valuestring != NULL){
-					intConvert = sensReading->valuestring;
-					*(teensy.hal->y3) = atof(intConvert);
-				}
-
-				sensReading = cJSON_GetObjectItemCaseSensitive(json, "3-z");
-				if(sensReading->valuestring != NULL){
-					intConvert = sensReading->valuestring;
-					*(teensy.hal->z3) = atof(intConvert);
-				}
+				// sensReading = cJSON_GetObjectItemCaseSensitive(json, "3-x");
+				// if(sensReading->valuestring != NULL){
+				// 	printf("3-x Read:\n");
+				// 	intConvert = sensReading->valuestring;
+				// 	*(teensy.hal->x3) = atof(intConvert);
+			  // }
+				//
+				// sensReading = cJSON_GetObjectItemCaseSensitive(json, "3-y");
+				// if(sensReading->valuestring != NULL){
+				// 	printf("3-y Read:\n");
+				// 	intConvert = sensReading->valuestring;
+				// 	*(teensy.hal->y3) = atof(intConvert);
+				// }
+				//
+				// sensReading = cJSON_GetObjectItemCaseSensitive(json, "3-z");
+				// if(sensReading->valuestring != NULL){
+				// 	printf("3-z Read:\n");
+				// 	intConvert = sensReading->valuestring;
+				// 	*(teensy.hal->z3) = atof(intConvert);
+				// }
 
 				sensReading = cJSON_GetObjectItemCaseSensitive(json, "4-x");
 				if(sensReading->valuestring != NULL){
