@@ -1266,7 +1266,7 @@ NOTE: Probe Height refers to the height above the Z axis MINIMUM_LIMIT.
 PlasmaC allows two different cut modes:
 
 . *Pierce and Cut* - runs the loaded G-Code program to pierce then cut.
-. *Pierce Only* - converts the loaded G-Code program and then runs the program to pierce the material at the M3 command positions only.
+. *Pierce Only* - converts the loaded G-Code program and then runs the program to pierce the material at the *M3 S1* or *M3 $0 S1* command positions only. Scribe (*M3 $1 S1*) and Spotting (*M3 $2 S1*) commands will be ignored and no pierce will take place in those locations.
 
 *Pierce Only* mode is useful for thick materials which may produce enough dross on the material surface from piercing to interfere with the torch while cutting. This enables the entire sheet to be pierced and cleaned off before cutting.
 
@@ -2109,7 +2109,9 @@ BUTTON_n_NAME = HAL\Show
 
 === Button Code
 
-Buttons can run <<button-cmds, External Commands>>, <<button-code, G-Code>> or any of five special functions, <<button-probe, Probe Test>>, <<button-ohmic, Ohmic Test>>, <<button-cut, Cut Type>>, <<button-consumables, Change Consumables>>, or <<button-touchoff, Touch Off X & Y>>. In addition to this, buttons 10-19 in the Extras panel can run the special function <<button-recovery, Cut Recovery>>, <<button-load, Load G-Code>> program or display a custom image.
+Buttons can run <<button-cmds, External Commands>>, <<button-code, G-Code>> or any of six special functions, <<button-toggle, Toggle HAL Pin>>, <<button-probe, Probe Test>>, <<button-ohmic, Ohmic Test>>, <<button-cut, Cut Type>>, <<button-consumables, Change Consumables>>, or <<button-touchoff, Touch Off X & Y>>.
+
+In addition to this, buttons 10-19 in the Extras panel can run the special functions <<button-recovery, Cut Recovery>>, <<button-load, Load G-Code>> program as well as display a custom image instead of the button name.
 
 [[button-cmds]]
 
@@ -2144,7 +2146,7 @@ BUTTON_n_CODE = G0 X{JOINT_0 HOME} Y1
 BUTTON_n_CODE = G53 G0 Z[{AXIS_Z MAX_LIMIT} - 1.001]
 ----
 
-Multiple codes can be run by separating the codes with a \
+Multiple codes can be run by separating the codes with a \ symbol. The exception is the special commands which are required to be a single command per button.
 
 ----
 BUTTON_n_CODE = G0 X0 Y0 \ G1 X5 \ G1 Y5
@@ -2155,6 +2157,18 @@ External commands and G-Code may be mixed on the same button.
 ----
 BUTTON_n_CODE = %halshow \ g0x.5y.5 \ %halmeter
 ----
+
+[[button-toggle]]
+
+[underline]*Toggle HAL Pin*
+
+The following code will allow the user to use a button to invert the current state of a HAL bit pin (this code is required to be used as a single command and may only control one HAL bit pin per button):
+
+----
+BUTTON_n_CODE = toggle-halpin my-hal-pin-name
+----
+
+After setting the code, upon clicking, the button will turn green, invert the pin state, and stay "latched" until it is clicked again. Clicking again will return the button to the original color and invert the pin state.
 
 [[button-probe]]
 
@@ -2206,28 +2220,6 @@ There are three methods to return to the previous coordinates:
 BUTTON_n_CODE = change-consumables X10 Y10 F1000
 ----
 
-[[button-recovery]]
-
-[underline]*Cut Recovery*
-
-Pressing this button brings up the <<cut-recovery, cut recovery>> dialog which will allow the user to move the torch off of the cut path to find a suitable piece of material to restart the cut from. This function is only available from the Extras panel and the button is only valid while paused.
-
-----
-BUTTON_n_CODE = cut-recovery
-----
-
-[[button-load]]
-
-[underline]*Load*
-
-Buttons 10-19 in the Extras Panel are able to load a G-Code program by using the following format:
-
-----
-BUTTON_n_CODE = load path/to/G-Code.ngc
-----
-
-The path is relative to the directory specified by *PROGRAM_PREFIX* in the <machine_name>.ini file. This is usually ~/linuxcnc/nc_files. For example: If the user's G-Code file was in a subdirectory of the *PROGRAM_PREFIX* directory named *plasma* then the entry would be *plasma/G-Code.ngc*.
-
 [[button-touchoff]]
 
 [underline]*Touch Off X & Y*
@@ -2259,6 +2251,28 @@ Combined to perform all 3 tasks:
 ----
 G10 L20 P0 X0 Y0 \ G53 G0 Z[{AXIS_Z MAX_LIMIT} - 5.0] \ %halcmd setp axisui.refresh 1
 ----
+
+[[button-recovery]]
+
+[underline]*Cut Recovery*
+
+Pressing this button brings up the <<cut-recovery, cut recovery>> dialog which will allow the user to move the torch off of the cut path to find a suitable piece of material to restart the cut from. This function is only available from the Extras panel and the button is only valid while paused.
+
+----
+BUTTON_n_CODE = cut-recovery
+----
+
+[[button-load]]
+
+[underline]*Load*
+
+Buttons 10-19 in the Extras Panel are able to load a G-Code program by using the following format:
+
+----
+BUTTON_n_CODE = load path/to/G-Code.ngc
+----
+
+The path is relative to the directory specified by *PROGRAM_PREFIX* in the <machine_name>.ini file. This is usually ~/linuxcnc/nc_files. For example: If the user's G-Code file was in a subdirectory of the *PROGRAM_PREFIX* directory named *plasma* then the entry would be *plasma/G-Code.ngc*.
 
 === Button Image
 
@@ -2660,6 +2674,30 @@ The user can create a complete backup of the machine configuration to aid in fau
 
 == PlasmaC Advanced Topics
 
+=== Tuning Void Sensing
+
+Void sensing may be further tuned by adjusting the required number of consecutive times that the threshold has been exceeded before applying the void lock to the THC.
+
+The parameter for adjusting this is named plasmac.kerf-errors-max and the default value is 2. To change this value, add the parameter and the required value to the <machine_name>_connections.hal file. The following example would set the required number of consecutive times to exceed the threshold to 3:
+
+----
+setp plasmac.kerf-error-max 3
+----
+
+=== Lost Arc Delay
+
+Some plasma power sources/machine configurations may lose the Arc OK signal either momentarily during a cut, or permanently near the end of a cut causing PlasmaC to pause the program and report a "valid arc lost" error. There is a HAL pin named *plasmac.arc-lost-delay* that may be used to set a delay (in seconds) that will prevent a paused program/error if the lost Arc OK signal is regained, or the *M5* command is reached before the set delay period expires.
+
+The following code would set a delay of 0.1 seconds:
+
+----
+setp plasmac.arc-lost-delay 0.1
+----
+
+It is recommended that the user set this parameter in the <machine_name>_connections.hal file.
+
+This setting should only be used if the user experiences the above symptoms. It should also be noted that the user could use the appropriate <<ignore-ok, Ignore Arc OK>> G-Code commands to achieve a similar result.
+
 === PlasmaC State Outputs
 
 PlasmaC has a HAL pin named *plasmac.state-out* which can be used to interface with user-coded components to provide PlasmaC's current state.
@@ -2698,16 +2736,6 @@ The different states PlasmaC could encounter are as follows:
 |===
 
 The DEBUG state is for testing purposes only and will not normally be encountered.
-
-=== Tuning Void Sensing
-
-Void sensing may be further tuned by adjusting the required number of consecutive times that the threshold has been exceeded before applying the void lock to the THC.
-
-The parameter for adjusting this is named plasmac.kerf-errors-max and the default value is 2. To change this value, add the parameter and the required value to the <machine_name>_connections.hal file. The following example would set the required number of consecutive times to exceed the threshold to 3:
-
-----
-setp plasmac.kerf-error-max 3
-----
 
 == Appendix
 
