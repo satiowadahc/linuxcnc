@@ -113,6 +113,7 @@ class OriginOffsetView(QTableView, _HalWidgetBase):
 
     def currentTool(self, data):
         self.current_tool = data
+
     def metricMode(self, state):
         self.metric_display = state
 
@@ -162,7 +163,7 @@ class OriginOffsetView(QTableView, _HalWidgetBase):
 
     def showSelection(self, item):
         cellContent = item.data()
-        #text = cellContent.toPyObject()  # test
+        # text = cellContent.toPyObject() # test
         text = cellContent
         LOG.debug('Text: {}, Row: {}, Column: {}'.format(text, item.row(), item.column()))
         sf = "You clicked on {}".format(text)
@@ -311,10 +312,12 @@ class OriginOffsetView(QTableView, _HalWidgetBase):
         data = self.tabledata[row][col]
 
         # Hack to not edit any rotational offset but Z axis
-        if row == 1 and not col == 2: return
+        if row == 1 and not col == 2:
+            return
 
         # dont evaluate text column
-        if col ==9 :return
+        if col == 9:
+            return
 
         # set the text style based on unit type
         if self.metric_display:
@@ -374,8 +377,10 @@ class OriginOffsetView(QTableView, _HalWidgetBase):
 
     def set_dialog_code(self, data):
         self.dialog_code = data
+
     def get_dialog_code(self):
         return self.dialog_code
+
     def reset_dialog_code(self):
         self.dialog_code = 'CALCULATOR'
     dialog_code_string = pyqtProperty(str, get_dialog_code, set_dialog_code, reset_dialog_code)
@@ -460,6 +465,7 @@ class MyTableModel(QAbstractTableModel):
         if order == Qt.DescendingOrder:
             self.arraydata.reverse()
         self.emit(SIGNAL("layoutChanged()"))
+
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
