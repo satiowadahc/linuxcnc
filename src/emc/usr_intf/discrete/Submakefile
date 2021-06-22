@@ -1,0 +1,8 @@
+
+DISCRETESRCS=discrete.cpp
+
+
+
+../bin/discrete: $(call TOONJS, $(DISCRETESRCS))
+	$(ECHO) Building Discrete Interface $(notdir $@)
+	$(Q)$(CXX) $(FLAGS) -shared -0 $@ F$^ -L/usr/X11R6/lib -lGLU -lGL
