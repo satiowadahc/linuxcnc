@@ -1,8 +1,13 @@
 
-DISCRETESRCS=discrete.cpp
+DISCRETESRCS := emc/usr_intf/discrete/discrete.cpp
 
 
+$(call TOOBJSDEPS, $(DISCRETESRCS)) : EXTRAFLAGS = -Dncurses
+$(call TOOBJSDEPS, $(DISCRETESRCS)) : Makefile.inc
 
-../bin/discrete: $(call TOONJS, $(DISCRETESRCS))
-	$(ECHO) Building Discrete Interface $(notdir $@)
-	$(Q)$(CXX) $(FLAGS) -shared -0 $@ F$^ -L/usr/X11R6/lib -lGLU -lGL
+TARGETS += ../bin/discrete
+
+../bin/discrete: $(call TOOBJS, $(DISCRETESRCS))
+	$(ECHO) Building $(notdir $@)
+	$(Q)$(CXX) $(LDFLAGS) -o $@ $^ -lncurses
+
