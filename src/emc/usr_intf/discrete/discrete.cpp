@@ -19,11 +19,11 @@
 
 #include <curses.h>
 #include <unistd.h>
-#include <linuxcnc/emcpos.h>
-#include <linuxcnc/emc_nml.hh>
-#include <linuxcnc/rtapi.h>
-#include <linuxcnc/emc.hh>
-
+#include "emc.hh"
+#include "emc_nml.hh"
+#include "kinematics.h"
+#include "config.h"
+#include "inifile.hh"
 
 
 // <><><><><><><><><><><><><>
