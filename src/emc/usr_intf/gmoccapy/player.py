@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
     This class is used to handle sound messages from gmoccapy,
@@ -23,7 +23,9 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 '''
-import gobject
+import gi
+from gi.repository import Gtk as gtk
+from gi.repository import GObject as gobject
 import gst
 
 # the player class does the work of playing the audio hints

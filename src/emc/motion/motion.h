@@ -425,16 +425,6 @@ Suggestion: Split this in to an Error and a Status flag register..
 	EMCMOT_ORIENT_FAULTED,
     } orient_state_t;
 
-/* flags for homing */
-#define HOME_IGNORE_LIMITS            1
-#define HOME_USE_INDEX                2
-#define HOME_IS_SHARED                4
-#define HOME_UNLOCK_FIRST             8
-#define HOME_ABSOLUTE_ENCODER        16
-#define HOME_NO_REHOME               32
-#define HOME_NO_FINAL_MOVE           64
-#define HOME_INDEX_NO_ENCODER_RESET 128
-
 /* flags for enabling spindle scaling, feed scaling,
    adaptive feed, and feed hold */
 
@@ -646,7 +636,7 @@ Suggestion: Split this in to an Error and a Status flag register..
 	int synch_do[EMCMOT_MAX_DIO]; /* outputs to the motion controller, queried by g-code */
 	double analog_input[EMCMOT_MAX_AIO]; /* inputs to the motion controller, queried by g-code */
 	double analog_output[EMCMOT_MAX_AIO]; /* outputs to the motion controller, queried by g-code */
-
+	int misc_error[EMCMOT_MAX_MISC_ERROR]; /* Random Error pins*/
 	struct state_tag_t tag; /* Current interp state corresponding
 				   to motion line */
 
@@ -728,6 +718,9 @@ Suggestion: Split this in to an Error and a Status flag register..
 
         int numAIO;             /* userdefined number of analog IO. default is 4. (EMCMOT_MAX_AIO=16), 
                                    but can be altered at motmod insmod time */
+
+        int numMiscError;     /* userdefined number of Misc Errors. default is 0.
+                                  but can be altered at motmod insmod time */
 
 /*! \todo FIXME - all structure members beyond this point are in limbo */
 

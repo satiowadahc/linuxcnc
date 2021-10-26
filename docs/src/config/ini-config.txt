@@ -511,7 +511,7 @@ This example program filters a file and adds a W axis to match the Z axis.
 It depends on there being a space between each axis word to work.
 
 ----
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 
@@ -602,13 +602,13 @@ time (typ: 'USER_DEFINED_FUNCTION_MAX_DIRS == 5').
 
 * 'INI_VARS = 1' Default 1
 Allows G-code programs to read values from the INI file using the format
-#<_ini[section]name>. See <<gcode:parameters,G-code Parameters>
+#<_ini[section]name>. See <<gcode:parameters,G-code Parameters>>.
 
 * 'HAL_PIN_VARS = 1' Default 1
 Allows G-code programs to read the values of HAL pins using the format
-#<_hal[Hal item]> Variable access is read-only
+#<_hal[Hal item]>.  Variable access is read-only.
 See <<gcode:parameters,G-code Parameters>> for more details and an
-important caveat
+important caveat.
 
 * 'RETAIN_G43 = 0' Default 0
 When set, you can  turn on G43 after loading the first tool,
@@ -691,9 +691,16 @@ Section.
     one 'HALFILE', and stepper systems typically have two such files, one which
     specifies the generic stepper configuration ('core_stepper.hal') and
     one which specifies the machine pin out ('xxx_pinout.hal').
+
     HALFILES are found using a search.  If the named file is found in the directory
     containing the ini file, it is used.  If the named file is not found in this
     ini file directory, a search is made using a system library of halfiles.
+
+    If LinuxCNC is started with the linuxcnc script using the "-H dirname" option,
+    the specified dirname is prepended to the search described above so that
+    "dirname" is searched first.  The "-H dirname" option may be specifed more
+    than once, directories are prepended in order.
+
     A HALFILE may also be specified as an absolute path (when the name starts with
     a '/' character).  Absolute paths are not recommended as their use may limit
     relocation of configurations.
@@ -1618,9 +1625,9 @@ image::images/encoder-scale.png[align="center"]
 
 * 'TOOL_CHANGE_AT_G30 = 1' -
     The machine is moved to reference point defined by parameters
-    5181-5186 for G30 if the value is 1. For more information see the
-    <<gcode:parameters,Parameters Section and the
-    <<gcode:g30-g30.1,G30 Section>>.
+    5181-5186 for G30 if the value is 1. For more information see
+    <<gcode:parameters,G-Code Parameters>> and
+    <<gcode:g30-g30.1,G-Code G30-G30.1>>.
 
 * 'RANDOM_TOOLCHANGER = 1' -
     This is for machines that cannot place the tool back into the pocket

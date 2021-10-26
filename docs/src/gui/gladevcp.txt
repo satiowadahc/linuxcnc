@@ -32,7 +32,7 @@ complete LinuxCNC user interface could be built with GladeVCP and Python.
 
 GladeVCP uses the http://glade.gnome.org/[Glade] WYSIWYG user
 interface editor, which makes it easy to create visually pleasing
-panels. It relies on the http://www.pygtk.org/[PyGTK] bindings to the
+panels. It relies on the https://pygobject.readthedocs.io/en/latest/[PyGObject] bindings to the
 rich http://www.gtk.org/[GTK+] widget set, and in fact all of these
 may be used in a GladeVCP application - not just the specialized
 widgets for interacting with HAL and LinuxCNC, which are documented here.
@@ -212,16 +212,15 @@ handled in more detail in the
 [[gladevcp:prerequisites]]
 
 === Prerequisite: Glade installation
-To view or modify Glade UI files, you need glade 3.8.0 installed - it is not
+To view or modify Glade UI files, you need glade 3.38.2 or later installed - it is not
 needed just to run a GladeVCP panel. If the glade command is missing, install
 it with the command:
 
- $ sudo apt-get install glade-gtk2
+ $ sudo apt install glade
 
-Verify the version number to be 3.8.0 or less
-
- $ glade-gtk2 --version
-glade3 3.8.0
+ Glade contains an internal Python interpreter, and only python3 is supported.
+ This is true for Debian Bullseye, Ubuntu 21 and Mint 21 or later.
+ Older versions will not work, you will get a python error.
 
 === Running Glade to create a new user interface
 This section just outlines the initial LinuxCNC-specific steps. For more
@@ -1045,10 +1044,10 @@ LEDs have several properties which control their look and feel: +
 
 on_color::
    a String defining ON color of LED. May be any valid
-   gtk.gdk.Color name. Not working on Ubuntu 8.04.
+   gdk.Color name. Not working on Ubuntu 8.04.
 off_color::
    String defining OFF color of LED. May be any valid
-   gtk.gdk.Color name or special value `dark`. `dark` means that OFF color
+   gdk.Color name or special value `dark`. `dark` means that OFF color
    will be set to 0.4 value of ON color. Not working on Ubuntu 8.04.
 pick_color_on, pick_color_off::
    Colors for ON and OFF states may be
@@ -1851,8 +1850,8 @@ Direct program control::
     There a couple ways to directly control the widget using Python.
 
     Using goobject to set the above listed properties:
-    [widget name].set_property("highlight_color",gtk.gdk.Color('blue'))
-    [widget name].set_property("foreground_color",gtk.gdk.Color('black'))
+    [widget name].set_property("highlight_color",gdk.Color('blue'))
+    [widget name].set_property("foreground_color",gdk.Color('black'))
     [widget name].set_property("hide_columns","xyzabcuvwt")
     [widget name].set_property("hide_rows","123456789abc")
     [widget name].set_property("font","sans 25")

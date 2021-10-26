@@ -12,7 +12,7 @@ once per second.
 
 [source,c]
 ----
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import hal, time
 h = hal.component("passthrough")
 h.newpin("in", hal.HAL_FLOAT, hal.HAL_IN)
@@ -126,6 +126,14 @@ the value may be accessed or set using the subscript syntax:
 
 ----
 h['out'] = h['in']
+----
+
+To see all pins with their values, getpins returns all values in a dictionary
+of that component.
+
+----
+h.getpins()
+>>>{'in': 0.0, 'out': 0.0}
 ----
 
 === Driving output (HAL_OUT) pins

@@ -144,6 +144,7 @@ SUBDIRS := \
     hal/user_comps/devices hal/user_comps/mb2hal \
     hal/user_comps hal/user_comps/vismach hal/user_comps/vfs11_vfd hal/classicladder hal/utils hal \
     hal/user_comps/vfdb_vfd hal/user_comps/wj200_vfd \
+    hal/user_comps/pi500_vfd \
     hal/user_comps/huanyang-vfd \
 	hal/user_comps/xhc-whb04b-6 \
     \
@@ -216,7 +217,7 @@ endif
 
 # Each directory in $(INCLUDES) is passed as a -I directory when compiling.
 INCLUDE := $(patsubst %,-I%, $(INCLUDES)) -I$(RTDIR)/include
-INCLUDE += -I$(INCLUDEPY)
+INCLUDE += $(PYTHON_CPPFLAGS)
 INCLUDE += $(LIBTIRPC_CFLAGS)
 
 # Compilation options.	Perhaps some of these should come from Makefile.inc? (CXXFLAGS now does)
@@ -489,6 +490,7 @@ userspace: $(TARGETS)
 pythonclean:
 	rm -f $(PYTARGETS)
 	find ../lib/python -name '*.so' -exec rm {} +
+	find . -name __pycache__ | xargs -r rm -r
 python: $(PYTARGETS)
 userspace: python
 clean: docclean pythonclean cscopeclean
@@ -527,21 +529,19 @@ clean: depclean modclean
 	-rm -f hal/components/conv_*.comp
 
 pycheck-python-files:
-	@echo 'Checking *.py files for python2 and python3 compatibility...'
+	@echo 'Checking *.py files for python3 compatibility...'
 	@for d in ./hal; do \
 		filelist=$(shell mktemp) && \
 		find $$d -name '*.py' -type f > $$filelist && \
-		cat $$filelist | xargs /usr/bin/env python2 -m py_compile && \
 		cat $$filelist | xargs /usr/bin/env python3 -m py_compile && \
 		rm -f $$filelist; \
 	done
 
 pycheck-python-script:
-	@echo 'Checking "text/x-python" (by MIME type) files for python2 and python3 compatibility...'
+	@echo 'Checking "text/x-python" (by MIME type) files python3 compatibility...'
 	@for d in ../tests; do \
 		filelist=$(shell mktemp) && \
 		find $$d -type f -exec file -F ':' -i {} \; | grep 'text/x-python' | awk -F ':' '{print $$1}' > $$filelist && \
-		cat $$filelist | xargs /usr/bin/env python2 -m py_compile && \
 		cat $$filelist | xargs /usr/bin/env python3 -m py_compile && \
 		rm -f $$filelist; \
 	done
@@ -572,12 +572,13 @@ $(patsubst %,../include/%,$(wildcard *.h)): ../include/%.h: %.h
 $(patsubst %,../include/%,$(wildcard *.hh)): ../include/%.hh: %.hh
 	$(Q)-cp $^ $@
 
-DIR=install -d -m 0755 -o root
-FILE=install -m 0644 -o root
+INSTALL=install -o root
+DIR=$(INSTALL) -d -m 0755
+FILE=$(INSTALL) -m 0644
 TREE=cp -dR
-CONFIGFILE=install -m 0644
-EXE=install -m 0755 -o root
-SETUID=install -m 4755 -o root
+CONFIGFILE=$(INSTALL) -m 0644
+EXE=$(INSTALL) -m 0755
+SETUID=$(INSTALL) -m 4755
 GLOB=$(wildcard $(1))
 
 ifeq ($(RUN_IN_PLACE),yes)
@@ -644,7 +645,7 @@ install-kernel-indep: install-dirs
 	$(FILE) $(filter-out %/skeleton.3rtapi, $(wildcard ../docs/man/man3/*.3rtapi)) $(DESTDIR)$(mandir)/man3
 	$(FILE) $(filter-out %/skeleton.9, $(wildcard ../docs/man/man9/*.9)) $(DESTDIR)$(mandir)/man9
 	$(FILE) objects/*.msg $(DESTDIR)$(tcldir)/msgs
-	$(EXE) ../scripts/realtime $(DESTDIR)$(initd_dir)
+	$(EXE) ../scripts/realtime $(DESTDIR)$(libdir)/linuxcnc
 	$(EXE) ../scripts/halrun $(DESTDIR)$(bindir)
 	$(EXE) ../scripts/halcmd_twopass $(DESTDIR)$(bindir)
 	$(EXE) ../scripts/haltcl $(DESTDIR)$(bindir)
@@ -847,10 +848,6 @@ EXTRA_CFLAGS += -g
 endif
 endif
 EXTRA_CFLAGS += -fno-builtin-sin -fno-builtin-cos -fno-builtin-sincos
-
-ifeq "$(USE_STUBS)" "1"
-MATHSTUB := rtapi/mathstubs.o
-endif
 
 ifdef SEQUENTIAL_SUPPORT
 EXTRA_CFLAGS += -DSEQUENTIAL_SUPPORT

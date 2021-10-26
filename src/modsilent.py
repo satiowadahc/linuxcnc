@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import re
 import sys
@@ -15,7 +15,7 @@ permitted_duplicates = ['kinematicsType', \
 
 kbuild = subprocess.Popen(sys.argv[1:], stderr=subprocess.PIPE)
 for line in kbuild.stderr:
-    m = duplicate_warning.match(line)
+    m = duplicate_warning.match(line.decode('utf-8'))
     if m and m.group(1) in permitted_duplicates: continue
 
     sys.stderr.write(line)

@@ -19,7 +19,8 @@ import os
 import locale
 import operator
 
-from PyQt5.QtCore import Qt, QAbstractTableModel, QVariant, pyqtProperty
+from PyQt5.QtCore import Qt, QAbstractTableModel, QVariant, pyqtProperty, QSize, pyqtSlot
+from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import (QTableView, QAbstractItemView, QCheckBox,
 QItemEditorFactory,QDoubleSpinBox,QSpinBox,QStyledItemDelegate)
 from qtvcp.widgets.widget_baseclass import _HalWidgetBase
@@ -43,6 +44,8 @@ LOG = logger.getLogger(__name__)
 
 # Force the log level for this module
 #LOG.setLevel(logger.DEBUG) # One of DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+ICONPATH = os.path.join(INFO.LIB_PATH, 'images/widgets/tool_offsetview')
 
 # custom spinbox controls for editing
 class ItemEditorFactory(QItemEditorFactory):
@@ -77,6 +80,8 @@ class ToolOffsetView(QTableView, _HalWidgetBase):
         self.setEnabled(False)
         self.dialog_code = 'CALCULATOR'
         self.text_dialog_code = 'KEYBOARD'
+        self.setIconSize(QSize(32,32))
+        self._last = 0
 
         # create table
         self.createAllView()
@@ -84,6 +89,7 @@ class ToolOffsetView(QTableView, _HalWidgetBase):
     def _hal_init(self):
         self.delay = 0
         STATUS.connect('all-homed', lambda w: self.setEnabled(True))
+        STATUS.connect('not-all-homed', lambda w, axis: self.setEnabled(False))
         STATUS.connect('interp-idle', lambda w: self.setEnabled(STATUS.machine_is_on()
                                                     and (STATUS.is_all_homed()
                                                         or INFO.NO_HOME_REQUIRED)))
@@ -101,8 +107,6 @@ class ToolOffsetView(QTableView, _HalWidgetBase):
         if not INFO.MACHINE_IS_LATHE:
             for i in (4,6,8,16,17,18):
                 self.hideColumn(i)
-        else:
-            self.hideColumn(15)
 
     def currentTool(self, data):
         self.current_tool = data
@@ -135,10 +139,11 @@ class ToolOffsetView(QTableView, _HalWidgetBase):
 
         # set horizontal header properties
         hh = self.horizontalHeader()
-        hh.setMinimumSectionSize(75)
+        # auto adjust to contents
+        hh.setSectionResizeMode(3)
+        
         hh.setStretchLastSection(True)
         hh.setSortIndicator(1,Qt.AscendingOrder)
-
 
         vh = self.verticalHeader()
         vh.setVisible(False)
@@ -154,13 +159,12 @@ class ToolOffsetView(QTableView, _HalWidgetBase):
 
     def showSelection(self, item):
         cellContent = item.data()
-        #text = cellContent.toPyObject()  # test
         text = cellContent
         LOG.debug('Text: {}, Row: {}, Column: {}'.format(text, item.row(), item.column()))
         sf = "You clicked on {}".format(text)
         # display in title bar for convenience
         self.setWindowTitle(sf)
-        # row 0 is not editable (absolute position)
+        # row 0 is not editable (checkbox position)
         # column 19 is the descritive text column
         if item.column() == 19:
             self.callTextDialog(text,item)
@@ -242,6 +246,54 @@ class ToolOffsetView(QTableView, _HalWidgetBase):
     def get_checked_list(self):
         return self.tablemodel.listCheckedTools()
 
+    def set_all_unchecked(self):
+        self.tablemodel.uncheckAllTools()
+
+    # This function uses the color name (string); setProperty
+    # expects a QColor object
+    def highlight(self, color):
+        self.setProperty('styleColorHighlight', QColor(color))
+
+    # This function uses the color name (string); calling setProperty
+    # expects a QColor object
+    def selected(self, color):
+        self.setProperty('styleColorSelection', QColor(color))
+
+    # external controls
+    @pyqtSlot(float)
+    @pyqtSlot(int)
+    def scroll(self, data):
+        if data > self._last:
+            self.up()
+        elif data < self._last:
+            self.down()
+        self._last = data
+
+    # moves the selection up
+    @pyqtSlot()
+    def up(self):
+        cr = self.currentIndex().row()
+        cc = 0#self.currentIndex().column()
+        row = cr-1
+        if row < 0:
+            row = 0
+        z = self.model().createIndex(row,cc)
+        self.setCurrentIndex(z)
+
+    # moves the selection down
+    @pyqtSlot()
+    def down(self):
+        cr = self.currentIndex().row()
+        cc = 0#self.currentIndex().column()
+        row = cr+1
+        if row > self.model().rowCount(None)-1:
+            row = cr
+        z = self.model().createIndex(row, cc)
+        self.setCurrentIndex(z)
+
+    def toggleCurrent(self):
+        self.model().toggle(self.currentIndex().row())
+
     #########################################################################
     # This is how designer can interact with our widget properties.
     # designer will show the pyqtProperty properties in the editor
@@ -281,6 +333,20 @@ class ToolOffsetView(QTableView, _HalWidgetBase):
         self.tablemodel.imperial_text_template =  '%9.4f'
     imperial_template = pyqtProperty(str, getimperialtexttemplate, setimperialtexttemplate, resetimperialtexttemplate)
 
+    def getColorHighlight(self):
+        return QColor(self.tablemodel._highlightcolor)
+    def setColorHighlight(self, value):
+        self.tablemodel._highlightcolor = value.name()
+        #self.tablemodel.layoutChanged.emit()
+    styleColorHighlight = pyqtProperty(QColor, getColorHighlight, setColorHighlight)
+
+    def getColorSelection(self):
+        return QColor(self.tablemodel._selectedcolor)
+    def setColorSelection(self, value):
+        self.tablemodel._selectedcolor = value.name()
+        #self.tablemodel.layoutChanged.emit()
+    styleColorSelection = pyqtProperty(QColor, getColorSelection, setColorSelection)
+
 #########################################
 # custom model
 #########################################
@@ -299,7 +365,11 @@ class MyTableModel(QAbstractTableModel):
         self.degree_text_template = '%10.1f'
         self.metric_display = False
         self.diameter_display = False
-        self.headerdata = ['Select','tool','pocket','X','X Wear', 'Y', 'Y Wear', 'Z', 'Z Wear', 'A', 'B', 'C', 'U', 'V', 'W', 'Diameter', 'Front Angle', 'Back Angle','Orientation','Comment']
+        self._highlightcolor = '#00ffff'
+        self._selectedcolor = '#00ff00'
+        self.headerdata = ['','tool','pocket','X','X Wear', 'Y', 'Y Wear', 'Z', 'Z Wear', 'A', 'B', 'C', 'U', 'V', 'W', 'Diameter', 'Front Angle', 'Back Angle','Orient','Comment']
+        if INFO.MACHINE_IS_LATHE:
+            self.headerdata[2] = 'Stn'
         self.vheaderdata = []
         self.arraydata = [[0, 0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0, 0,'No Tool']]
         STATUS.connect('toolfile-stale',lambda o, d: self.update(d))
@@ -320,6 +390,18 @@ class MyTableModel(QAbstractTableModel):
             if row[0].isChecked():
                 checkedlist.append(row[1])
         return checkedlist
+
+    def uncheckAllTools(self):
+        for row in self.arraydata:
+            if row[0].isChecked():
+                row[0].setChecked(False)
+
+    def toggle(self, row):
+        item = self.arraydata[row][0]
+        newState = (not item.isChecked())
+        self.uncheckAllTools()
+        item.setChecked(newState)
+        self.layoutChanged.emit()
 
     # update the internal array from STATUS's toolfile read array
     # we make sure the first array is switched to a QCheckbox widget
@@ -352,8 +434,14 @@ class MyTableModel(QAbstractTableModel):
 
     # Returns the data stored under the given role for the item referred to by the index.
     def data(self, index, role=Qt.DisplayRole):
+
         if role == Qt.EditRole:
             return self.arraydata[index.row()][index.column()]
+
+        elif role == Qt.DecorationRole and index.column() == 18:
+            value = self.arraydata[index.row()][index.column()]
+            return QIcon(os.path.join(ICONPATH, "tool_pos_{}.png".format(value)))
+
         elif role == Qt.DisplayRole:
             value = self.arraydata[index.row()][index.column()]
             col = index.column()
@@ -382,9 +470,19 @@ class MyTableModel(QAbstractTableModel):
 
             if isinstance(value, str):
                 return '%s' % value
-
             # Default (anything not captured above: e.g. int)
             return value
+
+        elif role == Qt.BackgroundRole:
+            value = self.arraydata[index.row()][index.column()]
+            if (isinstance(value, int) or isinstance(value, float) or
+                  isinstance(value, str), isinstance(value, QCheckBox)):
+                if self.arraydata[index.row()][1] == self.parent().current_tool:
+                    return QColor(self._highlightcolor)
+                elif self.arraydata[index.row()][0].isChecked():
+                    return QColor(self._selectedcolor)
+                else:
+                    return QVariant()
             
         elif role == Qt.CheckStateRole:
             if index.column() == 0:
@@ -393,6 +491,14 @@ class MyTableModel(QAbstractTableModel):
                     return Qt.Checked
                 else:
                     return Qt.Unchecked
+
+        elif role == Qt.ForegroundRole:
+            value = self.arraydata[index.row()][index.column()]
+
+            if ((isinstance(value, int) or isinstance(value, float))
+                and value < 0 ):
+                return QColor('red')
+
         return QVariant()
 
 
@@ -401,7 +507,7 @@ class MyTableModel(QAbstractTableModel):
         if not index.isValid():
             return None
         if index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsUserCheckable
+            return Qt.ItemIsEnabled | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable
         else:
             return Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
@@ -429,7 +535,9 @@ class MyTableModel(QAbstractTableModel):
                 self.arraydata[index.row()][index.column()].setChecked(False)
                 #self.arraydata[index.row()][index.column()].setText("Un")
             # don't emit dataChanged - return right away
+            self.parent().reset()
             return True
+
 
         try:
             if col in (1,2,18): # tool, pocket, orientation
@@ -446,7 +554,7 @@ class MyTableModel(QAbstractTableModel):
                     v /=2
             self.arraydata[index.row()][col] = v
         except:
-            LOG.error("Invaliad data type in row {} column:{} ".format(index.row(), col))
+            LOG.error("Invalid data type in row {} column:{} ".format(index.row(), col))
             return False
         LOG.debug(">>> setData() value = {} ".format(value))
         self.dataChanged.emit(index, index)
@@ -479,5 +587,7 @@ if __name__ == "__main__":
     w = ToolOffsetView()
     w.setEnabled(True)
     w._hal_init()
+    w.highlight('lightblue')
+    #w.setProperty('styleColorHighlight',QColor('purple'))
     w.show()
     sys.exit(app.exec_())

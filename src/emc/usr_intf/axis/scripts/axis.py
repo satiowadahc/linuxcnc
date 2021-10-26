@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #    This is a component of AXIS, a front-end for LinuxCNC
 #    Copyright 2004, 2005, 2006, 2007, 2008, 2009
 #    Jeff Epler <jepler@unpythonic.net> and Chris Radek <chris@timeguy.com>
@@ -19,10 +19,11 @@
 
 
 # import pdb
-
-from __future__ import print_function
 import sys, os
 import string
+from OpenGL.GL import *
+from OpenGL.GLU import *
+from OpenGL.GLUT import *
 BASE = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), ".."))
 sys.path.insert(0, os.path.join(BASE, "lib", "python"))
 
@@ -36,14 +37,9 @@ import gettext;
 import array, time, atexit, tempfile, shutil, errno, select, re, getopt
 import traceback
 
-if sys.version_info[0] == 3:
-    import tkinter as Tkinter
-    import _thread
-    gettext.install("linuxcnc", localedir=os.path.join(BASE, "share", "locale"))
-else:
-    import Tkinter
-    import thread as _thread
-    gettext.install("linuxcnc", localedir=os.path.join(BASE, "share", "locale"), unicode=True)
+import tkinter as Tkinter
+import _thread
+gettext.install("linuxcnc", localedir=os.path.join(BASE, "share", "locale"))
 
 # Print Tk errors to stdout. python.org/sf/639266
 OldTk = Tkinter.Tk
@@ -58,7 +54,6 @@ class Tk(OldTk):
 
 Tkinter.Tk = Tk
 
-from minigl import *
 RTLD_NOW, RTLD_GLOBAL = 0x1, 0x100  # XXX portable?
 old_flags = sys.getdlopenflags()
 sys.setdlopenflags(RTLD_NOW | RTLD_GLOBAL);
@@ -85,10 +80,8 @@ else:
 if hal_present == 1 :
     import hal
 
-if sys.version_info[0] == 3:
-    import configparser
-else:
-    import ConfigParser as configparser
+import configparser
+
 cp = configparser.ConfigParser
 class AxisPreferences(cp):
     types = {
@@ -182,6 +175,7 @@ maxvel_blackout = 0
 jogincr_index_last = 1
 mdi_history_index= -1
 resume_inhibit = 0
+continuous_jog_in_progress = False
 
 help1 = [
     ("F1", _("Emergency stop")),
@@ -2370,8 +2364,11 @@ class TclCommands(nf.TclCommands):
     def task_stop(*event):
         if s.task_mode == linuxcnc.MODE_AUTO and vars.running_line.get() != 0:
             o.set_highlight_line(vars.running_line.get())
+        comp["abort"] = True
         c.abort()
         c.wait_complete()
+        time.sleep(0.3)
+        comp["abort"] = False
 
     def mdi_up_cmd(*args):
         if args and args[0].char: return   # e.g., for KP_Up with numlock on
@@ -2943,11 +2940,7 @@ class TclCommands(nf.TclCommands):
 
     def inifindall(section, item):
         # used by TKPKG=Ngcgui
-        if sys.version_info[0] == 3:
-            return inifile.findall(section,item) # list
-        else:
-            items = tuple(inifile.findall(section, item))
-            return root_window.tk.merge(*items)  # str
+        return inifile.findall(section,item) # list
 
     def clear_recent_files():
         ap.putpref('recentfiles', [], repr)
@@ -3225,7 +3218,7 @@ def jog_on(a, b):
         jog_cont[a] = False
     else:
         global continuous_jog_in_progress
-        continuous_jog_in_progress = 1
+        continuous_jog_in_progress = True
         jog(linuxcnc.JOG_CONTINUOUS, jjogmode, a, b)
         jog_cont[a] = True
         jogging[a] = b
@@ -3237,7 +3230,7 @@ def jog_off(a):
 
 def jog_off_actual(a):
     global continuous_jog_in_progress
-    continuous_jog_in_progress = 0
+    continuous_jog_in_progress = False
     if not manual_ok(): return
     jog_after[a] = None
     jogging[a] = 0
@@ -3807,9 +3800,9 @@ def get_coordinate_font(large):
     global fontbase
 
     if large:
-        coordinate_font = "courier bold 20"
+        coordinate_font = "monospace 20"
     else:
-        coordinate_font = "courier bold 11"
+        coordinate_font = "monospace 11"
 
     if coordinate_font not in font_cache:
         font_cache[coordinate_font] = \
@@ -3880,6 +3873,7 @@ if hal_present == 1 :
     comp.newpin("notifications-clear-error",hal.HAL_BIT,hal.HAL_IN)
     comp.newpin("resume-inhibit",hal.HAL_BIT,hal.HAL_IN)
     comp.newpin("error", hal.HAL_BIT, hal.HAL_OUT)
+    comp.newpin("abort", hal.HAL_BIT, hal.HAL_OUT)
 
     vars.has_ladder.set(hal.component_exists('classicladder_rt'))
 
@@ -3922,7 +3916,8 @@ def load_gladevcp_panel():
         from subprocess import Popen
         xid = gladevcp_frame.winfo_id()
         cmd = "halcmd loadusr -Wn {0} gladevcp -c {0}".format(gladename).split()
-        cmd += ['-x', str(xid)] + gladecmd
+        cmd += ['-d', '-x', str(xid)] + gladecmd
+        print(cmd)
         child = Popen(cmd)
         _dynamic_childs['{}'.format(gladename)] = (child, cmd, True)
 

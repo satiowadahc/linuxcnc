@@ -24,7 +24,7 @@ ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
     NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
     MAKEFLAGS += -j$(NUMJOBS)
 endif
-
+MAKEFLAGS += PYTHON=/usr/bin/python3
 
 build: build-arch build-indep
 build-arch: build-stamp
@@ -39,8 +39,7 @@ build-stamp:
 	    --mandir=/usr/share/man \
 	    $(configure_realtime_arg) \
             $(enable_build_documentation) \
-	    --disable-check-runtime-deps \
-            --with-python=/usr/bin/python2.7
+	    --disable-check-runtime-deps
 	(cd src; $(MAKE) $(MAKEFLAGS))
 	$(if $(enable_build_documentation),(cd src; $(MAKE) $(MAKEFLAGS) docs))
 	touch build-stamp
@@ -49,18 +48,11 @@ clean: debian/control
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp
-
-	cd src && ./autogen.sh
-	cd src && ./configure \
-	    --prefix=/usr --sysconfdir=/etc \
-	    --mandir=/usr/share/man \
-	    $(configure_realtime_arg) \
-            $(enable_build_documentation) \
-	    --disable-check-runtime-deps
-	cd src && $(MAKE) clean -s
+	py3clean .
+	if [ -r src/Makefile.inc ]; then cd src && $(MAKE) clean -s; fi
 	rm -f Makefile.inc
 	rm -f src/config.log src/config.status
-
+	rm -f $(for i in $(find . -name "*.in"); do basename $i .in; done)
 	dh_clean
 
 install: build
@@ -80,7 +72,8 @@ install: build
 	done
 
 	-(cd debian/@EXTRAS@ && cp -a * ../tmp)
-	(cd src; export DESTDIR=`pwd`/../debian/tmp; $(MAKE) $@)
+	(cd src; export DESTDIR=`pwd`/../debian/tmp; $(MAKE) INSTALL=install $@)
+	py3clean .
 	mkdir -p debian/tmp/usr/lib debian/tmp/usr/include/linuxcnc
 	cp lib/*.a debian/tmp/usr/lib
 ifneq "$(enable_build_documentation)" ""
@@ -119,11 +112,13 @@ binary-arch: build install
 	dh_installexamples
 	dh_installman
 	dh_installmime
+	dh_install
 	dh_link
+	dh_lintian
 	dh_strip
 	dh_compress -X.pdf -X.txt -X.hal -X.ini -X.clp -X.var -X.nml -X.tbl -X.xml -Xsample-configs
 	dh_fixperms -X/linuxcnc_module_helper -X/rtapi_app
-	@PYTHON_PACKAGING@
+	dh_python3
 	dh_makeshlibs
 	dh_installdeb
 	cat debian/@MAIN_PACKAGE_NAME@/DEBIAN/shlibs debian/shlibs.pre > debian/shlibs.local

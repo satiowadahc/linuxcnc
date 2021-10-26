@@ -30,7 +30,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>QtPlasmaC</string>
+   <string notr="true">QtPlasmaC</string>
   </property>
   <property name="autoFillBackground">
    <bool>false</bool>
@@ -84,6 +84,13 @@
       <property name="catch_close_option" stdset="0">
        <bool>false</bool>
       </property>
+      <property name="close_overlay_color" stdset="0">
+       <color alpha="128">
+        <red>128</red>
+        <green>128</green>
+        <blue>128</blue>
+       </color>
+      </property>
       <property name="play_sounds_option" stdset="0">
        <bool>false</bool>
       </property>
@@ -91,7 +98,7 @@
        <bool>true</bool>
       </property>
       <property name="pref_filename_string" stdset="0">
-       <string>CONFIGFOLDER/qtplasmac.prefs</string>
+       <string notr="true">CONFIGFOLDER/qtplasmac.prefs</string>
       </property>
       <property name="focusOverlay_option" stdset="0">
        <bool>true</bool>
@@ -105,13 +112,6 @@
       </property>
       <property name="closeDialog_option" stdset="0">
        <bool>true</bool>
-      </property>
-      <property name="close_overlay_color" stdset="0">
-       <color alpha="128">
-        <red>128</red>
-        <green>128</green>
-        <blue>128</blue>
-       </color>
       </property>
       <property name="entryDialog_option" stdset="0">
        <bool>true</bool>
@@ -184,6 +184,9 @@
         <blue>128</blue>
        </color>
       </property>
+      <property name="originOffsetDialog_option" stdset="0">
+       <bool>false</bool>
+      </property>
       <property name="originOffset_overlay_color" stdset="0">
        <color alpha="128">
         <red>128</red>
@@ -236,6 +239,9 @@
        </property>
        <item>
         <widget class="QTabWidget" name="main_tab_widget">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -378,6 +384,25 @@
                          <number>0</number>
                         </property>
                         <item>
+                         <widget class="QLabel" name="material_label">
+                          <property name="minimumSize">
+                           <size>
+                            <width>0</width>
+                            <height>16</height>
+                           </size>
+                          </property>
+                          <property name="maximumSize">
+                           <size>
+                            <width>16777215</width>
+                            <height>16</height>
+                           </size>
+                          </property>
+                          <property name="text">
+                           <string>MATERIAL =</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
                          <widget class="QComboBox" name="material_selector">
                           <property name="sizePolicy">
                            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -433,10 +458,10 @@
                            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                           </property>
                           <property name="textTemplate" stdset="0">
-                           <string comment="s">%0.1f</string>
+                           <string notr="true" comment="s">%0.1f</string>
                           </property>
                           <property name="alt_textTemplate" stdset="0">
-                           <string>%0.0f</string>
+                           <string notr="true">%0.0f</string>
                           </property>
                           <property name="current_feedrate_status" stdset="0">
                            <bool>true</bool>
@@ -494,7 +519,7 @@
                            <string notr="true"/>
                           </property>
                           <property name="_view" stdset="0">
-                           <string>z</string>
+                           <string notr="true">z</string>
                           </property>
                           <property name="_dtg" stdset="0">
                            <bool>false</bool>
@@ -569,7 +594,7 @@
                               </size>
                              </property>
                              <property name="text">
-                              <string>P</string>
+                              <string notr="true">P</string>
                              </property>
                              <property name="checkable">
                               <bool>true</bool>
@@ -594,7 +619,7 @@
                               </size>
                              </property>
                              <property name="text">
-                              <string>Z</string>
+                              <string notr="true">Z</string>
                              </property>
                              <property name="checkable">
                               <bool>true</bool>
@@ -641,7 +666,7 @@
                               </size>
                              </property>
                              <property name="text">
-                              <string>→</string>
+                              <string notr="true">→</string>
                              </property>
                              <property name="autoRepeat">
                               <bool>true</bool>
@@ -663,7 +688,7 @@
                               </size>
                              </property>
                              <property name="text">
-                              <string>←</string>
+                              <string notr="true">←</string>
                              </property>
                              <property name="autoRepeat">
                               <bool>true</bool>
@@ -685,7 +710,7 @@
                               </size>
                              </property>
                              <property name="text">
-                              <string>↑</string>
+                              <string notr="true">↑</string>
                              </property>
                              <property name="autoRepeat">
                               <bool>true</bool>
@@ -707,7 +732,7 @@
                               </size>
                              </property>
                              <property name="text">
-                              <string>↓</string>
+                              <string notr="true">↓</string>
                              </property>
                              <property name="autoRepeat">
                               <bool>true</bool>
@@ -748,7 +773,7 @@
                               </size>
                              </property>
                              <property name="text">
-                              <string>+</string>
+                              <string notr="true">+</string>
                              </property>
                              <property name="autoRepeat">
                               <bool>true</bool>
@@ -770,7 +795,7 @@
                               </size>
                              </property>
                              <property name="text">
-                              <string>-</string>
+                              <string notr="true">-</string>
                              </property>
                              <property name="autoRepeat">
                               <bool>true</bool>
@@ -811,7 +836,7 @@
                               </size>
                              </property>
                              <property name="text">
-                              <string>C</string>
+                              <string notr="true">C</string>
                              </property>
                             </widget>
                            </item>
@@ -949,9 +974,6 @@
                             <height>16777215</height>
                            </size>
                           </property>
-                          <property name="statusTip">
-                           <string>Open the selected G-Code file</string>
-                          </property>
                           <property name="text">
                            <string>SELECT</string>
                           </property>
@@ -959,7 +981,7 @@
                            <bool>true</bool>
                           </property>
                           <property name="true_python_cmd_string" stdset="0">
-                           <string>INSTANCE.filemanager.load()</string>
+                           <string notr="true">INSTANCE.filemanager.load()</string>
                           </property>
                           <property name="false_python_cmd_string" stdset="0">
                            <string/>
@@ -986,9 +1008,6 @@
                             <height>16777215</height>
                            </size>
                           </property>
-                          <property name="statusTip">
-                           <string>Move down</string>
-                          </property>
                           <property name="text">
                            <string>NEXT</string>
                           </property>
@@ -999,7 +1018,7 @@
                            <bool>true</bool>
                           </property>
                           <property name="true_python_cmd_string" stdset="0">
-                           <string>INSTANCE.filemanager.down()</string>
+                           <string notr="true">INSTANCE.filemanager.down()</string>
                           </property>
                           <property name="false_python_cmd_string" stdset="0">
                            <string/>
@@ -1026,9 +1045,6 @@
                             <height>16777215</height>
                            </size>
                           </property>
-                          <property name="statusTip">
-                           <string>Move up</string>
-                          </property>
                           <property name="text">
                            <string>PREV</string>
                           </property>
@@ -1039,7 +1055,7 @@
                            <bool>true</bool>
                           </property>
                           <property name="true_python_cmd_string" stdset="0">
-                           <string>INSTANCE.filemanager.up()</string>
+                           <string notr="true">INSTANCE.filemanager.up()</string>
                           </property>
                           <property name="false_python_cmd_string" stdset="0">
                            <string/>
@@ -1059,9 +1075,6 @@
                             <width>40</width>
                             <height>40</height>
                            </size>
-                          </property>
-                          <property name="statusTip">
-                           <string>Close the file selector</string>
                           </property>
                           <property name="text">
                            <string>CANCEL</string>
@@ -1490,6 +1503,35 @@ EDGE</string>
                   </item>
                  </layout>
                 </widget>
+                <widget class="QWidget" name="offsets_page">
+                 <layout class="QHBoxLayout" name="horizontalLayout_36">
+                  <property name="spacing">
+                   <number>0</number>
+                  </property>
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
+                  <item>
+                   <widget class="OriginOffsetView" name="originoffsetview">
+                    <property name="dialog_code_string" stdset="0">
+                     <string/>
+                    </property>
+                    <property name="text_dialog_code_string" stdset="0">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
                </widget>
               </item>
              </layout>
@@ -1645,9 +1687,6 @@ EDGE</string>
                         <height>0</height>
                        </size>
                       </property>
-                      <property name="statusTip">
-                       <string>Estop status</string>
-                      </property>
                       <property name="text">
                        <string>ESTOP</string>
                       </property>
@@ -1693,12 +1732,10 @@ EDGE</string>
                        <double>0.200000000000000</double>
                       </property>
                       <property name="true_state_string" stdset="0">
-                       <string>ESTOP
-RESET</string>
+                       <string/>
                       </property>
                       <property name="false_state_string" stdset="0">
-                       <string>ESTOP
-SET</string>
+                       <string/>
                       </property>
                       <property name="is_estopped_status" stdset="0">
                        <bool>true</bool>
@@ -1731,7 +1768,7 @@ SET</string>
                        <double>50.000000000000000</double>
                       </property>
                       <property name="view_type_string" stdset="0">
-                       <string>p</string>
+                       <string notr="true">p</string>
                       </property>
                       <property name="command_text_string" stdset="0">
                        <string/>
@@ -1740,10 +1777,10 @@ SET</string>
                        <number>0</number>
                       </property>
                       <property name="textTemplate" stdset="0">
-                       <string/>
+                       <string notr="true"/>
                       </property>
                       <property name="alt_textTemplate" stdset="0">
-                       <string>%1.2f mm</string>
+                       <string notr="true">%1.2f mm</string>
                       </property>
                      </widget>
                     </item>
@@ -1775,9 +1812,6 @@ SET</string>
                       </property>
                       <property name="toolTip">
                        <string/>
-                      </property>
-                      <property name="statusTip">
-                       <string>Switch the GUI on or off</string>
                       </property>
                       <property name="text">
                        <string>POWER</string>
@@ -1821,12 +1855,10 @@ SET</string>
                        <double>0.200000000000000</double>
                       </property>
                       <property name="true_state_string" stdset="0">
-                       <string>MACHINE
-OFF</string>
+                       <string/>
                       </property>
                       <property name="false_state_string" stdset="0">
-                       <string>MACHINE
-ON</string>
+                       <string/>
                       </property>
                       <property name="is_estopped_status" stdset="0">
                        <bool>false</bool>
@@ -1898,9 +1930,6 @@ ON</string>
                         <height>40</height>
                        </size>
                       </property>
-                      <property name="statusTip">
-                       <string>Run the current G-Code program</string>
-                      </property>
                       <property name="text">
                        <string>CYCLE START</string>
                       </property>
@@ -1925,9 +1954,6 @@ ON</string>
                         <width>16777215</width>
                         <height>40</height>
                        </size>
-                      </property>
-                      <property name="statusTip">
-                       <string>Pause or resume the current G-Code program</string>
                       </property>
                       <property name="text">
                        <string>CYCLE PAUSE</string>
@@ -1986,16 +2012,16 @@ ON</string>
                        <double>0.900000000000000</double>
                       </property>
                       <property name="true_state_string" stdset="0">
-                       <string>True</string>
+                       <string notr="true">True</string>
                       </property>
                       <property name="false_state_string" stdset="0">
-                       <string>False</string>
+                       <string notr="true">False</string>
                       </property>
                       <property name="true_python_cmd_string" stdset="0">
-                       <string>print&quot;true command&quot;</string>
+                       <string notr="true">print&quot;true command&quot;</string>
                       </property>
                       <property name="false_python_cmd_string" stdset="0">
-                       <string>print&quot;false command&quot;</string>
+                       <string notr="true">print&quot;false command&quot;</string>
                       </property>
                       <property name="invert_the_status" stdset="0">
                        <bool>false</bool>
@@ -2085,7 +2111,7 @@ ON</string>
                        <double>50.000000000000000</double>
                       </property>
                       <property name="view_type_string" stdset="0">
-                       <string>P</string>
+                       <string notr="true">P</string>
                       </property>
                       <property name="command_text_string" stdset="0">
                        <string/>
@@ -2097,12 +2123,12 @@ ON</string>
                        <string/>
                       </property>
                       <property name="alt_textTemplate" stdset="0">
-                       <string>%1.2f mm</string>
+                       <string notr="true">%1.2f mm</string>
                       </property>
                      </widget>
                     </item>
                     <item>
-                     <widget class="ActionButton" name="abort">
+                     <widget class="QPushButton" name="abort">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
                         <horstretch>0</horstretch>
@@ -2121,178 +2147,11 @@ ON</string>
                         <height>40</height>
                        </size>
                       </property>
-                      <property name="statusTip">
-                       <string>Stop the current G-Code program</string>
+                      <property name="toolTip">
+                       <string/>
                       </property>
                       <property name="text">
                        <string>CYCLE STOP</string>
-                      </property>
-                      <property name="indicator_option" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="indicator_HAL_pin_option" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="indicator_status_option" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="checked_state_text_option" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="python_command_option" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="on_color" stdset="0">
-                       <color>
-                        <red>255</red>
-                        <green>0</green>
-                        <blue>0</blue>
-                       </color>
-                      </property>
-                      <property name="shape_option" stdset="0">
-                       <number>0</number>
-                      </property>
-                      <property name="off_color" stdset="0">
-                       <color>
-                        <red>0</red>
-                        <green>0</green>
-                        <blue>0</blue>
-                       </color>
-                      </property>
-                      <property name="indicator_size" stdset="0">
-                       <double>0.300000000000000</double>
-                      </property>
-                      <property name="circle_diameter" stdset="0">
-                       <double>10.000000000000000</double>
-                      </property>
-                      <property name="right_edge_offset" stdset="0">
-                       <double>0.000000000000000</double>
-                      </property>
-                      <property name="top_edge_offset" stdset="0">
-                       <double>0.000000000000000</double>
-                      </property>
-                      <property name="corner_radius" stdset="0">
-                       <double>5.000000000000000</double>
-                      </property>
-                      <property name="height_fraction" stdset="0">
-                       <double>0.300000000000000</double>
-                      </property>
-                      <property name="width_fraction" stdset="0">
-                       <double>0.900000000000000</double>
-                      </property>
-                      <property name="true_state_string" stdset="0">
-                       <string>True</string>
-                      </property>
-                      <property name="false_state_string" stdset="0">
-                       <string>False</string>
-                      </property>
-                      <property name="true_python_cmd_string" stdset="0">
-                       <string>print&quot;true command&quot;</string>
-                      </property>
-                      <property name="false_python_cmd_string" stdset="0">
-                       <string>print&quot;false command&quot;</string>
-                      </property>
-                      <property name="invert_the_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_paused_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_estopped_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_on_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_idle_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_homed_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_flood_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_mist_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_block_delete_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_optional_stop_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_joint_homed_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_limits_overridden_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_manual_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_mdi_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_auto_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_spindle_stopped_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_spindle_fwd_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="is_spindle_rev_status" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="joint_number_status" stdset="0">
-                       <number>0</number>
-                      </property>
-                      <property name="run_action" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="abort_action" stdset="0">
-                       <bool>true</bool>
-                      </property>
-                      <property name="template_label_option" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="joint_number" stdset="0">
-                       <number>0</number>
-                      </property>
-                      <property name="incr_imperial_number" stdset="0">
-                       <double>0.010000000000000</double>
-                      </property>
-                      <property name="incr_mm_number" stdset="0">
-                       <double>0.025000000000000</double>
-                      </property>
-                      <property name="incr_angular_number" stdset="0">
-                       <double>-1.000000000000000</double>
-                      </property>
-                      <property name="toggle_float_option" stdset="0">
-                       <bool>false</bool>
-                      </property>
-                      <property name="float_num" stdset="0">
-                       <double>0.300000000000000</double>
-                      </property>
-                      <property name="float_alt_num" stdset="0">
-                       <double>50.000000000000000</double>
-                      </property>
-                      <property name="view_type_string" stdset="0">
-                       <string>P</string>
-                      </property>
-                      <property name="command_text_string" stdset="0">
-                       <string/>
-                      </property>
-                      <property name="ini_mdi_number" stdset="0">
-                       <number>0</number>
-                      </property>
-                      <property name="textTemplate" stdset="0">
-                       <string>%1.3f in</string>
-                      </property>
-                      <property name="alt_textTemplate" stdset="0">
-                       <string>%1.2f mm</string>
                       </property>
                      </widget>
                     </item>
@@ -2383,8 +2242,7 @@ ON</string>
                           </size>
                          </property>
                          <property name="text">
-                          <string>FEED
-100%</string>
+                          <string>FEED</string>
                          </property>
                         </widget>
                        </item>
@@ -2407,9 +2265,6 @@ ON</string>
                            <width>16777215</width>
                            <height>16777215</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string>Set the feed override percentage</string>
                          </property>
                          <property name="maximum">
                           <number>100</number>
@@ -2464,8 +2319,7 @@ ON</string>
                           </size>
                          </property>
                          <property name="text">
-                          <string>RAPID
-100%</string>
+                          <string>RAPID</string>
                          </property>
                         </widget>
                        </item>
@@ -2482,9 +2336,6 @@ ON</string>
                            <width>0</width>
                            <height>0</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string>Set the rapid override percentage</string>
                          </property>
                          <property name="maximum">
                           <number>100</number>
@@ -2533,8 +2384,7 @@ ON</string>
                           </size>
                          </property>
                          <property name="text">
-                          <string>JOG
-100</string>
+                          <string>JOG</string>
                          </property>
                         </widget>
                        </item>
@@ -2551,9 +2401,6 @@ ON</string>
                            <width>0</width>
                            <height>0</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string>Set the jog feed rate</string>
                          </property>
                          <property name="maximum">
                           <number>100</number>
@@ -2659,7 +2506,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>10</string>
+                      <string notr="true">10</string>
                      </property>
                     </widget>
                    </item>
@@ -2678,7 +2525,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>18</string>
+                      <string notr="true">18</string>
                      </property>
                     </widget>
                    </item>
@@ -2703,7 +2550,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>8</string>
+                      <string notr="true">8</string>
                      </property>
                     </widget>
                    </item>
@@ -2728,7 +2575,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>7</string>
+                      <string notr="true">7</string>
                      </property>
                     </widget>
                    </item>
@@ -2747,7 +2594,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>9</string>
+                      <string notr="true">9</string>
                      </property>
                     </widget>
                    </item>
@@ -2766,7 +2613,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>12</string>
+                      <string notr="true">12</string>
                      </property>
                     </widget>
                    </item>
@@ -2785,7 +2632,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>14</string>
+                      <string notr="true">14</string>
                      </property>
                     </widget>
                    </item>
@@ -2804,7 +2651,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>13</string>
+                      <string notr="true">13</string>
                      </property>
                     </widget>
                    </item>
@@ -2823,7 +2670,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>17</string>
+                      <string notr="true">17</string>
                      </property>
                     </widget>
                    </item>
@@ -2848,7 +2695,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>4</string>
+                      <string notr="true">4</string>
                      </property>
                     </widget>
                    </item>
@@ -2873,7 +2720,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>5</string>
+                      <string notr="true">5</string>
                      </property>
                     </widget>
                    </item>
@@ -2911,7 +2758,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>16</string>
+                      <string notr="true">16</string>
                      </property>
                     </widget>
                    </item>
@@ -2930,7 +2777,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>11</string>
+                      <string notr="true">11</string>
                      </property>
                     </widget>
                    </item>
@@ -2955,7 +2802,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>2</string>
+                      <string notr="true">2</string>
                      </property>
                     </widget>
                    </item>
@@ -2980,7 +2827,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>1</string>
+                      <string notr="true">1</string>
                      </property>
                     </widget>
                    </item>
@@ -2999,7 +2846,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>15</string>
+                      <string notr="true">15</string>
                      </property>
                     </widget>
                    </item>
@@ -3024,7 +2871,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>6</string>
+                      <string notr="true">6</string>
                      </property>
                     </widget>
                    </item>
@@ -3068,7 +2915,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>3</string>
+                      <string notr="true">3</string>
                      </property>
                     </widget>
                    </item>
@@ -3087,7 +2934,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>19</string>
+                      <string notr="true">19</string>
                      </property>
                     </widget>
                    </item>
@@ -3106,7 +2953,7 @@ ON</string>
                       </size>
                      </property>
                      <property name="text">
-                      <string>20</string>
+                      <string notr="true">20</string>
                      </property>
                     </widget>
                    </item>
@@ -3329,14 +3176,11 @@ ON</string>
                            <pointsize>40</pointsize>
                           </font>
                          </property>
-                         <property name="statusTip">
-                          <string>Current arc voltage</string>
-                         </property>
                          <property name="frameShape">
                           <enum>QFrame::NoFrame</enum>
                          </property>
                          <property name="text">
-                          <string>300</string>
+                          <string notr="true">300</string>
                          </property>
                          <property name="alignment">
                           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -3348,7 +3192,7 @@ ON</string>
                           <bool>true</bool>
                          </property>
                          <property name="textTemplate" stdset="0">
-                          <string>%0.0f</string>
+                          <string notr="true">%0.0f</string>
                          </property>
                         </widget>
                        </item>
@@ -3436,9 +3280,6 @@ ON</string>
                               <width>16777215</width>
                               <height>16777215</height>
                              </size>
-                            </property>
-                            <property name="statusTip">
-                             <string>Arc OK signal</string>
                             </property>
                             <property name="color">
                              <color>
@@ -3564,11 +3405,8 @@ ON</string>
                                  <height>24</height>
                                 </size>
                                </property>
-                               <property name="statusTip">
-                                <string>Override THC height down</string>
-                               </property>
                                <property name="text">
-                                <string>-</string>
+                                <string notr="true">-</string>
                                </property>
                                <property name="autoRepeat">
                                 <bool>true</bool>
@@ -3587,7 +3425,7 @@ ON</string>
                                 </size>
                                </property>
                                <property name="text">
-                                <string>0.0</string>
+                                <string notr="true">0.0</string>
                                </property>
                                <property name="alignment">
                                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -3608,11 +3446,8 @@ ON</string>
                                  <height>24</height>
                                 </size>
                                </property>
-                               <property name="statusTip">
-                                <string>Override THC height down</string>
-                               </property>
                                <property name="text">
-                                <string>+</string>
+                                <string notr="true">+</string>
                                </property>
                                <property name="autoRepeat">
                                 <bool>true</bool>
@@ -3720,9 +3555,6 @@ ON</string>
                            <height>16777215</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string>Ignore Arc OK signal</string>
-                         </property>
                          <property name="layoutDirection">
                           <enum>Qt::LeftToRight</enum>
                          </property>
@@ -3808,9 +3640,6 @@ ON</string>
                            <height>16777215</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string>Enable ohmic probing</string>
-                         </property>
                          <property name="layoutDirection">
                           <enum>Qt::LeftToRight</enum>
                          </property>
@@ -3894,9 +3723,6 @@ ON</string>
                            <height>16777215</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string>Torch on status</string>
-                         </property>
                          <property name="color">
                           <color>
                            <red>252</red>
@@ -3919,9 +3745,6 @@ ON</string>
                            <width>16777215</width>
                            <height>16777215</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string/>
                          </property>
                          <property name="text">
                           <string>TORCH ON</string>
@@ -3958,9 +3781,6 @@ ON</string>
                            <height>16777215</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string/>
-                         </property>
                          <property name="text">
                           <string>ENABLE</string>
                          </property>
@@ -3988,9 +3808,6 @@ ON</string>
                            <width>16777215</width>
                            <height>16777215</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string>Enable the torch</string>
                          </property>
                          <property name="layoutDirection">
                           <enum>Qt::LeftToRight</enum>
@@ -4052,9 +3869,6 @@ ON</string>
                            <width>16777215</width>
                            <height>16777215</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string>Enable mesh mode cutting</string>
                          </property>
                          <property name="layoutDirection">
                           <enum>Qt::LeftToRight</enum>
@@ -4135,9 +3949,6 @@ ON</string>
                            <height>0</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string>Use automatic voltage for THC</string>
-                         </property>
                          <property name="checked">
                           <bool>false</bool>
                          </property>
@@ -4196,9 +4007,6 @@ ON</string>
                            <height>16777215</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string>Void anti dive is active</string>
-                         </property>
                          <property name="color">
                           <color>
                            <red>252</red>
@@ -4221,9 +4029,6 @@ ON</string>
                            <width>16777215</width>
                            <height>16777215</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string/>
                          </property>
                          <property name="text">
                           <string>VOID A/DIVE</string>
@@ -4288,9 +4093,6 @@ ON</string>
                            <height>16777215</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string>Enable void anti dive</string>
-                         </property>
                          <property name="layoutDirection">
                           <enum>Qt::LeftToRight</enum>
                          </property>
@@ -4343,9 +4145,6 @@ ON</string>
                            <verstretch>0</verstretch>
                           </sizepolicy>
                          </property>
-                         <property name="statusTip">
-                          <string>status of pmx485 communications</string>
-                         </property>
                          <property name="text">
                           <string/>
                          </property>
@@ -4357,7 +4156,7 @@ ON</string>
                        <item>
                         <widget class="QLabel" name="pmx485_label1">
                          <property name="text">
-                          <string>RS485</string>
+                          <string notr="true">RS485</string>
                          </property>
                          <property name="alignment">
                           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -4383,9 +4182,6 @@ ON</string>
                            <width>16777215</width>
                            <height>16777215</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string>Enable Powermax communications</string>
                          </property>
                          <property name="text">
                           <string/>
@@ -4445,9 +4241,6 @@ ON</string>
                            <height>16777215</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string>Velocity anti dive is active</string>
-                         </property>
                          <property name="color">
                           <color>
                            <red>252</red>
@@ -4470,9 +4263,6 @@ ON</string>
                            <width>16777215</width>
                            <height>16777215</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string/>
                          </property>
                          <property name="text">
                           <string>VELOCITY A/DIVE</string>
@@ -4509,9 +4299,6 @@ ON</string>
                            <height>16777215</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string/>
-                         </property>
                          <property name="text">
                           <string>ENABLE</string>
                          </property>
@@ -4539,9 +4326,6 @@ ON</string>
                            <width>16777215</width>
                            <height>16777215</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string>Enable velocity anti dive</string>
                          </property>
                          <property name="layoutDirection">
                           <enum>Qt::LeftToRight</enum>
@@ -4710,9 +4494,6 @@ ON</string>
                            <height>16777215</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string>Float switch status</string>
-                         </property>
                          <property name="color">
                           <color>
                            <red>252</red>
@@ -4736,9 +4517,6 @@ ON</string>
                            <height>17</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string/>
-                         </property>
                          <property name="text">
                           <string>FLOAT</string>
                          </property>
@@ -4760,9 +4538,6 @@ ON</string>
                            <width>16777215</width>
                            <height>16777215</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string>Ohmic probe status</string>
                          </property>
                          <property name="color">
                           <color>
@@ -4787,9 +4562,6 @@ ON</string>
                            <height>17</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string/>
-                         </property>
                          <property name="text">
                           <string>OHMIC</string>
                          </property>
@@ -4811,9 +4583,6 @@ ON</string>
                            <width>16777215</width>
                            <height>16777215</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string>Breakaway switch status</string>
                          </property>
                          <property name="color">
                           <color>
@@ -4837,9 +4606,6 @@ ON</string>
                            <width>48</width>
                            <height>17</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string/>
                          </property>
                          <property name="text">
                           <string>BREAK</string>
@@ -5035,9 +4801,6 @@ ON</string>
                            <height>16777215</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string>THC is moving the Z axis up</string>
-                         </property>
                          <property name="color">
                           <color>
                            <red>252</red>
@@ -5060,9 +4823,6 @@ ON</string>
                            <width>1677215</width>
                            <height>17</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string/>
                          </property>
                          <property name="text">
                           <string>UP</string>
@@ -5099,9 +4859,6 @@ ON</string>
                            <height>17</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string/>
-                         </property>
                          <property name="text">
                           <string>ENABLED</string>
                          </property>
@@ -5123,9 +4880,6 @@ ON</string>
                            <width>16777215</width>
                            <height>16777215</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string>THC is enabled</string>
                          </property>
                          <property name="color">
                           <color>
@@ -5184,9 +4938,6 @@ ON</string>
                            <height>16777215</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string>THC is moving the Z axis down</string>
-                         </property>
                          <property name="color">
                           <color>
                            <red>252</red>
@@ -5209,9 +4960,6 @@ ON</string>
                            <width>16777215</width>
                            <height>17</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string/>
                          </property>
                          <property name="text">
                           <string>DOWN</string>
@@ -5248,9 +4996,6 @@ ON</string>
                            <height>17</height>
                           </size>
                          </property>
-                         <property name="statusTip">
-                          <string/>
-                         </property>
                          <property name="text">
                           <string>ACTIVE</string>
                          </property>
@@ -5272,9 +5017,6 @@ ON</string>
                            <width>16777215</width>
                            <height>16777215</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string>THC is currently active</string>
                          </property>
                          <property name="color">
                           <color>
@@ -5421,9 +5163,6 @@ ON</string>
                             <height>40</height>
                            </size>
                           </property>
-                          <property name="statusTip">
-                           <string>Set the jog increment</string>
-                          </property>
                          </widget>
                         </item>
                         <item>
@@ -5449,9 +5188,6 @@ ON</string>
                           <property name="toolTip">
                            <string/>
                           </property>
-                          <property name="statusTip">
-                           <string>Toggle jog feed rate by a factor of 10</string>
-                          </property>
                           <property name="text">
                            <string>FAST</string>
                           </property>
@@ -5459,16 +5195,22 @@ ON</string>
                            <bool>true</bool>
                           </property>
                           <property name="checked_state_text_option" stdset="0">
-                           <bool>true</bool>
+                           <bool>false</bool>
                           </property>
                           <property name="true_state_string" stdset="0">
-                           <string>SLOW</string>
+                           <string/>
                           </property>
                           <property name="false_state_string" stdset="0">
-                           <string>FAST</string>
+                           <string/>
+                          </property>
+                          <property name="true_python_cmd_string" stdset="0">
+                           <string notr="true">print&quot;true command&quot;</string>
+                          </property>
+                          <property name="false_python_cmd_string" stdset="0">
+                           <string notr="true">print&quot;false command&quot;</string>
                           </property>
                           <property name="slider" stdset="0">
-                           <string>jog_slider</string>
+                           <string notr="true">jog_slider</string>
                           </property>
                          </widget>
                         </item>
@@ -5525,9 +5267,6 @@ ON</string>
                             <height>40</height>
                            </size>
                           </property>
-                          <property name="statusTip">
-                           <string>Jog the Z axis up</string>
-                          </property>
                           <property name="iconSize">
                            <size>
                             <width>40</width>
@@ -5555,9 +5294,6 @@ ON</string>
                             <width>40</width>
                             <height>40</height>
                            </size>
-                          </property>
-                          <property name="statusTip">
-                           <string>Jog the X axis left</string>
                           </property>
                           <property name="iconSize">
                            <size>
@@ -5587,9 +5323,6 @@ ON</string>
                             <height>40</height>
                            </size>
                           </property>
-                          <property name="statusTip">
-                           <string>Jog the X axis right</string>
-                          </property>
                           <property name="iconSize">
                            <size>
                             <width>40</width>
@@ -5617,9 +5350,6 @@ ON</string>
                             <width>40</width>
                             <height>40</height>
                            </size>
-                          </property>
-                          <property name="statusTip">
-                           <string>Jog the A axis clockwise</string>
                           </property>
                           <property name="iconSize">
                            <size>
@@ -5649,9 +5379,6 @@ ON</string>
                             <height>40</height>
                            </size>
                           </property>
-                          <property name="statusTip">
-                           <string>Jog the A axis counter clockwise</string>
-                          </property>
                           <property name="iconSize">
                            <size>
                             <width>32</width>
@@ -5679,9 +5406,6 @@ ON</string>
                             <width>40</width>
                             <height>40</height>
                            </size>
-                          </property>
-                          <property name="statusTip">
-                           <string>Jog the Y axis back</string>
                           </property>
                           <property name="iconSize">
                            <size>
@@ -5711,9 +5435,6 @@ ON</string>
                             <height>40</height>
                            </size>
                           </property>
-                          <property name="statusTip">
-                           <string>Jog the Y axis forward</string>
-                          </property>
                           <property name="iconSize">
                            <size>
                             <width>40</width>
@@ -5741,9 +5462,6 @@ ON</string>
                             <width>40</width>
                             <height>40</height>
                            </size>
-                          </property>
-                          <property name="statusTip">
-                           <string>Jog the Z axis down</string>
                           </property>
                           <property name="iconSize">
                            <size>
@@ -5970,9 +5688,6 @@ ON</string>
                                <height>40</height>
                               </size>
                              </property>
-                             <property name="statusTip">
-                              <string>Cancel cut recovery</string>
-                             </property>
                              <property name="text">
                               <string>CANCEL</string>
                              </property>
@@ -6028,9 +5743,6 @@ ON</string>
                                   <height>40</height>
                                  </size>
                                 </property>
-                                <property name="statusTip">
-                                 <string>Reverse move along current motion segment</string>
-                                </property>
                                 <property name="text">
                                  <string>REV</string>
                                 </property>
@@ -6078,9 +5790,6 @@ ON</string>
                             <horstretch>0</horstretch>
                             <verstretch>0</verstretch>
                            </sizepolicy>
-                          </property>
-                          <property name="statusTip">
-                           <string>Paused motion feed rate override percentage</string>
                           </property>
                           <property name="minimum">
                            <number>1</number>
@@ -6196,9 +5905,6 @@ ON</string>
                                   <height>40</height>
                                  </size>
                                 </property>
-                                <property name="statusTip">
-                                 <string>Forward move along current motion segment</string>
-                                </property>
                                 <property name="layoutDirection">
                                  <enum>Qt::LeftToRight</enum>
                                 </property>
@@ -6228,7 +5934,7 @@ ON</string>
                               </size>
                              </property>
                              <property name="text">
-                              <string>1</string>
+                              <string notr="true">1</string>
                              </property>
                              <property name="alignment">
                               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -6298,9 +6004,6 @@ ON</string>
                             <height>40</height>
                            </size>
                           </property>
-                          <property name="statusTip">
-                           <string>Move torch in the X+ Y- direction</string>
-                          </property>
                           <property name="text">
                            <string/>
                           </property>
@@ -6332,9 +6035,6 @@ ON</string>
                             <height>40</height>
                            </size>
                           </property>
-                          <property name="statusTip">
-                           <string>Move torch in the Y- direction</string>
-                          </property>
                           <property name="text">
                            <string/>
                           </property>
@@ -6365,9 +6065,6 @@ ON</string>
                             <width>40</width>
                             <height>40</height>
                            </size>
-                          </property>
-                          <property name="statusTip">
-                           <string>Move torch in the X- Y+ direction</string>
                           </property>
                           <property name="layoutDirection">
                            <enum>Qt::LeftToRight</enum>
@@ -6403,9 +6100,6 @@ ON</string>
                             <height>40</height>
                            </size>
                           </property>
-                          <property name="statusTip">
-                           <string>Move torch in the X+ direction</string>
-                          </property>
                           <property name="text">
                            <string/>
                           </property>
@@ -6436,9 +6130,6 @@ ON</string>
                             <width>40</width>
                             <height>40</height>
                            </size>
-                          </property>
-                          <property name="statusTip">
-                           <string>Move torch in the X- Y- direction</string>
                           </property>
                           <property name="text">
                            <string/>
@@ -6471,9 +6162,6 @@ ON</string>
                             <height>40</height>
                            </size>
                           </property>
-                          <property name="statusTip">
-                           <string>Move torch in the X- direction</string>
-                          </property>
                           <property name="text">
                            <string/>
                           </property>
@@ -6504,9 +6192,6 @@ ON</string>
                             <width>40</width>
                             <height>40</height>
                            </size>
-                          </property>
-                          <property name="statusTip">
-                           <string>Move torch in the Y+ direction</string>
                           </property>
                           <property name="text">
                            <string/>
@@ -6539,9 +6224,6 @@ ON</string>
                             <height>40</height>
                            </size>
                           </property>
-                          <property name="statusTip">
-                           <string>Move torch in the X+ Y+ direction</string>
-                          </property>
                           <property name="text">
                            <string/>
                           </property>
@@ -6555,9 +6237,6 @@ ON</string>
                         </item>
                         <item row="1" column="1">
                          <widget class="QLabel" name="cut_rec_move_label">
-                          <property name="statusTip">
-                           <string>Distance the torch will move</string>
-                          </property>
                           <property name="text">
                            <string>MOVE</string>
                           </property>
@@ -6723,9 +6402,6 @@ ON</string>
                             <height>16</height>
                            </size>
                           </property>
-                          <property name="statusTip">
-                           <string>Open the file selector</string>
-                          </property>
                           <property name="text">
                            <string>OPEN</string>
                           </property>
@@ -6750,9 +6426,6 @@ ON</string>
                             <width>60</width>
                             <height>16</height>
                            </size>
-                          </property>
-                          <property name="statusTip">
-                           <string>Reload the current G-Code file</string>
                           </property>
                           <property name="text">
                            <string>RELOAD</string>
@@ -6829,7 +6502,7 @@ ON</string>
                            </size>
                           </property>
                           <property name="whatsThis">
-                           <string>wot is this???</string>
+                           <string/>
                           </property>
                           <property name="autoFillBackground">
                            <bool>false</bool>
@@ -7095,11 +6768,8 @@ ON</string>
                         <height>40</height>
                        </size>
                       </property>
-                      <property name="statusTip">
-                       <string>Touch off the Y axis</string>
-                      </property>
                       <property name="text">
-                       <string>0</string>
+                       <string notr="true">0</string>
                       </property>
                       <property name="popupMode">
                        <enum>QToolButton::InstantPopup</enum>
@@ -7111,7 +6781,7 @@ ON</string>
                        <number>1</number>
                       </property>
                       <property name="axis_letter" stdset="0">
-                       <string>Y</string>
+                       <string notr="true">Y</string>
                       </property>
                       <property name="halpin_option" stdset="0">
                        <bool>false</bool>
@@ -7141,11 +6811,8 @@ ON</string>
                         <height>40</height>
                        </size>
                       </property>
-                      <property name="statusTip">
-                       <string>Touch off the Z axis</string>
-                      </property>
                       <property name="text">
-                       <string>0</string>
+                       <string notr="true">0</string>
                       </property>
                       <property name="popupMode">
                        <enum>QToolButton::InstantPopup</enum>
@@ -7157,7 +6824,7 @@ ON</string>
                        <number>2</number>
                       </property>
                       <property name="axis_letter" stdset="0">
-                       <string>Z</string>
+                       <string notr="true">Z</string>
                       </property>
                       <property name="halpin_option" stdset="0">
                        <bool>false</bool>
@@ -7186,9 +6853,6 @@ ON</string>
                         <width>16777215</width>
                         <height>40</height>
                        </size>
-                      </property>
-                      <property name="statusTip">
-                       <string>Current Y axis position</string>
                       </property>
                       <property name="styleSheet">
                        <string notr="true"/>
@@ -7225,7 +6889,7 @@ ON</string>
                        </size>
                       </property>
                       <property name="text">
-                       <string>Y</string>
+                       <string notr="true">Y</string>
                       </property>
                       <property name="alignment">
                        <set>Qt::AlignCenter</set>
@@ -7251,9 +6915,6 @@ ON</string>
                         <width>16777215</width>
                         <height>40</height>
                        </size>
-                      </property>
-                      <property name="statusTip">
-                       <string>Current Z axis position</string>
                       </property>
                       <property name="styleSheet">
                        <string notr="true"/>
@@ -7294,9 +6955,6 @@ ON</string>
                         <width>48</width>
                         <height>40</height>
                        </size>
-                      </property>
-                      <property name="statusTip">
-                       <string>Home the Y axis</string>
                       </property>
                       <property name="text">
                        <string>HOME</string>
@@ -7353,7 +7011,7 @@ HOME</string>
                        <number>1</number>
                       </property>
                       <property name="axis_letter" stdset="0">
-                       <string>Y</string>
+                       <string notr="true">Y</string>
                       </property>
                       <property name="incr_imperial_number" stdset="0">
                        <double>0.010000000000000</double>
@@ -7374,7 +7032,7 @@ HOME</string>
                        <double>50.000000000000000</double>
                       </property>
                       <property name="view_type_string" stdset="0">
-                       <string>P</string>
+                       <string notr="true">P</string>
                       </property>
                       <property name="command_text_string" stdset="0">
                        <string/>
@@ -7383,10 +7041,10 @@ HOME</string>
                        <number>0</number>
                       </property>
                       <property name="textTemplate" stdset="0">
-                       <string/>
+                       <string notr="true"/>
                       </property>
                       <property name="alt_textTemplate" stdset="0">
-                       <string>%1.2f mm</string>
+                       <string notr="true">%1.2f mm</string>
                       </property>
                      </widget>
                     </item>
@@ -7409,9 +7067,6 @@ HOME</string>
                         <width>200</width>
                         <height>40</height>
                        </size>
-                      </property>
-                      <property name="statusTip">
-                       <string>Current A axis position</string>
                       </property>
                       <property name="styleSheet">
                        <string notr="true"/>
@@ -7455,9 +7110,6 @@ HOME</string>
                         <width>48</width>
                         <height>40</height>
                        </size>
-                      </property>
-                      <property name="statusTip">
-                       <string>Home the X axis</string>
                       </property>
                       <property name="text">
                        <string>HOME</string>
@@ -7516,6 +7168,9 @@ HOME</string>
                       <property name="joint_number" stdset="0">
                        <number>0</number>
                       </property>
+                      <property name="axis_letter" stdset="0">
+                       <string notr="true">X</string>
+                      </property>
                       <property name="incr_imperial_number" stdset="0">
                        <double>0.010000000000000</double>
                       </property>
@@ -7535,7 +7190,7 @@ HOME</string>
                        <double>50.000000000000000</double>
                       </property>
                       <property name="view_type_string" stdset="0">
-                       <string>P</string>
+                       <string notr="true">P</string>
                       </property>
                       <property name="command_text_string" stdset="0">
                        <string/>
@@ -7544,10 +7199,10 @@ HOME</string>
                        <number>0</number>
                       </property>
                       <property name="textTemplate" stdset="0">
-                       <string/>
+                       <string notr="true"/>
                       </property>
                       <property name="alt_textTemplate" stdset="0">
-                       <string>%1.2f mm</string>
+                       <string notr="true">%1.2f mm</string>
                       </property>
                      </widget>
                     </item>
@@ -7570,9 +7225,6 @@ HOME</string>
                         <width>48</width>
                         <height>40</height>
                        </size>
-                      </property>
-                      <property name="statusTip">
-                       <string>Home the Z axis</string>
                       </property>
                       <property name="text">
                        <string>HOME</string>
@@ -7626,10 +7278,16 @@ HOME</string>
                        <number>2</number>
                       </property>
                       <property name="axis_letter" stdset="0">
-                       <string>Z</string>
+                       <string notr="true">Z</string>
                       </property>
                       <property name="view_type_string" stdset="0">
-                       <string>P</string>
+                       <string notr="true">P</string>
+                      </property>
+                      <property name="textTemplate" stdset="0">
+                       <string notr="true">%1.3f in</string>
+                      </property>
+                      <property name="alt_textTemplate" stdset="0">
+                       <string notr="true">%1.2f mm</string>
                       </property>
                      </widget>
                     </item>
@@ -7648,7 +7306,7 @@ HOME</string>
                        </size>
                       </property>
                       <property name="text">
-                       <string>A</string>
+                       <string notr="true">A</string>
                       </property>
                       <property name="alignment">
                        <set>Qt::AlignCenter</set>
@@ -7675,11 +7333,8 @@ HOME</string>
                         <height>40</height>
                        </size>
                       </property>
-                      <property name="statusTip">
-                       <string>Touch off the A axis</string>
-                      </property>
                       <property name="text">
-                       <string>0</string>
+                       <string notr="true">0</string>
                       </property>
                       <property name="popupMode">
                        <enum>QToolButton::InstantPopup</enum>
@@ -7691,7 +7346,7 @@ HOME</string>
                        <number>3</number>
                       </property>
                       <property name="axis_letter" stdset="0">
-                       <string>A</string>
+                       <string notr="true">A</string>
                       </property>
                       <property name="halpin_option" stdset="0">
                        <bool>false</bool>
@@ -7720,9 +7375,6 @@ HOME</string>
                         <width>48</width>
                         <height>40</height>
                        </size>
-                      </property>
-                      <property name="statusTip">
-                       <string>Home the A axis</string>
                       </property>
                       <property name="text">
                        <string>HOME</string>
@@ -7781,7 +7433,7 @@ HOME</string>
                        <number>3</number>
                       </property>
                       <property name="axis_letter" stdset="0">
-                       <string>A</string>
+                       <string notr="true">A</string>
                       </property>
                       <property name="incr_imperial_number" stdset="0">
                        <double>0.010000000000000</double>
@@ -7802,16 +7454,16 @@ HOME</string>
                        <double>50.000000000000000</double>
                       </property>
                       <property name="view_type_string" stdset="0">
-                       <string>P</string>
+                       <string notr="true">P</string>
                       </property>
                       <property name="ini_mdi_number" stdset="0">
                        <number>0</number>
                       </property>
                       <property name="textTemplate" stdset="0">
-                       <string>%1.3f in</string>
+                       <string notr="true">%1.3f in</string>
                       </property>
                       <property name="alt_textTemplate" stdset="0">
-                       <string>%1.2f mm</string>
+                       <string notr="true">%1.2f mm</string>
                       </property>
                      </widget>
                     </item>
@@ -7835,11 +7487,8 @@ HOME</string>
                         <height>40</height>
                        </size>
                       </property>
-                      <property name="statusTip">
-                       <string>Touch off the X axis</string>
-                      </property>
                       <property name="text">
-                       <string>0</string>
+                       <string notr="true">0</string>
                       </property>
                       <property name="popupMode">
                        <enum>QToolButton::InstantPopup</enum>
@@ -7848,7 +7497,7 @@ HOME</string>
                        <enum>Qt::NoArrow</enum>
                       </property>
                       <property name="axis_letter" stdset="0">
-                       <string>X</string>
+                       <string notr="true">X</string>
                       </property>
                       <property name="halpin_option" stdset="0">
                        <bool>false</bool>
@@ -7877,9 +7526,6 @@ HOME</string>
                         <width>16777215</width>
                         <height>40</height>
                        </size>
-                      </property>
-                      <property name="statusTip">
-                       <string>Current X axis position</string>
                       </property>
                       <property name="styleSheet">
                        <string notr="true"/>
@@ -7916,7 +7562,7 @@ HOME</string>
                        </size>
                       </property>
                       <property name="text">
-                       <string>Z</string>
+                       <string notr="true">Z</string>
                       </property>
                       <property name="alignment">
                        <set>Qt::AlignCenter</set>
@@ -7938,7 +7584,7 @@ HOME</string>
                        </size>
                       </property>
                       <property name="text">
-                       <string>X</string>
+                       <string notr="true">X</string>
                       </property>
                       <property name="alignment">
                        <set>Qt::AlignCenter</set>
@@ -7967,9 +7613,6 @@ HOME</string>
                       </property>
                       <property name="toolTip">
                        <string/>
-                      </property>
-                      <property name="statusTip">
-                       <string>Home all axes</string>
                       </property>
                       <property name="text">
                        <string>HOME ALL</string>
@@ -8035,10 +7678,10 @@ HOME ALL</string>
                        <string>HOME ALL</string>
                       </property>
                       <property name="true_python_cmd_string" stdset="0">
-                       <string>print&quot;true command&quot;</string>
+                       <string notr="true">print&quot;true command&quot;</string>
                       </property>
                       <property name="false_python_cmd_string" stdset="0">
-                       <string>print&quot;false command&quot;</string>
+                       <string notr="true">print&quot;false command&quot;</string>
                       </property>
                       <property name="invert_the_status" stdset="0">
                        <bool>false</bool>
@@ -8125,7 +7768,7 @@ HOME ALL</string>
                        <double>50.000000000000000</double>
                       </property>
                       <property name="view_type_string" stdset="0">
-                       <string>P</string>
+                       <string notr="true">P</string>
                       </property>
                       <property name="command_text_string" stdset="0">
                        <string/>
@@ -8134,10 +7777,10 @@ HOME ALL</string>
                        <number>0</number>
                       </property>
                       <property name="textTemplate" stdset="0">
-                       <string>%1.3f in</string>
+                       <string notr="true">%1.3f in</string>
                       </property>
                       <property name="alt_textTemplate" stdset="0">
-                       <string>%1.2f mm</string>
+                       <string notr="true">%1.2f mm</string>
                       </property>
                      </widget>
                     </item>
@@ -8156,7 +7799,7 @@ HOME ALL</string>
                        </size>
                       </property>
                       <property name="text">
-                       <string>X0Y0</string>
+                       <string notr="true">X0Y0</string>
                       </property>
                      </widget>
                     </item>
@@ -8203,9 +7846,6 @@ HOME ALL</string>
                            <width>48</width>
                            <height>40</height>
                           </size>
-                         </property>
-                         <property name="statusTip">
-                          <string>Select work coordinate system</string>
                          </property>
                          <property name="text">
                           <string/>
@@ -8301,9 +7941,6 @@ HOME ALL</string>
                         <height>40</height>
                        </size>
                       </property>
-                      <property name="statusTip">
-                       <string>Home the B axis</string>
-                      </property>
                       <property name="text">
                        <string>HOME</string>
                       </property>
@@ -8320,10 +7957,16 @@ HOME ALL</string>
                        <number>4</number>
                       </property>
                       <property name="axis_letter" stdset="0">
-                       <string>B</string>
+                       <string notr="true">B</string>
                       </property>
                       <property name="view_type_string" stdset="0">
-                       <string>P</string>
+                       <string notr="true">P</string>
+                      </property>
+                      <property name="textTemplate" stdset="0">
+                       <string notr="true">%1.3f in</string>
+                      </property>
+                      <property name="alt_textTemplate" stdset="0">
+                       <string notr="true">%1.2f mm</string>
                       </property>
                      </widget>
                     </item>
@@ -8342,7 +7985,7 @@ HOME ALL</string>
                        </size>
                       </property>
                       <property name="text">
-                       <string>B</string>
+                       <string notr="true">B</string>
                       </property>
                       <property name="alignment">
                        <set>Qt::AlignCenter</set>
@@ -8362,9 +8005,6 @@ HOME ALL</string>
                         <width>200</width>
                         <height>40</height>
                        </size>
-                      </property>
-                      <property name="statusTip">
-                       <string>Current B axis position</string>
                       </property>
                       <property name="alignment">
                        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -8395,13 +8035,13 @@ HOME ALL</string>
                        </size>
                       </property>
                       <property name="text">
-                       <string>0</string>
+                       <string notr="true">0</string>
                       </property>
                       <property name="joint_number" stdset="0">
                        <number>4</number>
                       </property>
                       <property name="axis_letter" stdset="0">
-                       <string>B</string>
+                       <string notr="true">B</string>
                       </property>
                       <property name="halpin_option" stdset="0">
                        <bool>false</bool>
@@ -8601,6 +8241,31 @@ HOME ALL</string>
                       </property>
                       <property name="autoExclusive">
                        <bool>true</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="conv_ellipse">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>60</width>
+                        <height>60</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string/>
+                      </property>
+                      <property name="iconSize">
+                       <size>
+                        <width>48</width>
+                        <height>48</height>
+                       </size>
                       </property>
                      </widget>
                     </item>
@@ -8877,41 +8542,20 @@ HOME ALL</string>
                      </widget>
                     </item>
                     <item>
-                     <widget class="PushButton" name="conv_rotate">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
+                     <spacer name="horizontalSpacer_19">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
                       </property>
-                      <property name="minimumSize">
+                      <property name="sizeHint" stdset="0">
                        <size>
-                        <width>60</width>
-                        <height>60</height>
+                        <width>40</width>
+                        <height>20</height>
                        </size>
                       </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>16777215</width>
-                        <height>16777215</height>
-                       </size>
-                      </property>
-                      <property name="iconSize">
-                       <size>
-                        <width>48</width>
-                        <height>48</height>
-                       </size>
-                      </property>
-                      <property name="checkable">
-                       <bool>false</bool>
-                      </property>
-                      <property name="autoExclusive">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
+                     </spacer>
                     </item>
                     <item>
-                     <widget class="PushButton" name="conv_scale">
+                     <widget class="QPushButton" name="conv_block">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                         <horstretch>0</horstretch>
@@ -8924,48 +8568,14 @@ HOME ALL</string>
                         <height>60</height>
                        </size>
                       </property>
-                      <property name="iconSize">
-                       <size>
-                        <width>48</width>
-                        <height>48</height>
-                       </size>
-                      </property>
-                      <property name="autoExclusive">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="PushButton" name="conv_array">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="minimumSize">
-                       <size>
-                        <width>60</width>
-                        <height>60</height>
-                       </size>
-                      </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>16777215</width>
-                        <height>16777215</height>
-                       </size>
+                      <property name="text">
+                       <string/>
                       </property>
                       <property name="iconSize">
                        <size>
                         <width>48</width>
                         <height>48</height>
                        </size>
-                      </property>
-                      <property name="checkable">
-                       <bool>false</bool>
-                      </property>
-                      <property name="autoExclusive">
-                       <bool>true</bool>
                       </property>
                      </widget>
                     </item>
@@ -10121,13 +9731,13 @@ HOME ALL</string>
                              <bool>true</bool>
                             </property>
                             <property name="decimals">
-                             <number>1</number>
+                             <number>2</number>
                             </property>
                             <property name="maximum">
                              <double>9.000000000000000</double>
                             </property>
                             <property name="singleStep">
-                             <double>0.100000000000000</double>
+                             <double>0.010000000000000</double>
                             </property>
                             <property name="value">
                              <double>0.000000000000000</double>
@@ -10192,7 +9802,7 @@ HOME ALL</string>
                              <bool>true</bool>
                             </property>
                             <property name="suffix">
-                             <string> V</string>
+                             <string notr="true"> V</string>
                             </property>
                             <property name="minimum">
                              <double>0.050000000000000</double>
@@ -10334,7 +9944,7 @@ HOME ALL</string>
                              <bool>true</bool>
                             </property>
                             <property name="suffix">
-                             <string> %</string>
+                             <string notr="true"> %</string>
                             </property>
                             <property name="decimals">
                              <number>0</number>
@@ -10408,7 +10018,7 @@ HOME ALL</string>
                              <bool>true</bool>
                             </property>
                             <property name="suffix">
-                             <string> %</string>
+                             <string notr="true"> %</string>
                             </property>
                             <property name="decimals">
                              <number>0</number>
@@ -11604,7 +11214,7 @@ HOME ALL</string>
                              <bool>true</bool>
                             </property>
                             <property name="suffix">
-                             <string> V</string>
+                             <string notr="true"> V</string>
                             </property>
                             <property name="decimals">
                              <number>0</number>
@@ -11675,7 +11285,7 @@ HOME ALL</string>
                              <bool>true</bool>
                             </property>
                             <property name="suffix">
-                             <string> mS</string>
+                             <string notr="true"> mS</string>
                             </property>
                             <property name="decimals">
                              <number>0</number>
@@ -11795,7 +11405,7 @@ HOME ALL</string>
                              </size>
                             </property>
                             <property name="text">
-                             <string>12345</string>
+                             <string/>
                             </property>
                             <property name="alignment">
                              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -12527,7 +12137,7 @@ HOME ALL</string>
                     <bool>true</bool>
                    </property>
                    <property name="suffix">
-                    <string> psi</string>
+                    <string notr="true"> psi</string>
                    </property>
                    <property name="decimals">
                     <number>1</number>
@@ -12582,7 +12192,7 @@ HOME ALL</string>
                     <bool>true</bool>
                    </property>
                    <property name="suffix">
-                    <string> %</string>
+                    <string notr="true"> %</string>
                    </property>
                    <property name="decimals">
                     <number>0</number>
@@ -12760,9 +12370,6 @@ HOME ALL</string>
                      <height>16777215</height>
                     </size>
                    </property>
-                   <property name="statusTip">
-                    <string>cutting current in amps, indicator only, not used by PlasmaC</string>
-                   </property>
                    <property name="layoutDirection">
                     <enum>Qt::LeftToRight</enum>
                    </property>
@@ -12782,13 +12389,13 @@ HOME ALL</string>
                     <number>0</number>
                    </property>
                    <property name="minimum">
-                    <double>15.000000000000000</double>
+                    <double>10.000000000000000</double>
                    </property>
                    <property name="maximum">
                     <double>999.000000000000000</double>
                    </property>
                    <property name="value">
-                    <double>15.000000000000000</double>
+                    <double>10.000000000000000</double>
                    </property>
                   </widget>
                  </item>
@@ -14010,6 +13617,29 @@ HOME ALL</string>
                    </property>
                   </widget>
                  </item>
+                 <item row="2" column="4">
+                  <widget class="QCheckBox" name="chk_tool_tips">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="3">
+                  <widget class="QLabel" name="label_38">
+                   <property name="text">
+                    <string>Tool Tips</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                  </widget>
+                 </item>
                 </layout>
                </widget>
               </item>
@@ -14309,7 +13939,7 @@ HOME ALL</string>
                     <double>50.000000000000000</double>
                    </property>
                    <property name="view_type_string" stdset="0">
-                    <string>P</string>
+                    <string notr="true">P</string>
                    </property>
                    <property name="command_text_string" stdset="0">
                     <string/>
@@ -14318,13 +13948,13 @@ HOME ALL</string>
                     <number>0</number>
                    </property>
                    <property name="textTemplate" stdset="0">
-                    <string>%1.3f in</string>
+                    <string notr="true">%1.3f in</string>
                    </property>
                    <property name="alt_textTemplate" stdset="0">
-                    <string>%1.2f mm</string>
+                    <string notr="true">%1.2f mm</string>
                    </property>
                    <property name="actionName" stdset="0">
-                    <string>tool.halshow</string>
+                    <string notr="true">tool.halshow</string>
                    </property>
                   </widget>
                  </item>
@@ -14379,7 +14009,7 @@ HOME ALL</string>
                     <double>50.000000000000000</double>
                    </property>
                    <property name="view_type_string" stdset="0">
-                    <string>P</string>
+                    <string notr="true">P</string>
                    </property>
                    <property name="command_text_string" stdset="0">
                     <string/>
@@ -14388,13 +14018,13 @@ HOME ALL</string>
                     <number>0</number>
                    </property>
                    <property name="textTemplate" stdset="0">
-                    <string>%1.3f in</string>
+                    <string notr="true">%1.3f in</string>
                    </property>
                    <property name="alt_textTemplate" stdset="0">
-                    <string>%1.2f mm</string>
+                    <string notr="true">%1.2f mm</string>
                    </property>
                    <property name="actionName" stdset="0">
-                    <string>tool.halscope</string>
+                    <string notr="true">tool.halscope</string>
                    </property>
                   </widget>
                  </item>
@@ -14449,7 +14079,7 @@ HOME ALL</string>
                     <double>50.000000000000000</double>
                    </property>
                    <property name="view_type_string" stdset="0">
-                    <string>P</string>
+                    <string notr="true">P</string>
                    </property>
                    <property name="command_text_string" stdset="0">
                     <string/>
@@ -14458,13 +14088,13 @@ HOME ALL</string>
                     <number>0</number>
                    </property>
                    <property name="textTemplate" stdset="0">
-                    <string>%1.3f in</string>
+                    <string notr="true">%1.3f in</string>
                    </property>
                    <property name="alt_textTemplate" stdset="0">
-                    <string>%1.2f mm</string>
+                    <string notr="true">%1.2f mm</string>
                    </property>
                    <property name="actionName" stdset="0">
-                    <string>tool.halmeter</string>
+                    <string notr="true">tool.halmeter</string>
                    </property>
                   </widget>
                  </item>
@@ -14494,10 +14124,19 @@ HOME ALL</string>
                    <property name="launch_calibration_action" stdset="0">
                     <bool>true</bool>
                    </property>
+                   <property name="view_type_string" stdset="0">
+                    <string notr="true">p</string>
+                   </property>
+                   <property name="textTemplate" stdset="0">
+                    <string notr="true">%1.3f in</string>
+                   </property>
+                   <property name="alt_textTemplate" stdset="0">
+                    <string notr="true">%1.2f mm</string>
+                   </property>
                   </widget>
                  </item>
                  <item>
-                  <widget class="ActionButton" name="actionbutton_lcnc_status_2">
+                  <widget class="ActionButton" name="actionbutton_lcnc_status">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                      <horstretch>0</horstretch>
@@ -14547,7 +14186,7 @@ HOME ALL</string>
                     <double>50.000000000000000</double>
                    </property>
                    <property name="view_type_string" stdset="0">
-                    <string>P</string>
+                    <string notr="true">P</string>
                    </property>
                    <property name="command_text_string" stdset="0">
                     <string/>
@@ -14556,13 +14195,13 @@ HOME ALL</string>
                     <number>0</number>
                    </property>
                    <property name="textTemplate" stdset="0">
-                    <string>%1.3f in</string>
+                    <string notr="true">%1.3f in</string>
                    </property>
                    <property name="alt_textTemplate" stdset="0">
-                    <string>%1.2f mm</string>
+                    <string notr="true">%1.2f mm</string>
                    </property>
                    <property name="actionName" stdset="0">
-                    <string>tool.status</string>
+                    <string notr="true">tool.status</string>
                    </property>
                   </widget>
                  </item>
@@ -14625,6 +14264,11 @@ CONFIG</string>
             </spacer>
            </item>
           </layout>
+         </widget>
+         <widget class="QWidget" name="settings_tab">
+          <attribute name="title">
+           <string>SETTINGS</string>
+          </attribute>
          </widget>
          <widget class="QWidget" name="stats_tab">
           <attribute name="title">
@@ -14722,7 +14366,7 @@ CONFIG</string>
                  <item row="7" column="3">
                   <widget class="QLabel" name="rapid_time_t">
                    <property name="text">
-                    <string>0.00</string>
+                    <string notr="true">0.00</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -14732,7 +14376,7 @@ CONFIG</string>
                  <item row="8" column="3">
                   <widget class="QLabel" name="probe_time_t">
                    <property name="text">
-                    <string>0.00</string>
+                    <string notr="true">0.00</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -14749,7 +14393,7 @@ CONFIG</string>
                  <item row="5" column="3">
                   <widget class="QLabel" name="torch_time_t">
                    <property name="text">
-                    <string>0.00</string>
+                    <string notr="true">0.00</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -14776,7 +14420,7 @@ CONFIG</string>
                  <item row="6" column="2">
                   <widget class="QLabel" name="run_time">
                    <property name="text">
-                    <string>0.00</string>
+                    <string notr="true">0.00</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -14786,7 +14430,7 @@ CONFIG</string>
                  <item row="6" column="3">
                   <widget class="QLabel" name="run_time_t">
                    <property name="text">
-                    <string>0.00</string>
+                    <string notr="true">0.00</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -14806,7 +14450,7 @@ CONFIG</string>
                  <item row="3" column="2">
                   <widget class="QLabel" name="cut_length">
                    <property name="text">
-                    <string>0.00</string>
+                    <string notr="true">0.00</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -14855,7 +14499,7 @@ CONFIG</string>
                  <item row="2" column="2">
                   <widget class="QLabel" name="pierce_count">
                    <property name="text">
-                    <string>0.00</string>
+                    <string notr="true">0.00</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -14865,7 +14509,7 @@ CONFIG</string>
                  <item row="3" column="3">
                   <widget class="QLabel" name="cut_length_t">
                    <property name="text">
-                    <string>0.00</string>
+                    <string notr="true">0.00</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -14892,7 +14536,7 @@ CONFIG</string>
                  <item row="4" column="2">
                   <widget class="QLabel" name="cut_time">
                    <property name="text">
-                    <string>0.00</string>
+                    <string notr="true">0.00</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -14902,7 +14546,7 @@ CONFIG</string>
                  <item row="5" column="2">
                   <widget class="QLabel" name="torch_time">
                    <property name="text">
-                    <string>0.00</string>
+                    <string notr="true">0.00</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -14912,7 +14556,7 @@ CONFIG</string>
                  <item row="2" column="3">
                   <widget class="QLabel" name="pierce_count_t">
                    <property name="text">
-                    <string>0.00</string>
+                    <string notr="true">0.00</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -14951,7 +14595,7 @@ CONFIG</string>
                  <item row="4" column="3">
                   <widget class="QLabel" name="cut_time_t">
                    <property name="text">
-                    <string>0.00</string>
+                    <string notr="true">0.00</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -15017,7 +14661,7 @@ CONFIG</string>
                  <item row="7" column="2">
                   <widget class="QLabel" name="rapid_time">
                    <property name="text">
-                    <string>0.00</string>
+                    <string notr="true">0.00</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -15044,7 +14688,7 @@ CONFIG</string>
                  <item row="8" column="2">
                   <widget class="QLabel" name="probe_time">
                    <property name="text">
-                    <string>0.00</string>
+                    <string notr="true">0.00</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -15207,7 +14851,7 @@ CONFIG</string>
                  <item row="1" column="1">
                   <widget class="QLabel" name="pmx_arc_time_t">
                    <property name="text">
-                    <string>0.00</string>
+                    <string notr="true">0.00</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -15358,106 +15002,11 @@ CONFIG</string>
     <bool>false</bool>
    </property>
   </widget>
-  <action name="actionExit">
-   <property name="text">
-    <string>Exit</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Q</string>
-   </property>
-  </action>
-  <action name="actionOPEN">
-   <property name="text">
-    <string>oPEN</string>
-   </property>
-  </action>
-  <action name="actionOpen">
-   <property name="text">
-    <string>Open</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+O</string>
-   </property>
-  </action>
-  <action name="actionFullscreen">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Fullscreen</string>
-   </property>
-   <property name="shortcut">
-    <string>F11</string>
-   </property>
-  </action>
  </widget>
  <customwidgets>
   <customwidget>
-   <class>GCodeGraphics</class>
-   <extends>QWidget</extends>
-   <header>qtvcp.widgets.gcode_graphics</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>StatusSlider</class>
-   <extends>QSlider</extends>
-   <header>qtvcp.widgets.status_slider</header>
-  </customwidget>
-  <customwidget>
-   <class>AxisToolButton</class>
-   <extends>QToolButton</extends>
-   <header>qtvcp.widgets.axis_tool_button</header>
-  </customwidget>
-  <customwidget>
-   <class>LED</class>
-   <extends>QWidget</extends>
-   <header>qtvcp.widgets.led_widget</header>
-  </customwidget>
-  <customwidget>
-   <class>JogIncrements</class>
-   <extends>QComboBox</extends>
-   <header>qtvcp.widgets.jog_increments</header>
-  </customwidget>
-  <customwidget>
-   <class>ScreenOptions</class>
-   <extends>QWidget</extends>
-   <header>qtvcp.widgets.screen_options</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>PushButton</class>
    <extends>QPushButton</extends>
-   <header>qtvcp.widgets.simple_widgets</header>
-  </customwidget>
-  <customwidget>
-   <class>MachineLog</class>
-   <extends>QTextEdit</extends>
-   <header>qtvcp.widgets.machine_log</header>
-  </customwidget>
-  <customwidget>
-   <class>CamView</class>
-   <extends>QWidget</extends>
-   <header>qtvcp.widgets.camview_widget</header>
-  </customwidget>
-  <customwidget>
-   <class>HALLabel</class>
-   <extends>QLabel</extends>
-   <header>qtvcp.widgets.hal_label</header>
-  </customwidget>
-  <customwidget>
-   <class>StatusLabel</class>
-   <extends>QLabel</extends>
-   <header>qtvcp.widgets.status_label</header>
-  </customwidget>
-  <customwidget>
-   <class>DROLabel</class>
-   <extends>QLabel</extends>
-   <header>qtvcp.widgets.dro_widget</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>DoubleScale</class>
-   <extends>QDoubleSpinBox</extends>
    <header>qtvcp.widgets.simple_widgets</header>
   </customwidget>
   <customwidget>
@@ -15466,25 +15015,45 @@ CONFIG</string>
    <header>qtvcp.widgets.simple_widgets</header>
   </customwidget>
   <customwidget>
+   <class>AxisToolButton</class>
+   <extends>QToolButton</extends>
+   <header>qtvcp.widgets.axis_tool_button</header>
+  </customwidget>
+  <customwidget>
    <class>FileManager</class>
    <extends>QWidget</extends>
    <header>qtvcp.widgets.file_manager</header>
   </customwidget>
   <customwidget>
-   <class>GcodeDisplay</class>
-   <extends>QFrame</extends>
-   <header>qtvcp.widgets.gcode_editor</header>
+   <class>DoubleScale</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>qtvcp.widgets.simple_widgets</header>
+  </customwidget>
+  <customwidget>
+   <class>MachineLog</class>
+   <extends>QTextEdit</extends>
+   <header>qtvcp.widgets.machine_log</header>
+  </customwidget>
+  <customwidget>
+   <class>LED</class>
+   <extends>QWidget</extends>
+   <header>qtvcp.widgets.led_widget</header>
+  </customwidget>
+  <customwidget>
+   <class>HALLabel</class>
+   <extends>QLabel</extends>
+   <header>qtvcp.widgets.hal_label</header>
+  </customwidget>
+  <customwidget>
+   <class>GCodeGraphics</class>
+   <extends>QWidget</extends>
+   <header>qtvcp.widgets.gcode_graphics</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>SystemToolButton</class>
-   <extends>QToolButton</extends>
-   <header>qtvcp.widgets.system_tool_button</header>
-  </customwidget>
-  <customwidget>
-   <class>GcodeEditor</class>
-   <extends>QWidget</extends>
-   <header>qtvcp.widgets.gcode_editor</header>
+   <class>DROLabel</class>
+   <extends>QLabel</extends>
+   <header>qtvcp.widgets.dro_widget</header>
    <container>1</container>
   </customwidget>
   <customwidget>
@@ -15493,9 +15062,58 @@ CONFIG</string>
    <header>qtvcp.widgets.mdi_history</header>
   </customwidget>
   <customwidget>
+   <class>GcodeEditor</class>
+   <extends>QWidget</extends>
+   <header>qtvcp.widgets.gcode_editor</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>GcodeDisplay</class>
+   <extends>QFrame</extends>
+   <header>qtvcp.widgets.gcode_editor</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>OriginOffsetView</class>
+   <extends>QTableView</extends>
+   <header>qtvcp.widgets.origin_offsetview</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>StatusLabel</class>
+   <extends>QLabel</extends>
+   <header>qtvcp.widgets.status_label</header>
+  </customwidget>
+  <customwidget>
    <class>ActionButton</class>
    <extends>QPushButton</extends>
    <header>qtvcp.widgets.action_button</header>
+  </customwidget>
+  <customwidget>
+   <class>StatusSlider</class>
+   <extends>QSlider</extends>
+   <header>qtvcp.widgets.status_slider</header>
+  </customwidget>
+  <customwidget>
+   <class>ScreenOptions</class>
+   <extends>QWidget</extends>
+   <header>qtvcp.widgets.screen_options</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>JogIncrements</class>
+   <extends>QComboBox</extends>
+   <header>qtvcp.widgets.jog_increments</header>
+  </customwidget>
+  <customwidget>
+   <class>CamView</class>
+   <extends>QWidget</extends>
+   <header>qtvcp.widgets.camview_widget</header>
+  </customwidget>
+  <customwidget>
+   <class>SystemToolButton</class>
+   <extends>QToolButton</extends>
+   <header>qtvcp.widgets.system_tool_button</header>
   </customwidget>
  </customwidgets>
  <tabstops>
@@ -15576,8 +15194,6 @@ CONFIG</string>
   <tabstop>conv_star</tabstop>
   <tabstop>conv_gusset</tabstop>
   <tabstop>conv_sector</tabstop>
-  <tabstop>conv_rotate</tabstop>
-  <tabstop>conv_array</tabstop>
   <tabstop>conv_material</tabstop>
   <tabstop>conv_new</tabstop>
   <tabstop>conv_save</tabstop>
@@ -15622,7 +15238,6 @@ CONFIG</string>
   <tabstop>cam_mark</tabstop>
   <tabstop>run</tabstop>
   <tabstop>pause</tabstop>
-  <tabstop>abort</tabstop>
   <tabstop>feed_slider</tabstop>
   <tabstop>rapid_slider</tabstop>
   <tabstop>jog_slider</tabstop>
@@ -15678,38 +15293,4 @@ CONFIG</string>
    <bool>true</bool>
   </property>
  </designerdata>
- <slots>
-  <signal>keyPressEvent()</signal>
-  <signal>keyReleaseEvent()</signal>
-  <slot>btn_start_clicked()</slot>
-  <slot>home_buttons()</slot>
-  <slot>on_keyPressEvent(0)</slot>
-  <slot>btn_ref_laser_clicked()</slot>
-  <slot>btn_go_home_clicked()</slot>
-  <slot>btn_touchoff_clicked()</slot>
-  <slot>btn_reload_file_clicked()</slot>
-  <slot>btn_save_tool_clicked()</slot>
-  <slot>btn_add_tool_clicked()</slot>
-  <slot>btn_delete_tool_clicked()</slot>
-  <slot>btn_m61_clicked()</slot>
-  <slot>alarm_added()</slot>
-  <slot>tab_changed(int)</slot>
-  <slot>btn_clear_alarms_clicked()</slot>
-  <slot>btn_save_alarms_clicked()</slot>
-  <slot>btn_file_load_clicked()</slot>
-  <slot>btn_file_next_clicked()</slot>
-  <slot>btn_file_prev_clicked()</slot>
-  <slot>btn_maxv_max_clicked()</slot>
-  <slot>btn_gcode_edit_clicked()</slot>
-  <slot>btn_hide_axis_clicked()</slot>
-  <slot>chk_override_limits_checked()</slot>
-  <slot>btn_clear_display_clicked()</slot>
-  <slot>slow_button_clicked()</slot>
-  <slot>probe_help_prev_clicked()</slot>
-  <slot>probe_help_next_clicked()</slot>
-  <slot>chk_run_from_line_checked()</slot>
-  <slot>percent_loaded()</slot>
-  <slot>thc_mode_toggled()</slot>
-  <slot>user_button_1_pressed()</slot>
- </slots>
 </ui>

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtDesigner import QPyDesignerCustomWidgetPlugin
@@ -486,7 +486,7 @@ class MacroTabPlugin(QPyDesignerCustomWidgetPlugin):
         return "MacroTab"
 
     def group(self):
-        return "Linuxcnc - Controller"
+        return "Linuxcnc - Widgets"
 
     def icon(self):
         return QtGui.QIcon(QtGui.QPixmap(ICON.get_path('macrotab')))

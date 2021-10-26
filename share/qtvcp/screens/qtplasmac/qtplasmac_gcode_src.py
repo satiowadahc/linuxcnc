@@ -1,8 +1,8 @@
-
 '''
 plasmac_gcode.py
 
-Copyright (C) 2019, 2020  Phillip A Carter
+Copyright (C) 2019, 2020, 2021  Phillip A Carter
+Copyright (C) 2020, 2021  Gregory D Carl
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -55,6 +55,7 @@ else:
     ocLength = 0.157
     unitsPerMm = 0.03937
 unitMultiplier = 1
+gcodeList = []
 newMaterial = []
 firstMaterial = ''
 line = ''
@@ -76,7 +77,7 @@ torchEnable = True
 pierceOnly = False
 scribing = False
 spotting = False
-offsetG41 = False
+offsetG4x = False
 feedWarning = False
 zSetup = False
 zBypass = False
@@ -109,25 +110,25 @@ def set_hole_type():
         holeEnable = True
         overCut = False
         arcEnable = False
-        print('(velocity reduction for small holes)')
+        gcodeList.append('(velocity reduction for small holes)')
     elif holeType == '2':
         holeEnable = overCut = True
         arcEnable = False
-        print('(velocity reduction for small holes)')
+        gcodeList.append('(velocity reduction for small holes)')
         lineNum += 1
-        print('(overcut for small holes)')
+        gcodeList.append('(overcut for small holes)')
     elif holeType == '3':
         holeEnable = arcEnable = True
         overCut = False
-        print('(velocity reduction for small holes and arcs)')
+        gcodeList.append('(velocity reduction for small holes and arcs)')
     elif holeType == '4':
         holeEnable = arcEnable = overCut = True
-        print('(velocity reduction for small holes and arcs)')
+        gcodeList.append('(velocity reduction for small holes and arcs)')
         lineNum += 1
-        print('(overcut for small holes)')
+        gcodeList.append('(overcut for small holes)')
     else:
         holeEnable = arcEnable = overCut = False
-        print('(disable small hole sensing)')
+        gcodeList.append('(disable small hole sensing)')
 
 # check if arc is a hole
 def check_if_hole():
@@ -140,7 +141,7 @@ def check_if_hole():
     if lastX == endX and lastY == endY:
         isHole = True
     radius = get_hole_radius(I, J, isHole)
-    print(line)
+    gcodeList.append(line)
     if isHole and overCut and radius <= (minDiameter / 2):
         overburn(I, J, radius)
         return
@@ -151,23 +152,23 @@ def check_if_hole():
 # get hole radius and set velocity percentage
 def get_hole_radius(I, J, isHole):
     global holeActive, lineNum
-    if offsetG41:
+    if offsetG4x:
         radius = math.sqrt((I ** 2) + (J ** 2))
     else:
         #radius = math.sqrt((I ** 2) + (J ** 2)) + (materialDict[material[0]][1] / 2)
         radius = math.sqrt((I ** 2) + (J ** 2))
     # velocity reduction required
     if radius <= (minDiameter / 2) and (isHole or arcEnable):
-        if offsetG41:
+        if offsetG4x:
             lineNum += 1
             codeWarn = True
-            print(';m67 e3 q0 (inactive due to g41)')
+            gcodeList.append(';m67 e3 q0 (inactive due to g41)')
             dlg  = '\nCannot reduce velocity with cutter compensation active.\n'
             dlg += '\nWarning for line #{}.\n'.format(lineNum)
             dialog_box('WARNING', dlg)
         elif not holeActive:
             lineNum += 1
-            print('m67 e3 q{0} (diameter:{1:0.3f}, velocity:{0}%)'.format(holeVelocity, radius * 2))
+            gcodeList.append('m67 e3 q{0} (diameter:{1:0.3f}, velocity:{0}%)'.format(holeVelocity, radius * 2))
             holeActive = True
         if line.startswith('g2') and isHole:
             codeWarn = True
@@ -179,7 +180,7 @@ def get_hole_radius(I, J, isHole):
     else:
         if holeActive:
             lineNum += 1
-            print('m67 e3 q0 (arc complete, velocity 100%)')
+            gcodeList.append('m67 e3 q0 (arc complete, velocity 100%)')
             holeActive = False
     return radius
 
@@ -193,14 +194,14 @@ def overburn(I, J, radius):
     cosB = ((lastX - centerX) / radius)
     sinB = ((lastY - centerY) / radius)
     lineNum += 1
-    if offsetG41:
+    if offsetG4x:
         codeWarn = True
-        print(';m62 p3 (inactive due to g41)')
+        gcodeList.append(';m62 p3 (inactive due to g41)')
         dlg  = '\nCannot enable/disable torch with cutter compensation active.\n'
         dlg += '\nWarning for line #{}.\n'.format(lineNum)
         dialog_box('WARNING', dlg)
     else:
-        print('m62 p3 (disable torch)')
+        gcodeList.append('m62 p3 (disable torch)')
         torchEnable = False
     #clockwise arc
     if line.startswith('g2'):
@@ -213,7 +214,7 @@ def overburn(I, J, radius):
         endY = centerY + radius * ((sinB * cosA) + (cosB * sinA))
         dir = '3'
     lineNum += 1
-    print('g{0} x{1:0.{5}f} y{2:0.{5}f} i{3:0.{5}f} j{4:0.{5}f}'.format(dir, endX, endY, I, J, precision))
+    gcodeList.append('g{0} x{1:0.{5}f} y{2:0.{5}f} i{3:0.{5}f} j{4:0.{5}f}'.format(dir, endX, endY, I, J, precision))
     lastX = endX
     lastY = endY
 
@@ -275,7 +276,7 @@ def comment_out_z_commands():
             newline += bit
     if holeActive:
         lineNum += 1
-        print('m67 e3 q0 (arc complete, velocity 100%)')
+        gcodeList.append('m67 e3 q0 (arc complete, velocity 100%)')
         holeActive = False
     return '{} {})'.format(newline, newz)
 
@@ -292,7 +293,7 @@ def check_math(axis):
 
 # do material change
 def do_material_change():
-    global firstMaterial
+    global firstMaterial, codeError
     if '(' in line:
         c = line.split('(', 1)[0]
     elif ';' in line:
@@ -317,12 +318,16 @@ def do_material_change():
             dlg  = '\nThe G-Code file contains a reference to a temporary material near line #{}.\n'.format(lineNum)
             dlg += '\nEdit the G-Code file outside of QtPlasmaC to reference an existing material and then reload the G-Code file.\n'
         dialog_box('ERROR', dlg)
-        print(line)
-        quit()
+
+#        gcodeList.append(line)
+#        gcodeList.append('m5\nm2')
+#        quit()
+
+
     hal.set_p('qtplasmac.material_change_number', '{}'.format(material[0]))
     if not firstMaterial:
         firstMaterial = material[0]
-    print(line)
+    gcodeList.append(line)
 
 # check if material edit required
 def check_material_edit():
@@ -356,19 +361,29 @@ def check_material_edit():
                         tmpMatNam = na
                 elif 'ph=' in item:
                     ph = float(item.split('=')[1])
+                    if unitMultiplier != 1:
+                        ph = ph / unitMultiplier
                 elif 'pd=' in item:
                     pd = float(item.split('=')[1])
                 elif 'ch=' in item:
                     ch = float(item.split('=')[1])
+                    if unitMultiplier != 1:
+                        ch = ch / unitMultiplier
                 elif 'fr=' in item:
                     fr = float(item.split('=')[1])
+                    if unitMultiplier != 1:
+                        fr = fr / unitMultiplier
                 # optional items
                 elif 'kw=' in item:
                     kw = float(item.split('=')[1])
+                    if unitMultiplier != 1:
+                        kw = kw / unitMultiplier
                 elif 'th=' in item:
                     th = int(item.split('=')[1])
                 elif 'jh=' in item:
                     jh = float(item.split('=')[1])
+                    if unitMultiplier != 1:
+                        jh = ph / unitMultiplier
                 elif 'jd=' in item:
                     jd = float(item.split('=')[1])
                 elif 'ca=' in item:
@@ -585,13 +600,13 @@ with open(inCode, 'r') as fRead:
             check_material_edit()
             # add material change for temporay material
             if line.startswith('(o=0'):
-                print('m190 p{} ({})'.format(tmpMatNum, tmpMatNam))
-                print('m66 p3 l3 q1')
+                gcodeList.append('m190 p{} ({})'.format(tmpMatNum, tmpMatNam))
+                gcodeList.append('m66 p3 l3 q1')
                 tmpMatNum += 1
             continue
-        # if line is a comment then print it and get next line
+        # if line is a comment then gcodeList.append it and get next line
         if line.startswith(';') or line.startswith('('):
-            print(line)
+            gcodeList.append(line)
             continue
         # if a ; comment at end of line, convert line to lower case and remove spaces, preserve comment as is
         elif ';' in line:
@@ -619,17 +634,19 @@ with open(inCode, 'r') as fRead:
                 zBypass = True
             else:
                 zBypass = False
-            print(line)
+            gcodeList.append(line)
             continue
         # remove any additional z max moves
         if '[#<_ini[axis_z]max_limit>' in line and zSetup:
             continue
         # set initial Z height
         if not zSetup and not zBypass and ('g0' in line or 'g1' in line or 'm3' in line):
+            offsetTopZ = (zMaxOffset * unitsPerMm * unitMultiplier)
+            moveTopZ = 'g53 g0 z[#<_ini[axis_z]max_limit> * {} - {:.3f}] (Z just below max height)'.format(unitMultiplier, offsetTopZ)
             if not '[#<_ini[axis_z]max_limit>' in line:
-                print('g53 g0 z[#<_ini[axis_z]max_limit> * {} - {}] (Z just below max height)'.format(unitMultiplier, zMaxOffset * unitsPerMm * unitMultiplier))
+                gcodeList.append(moveTopZ)
             else:
-                line = 'g53 g0 z[#<_ini[axis_z]max_limit> * {} - {}] (Z just below max height)'.format(unitMultiplier, zMaxOffset * unitsPerMm * unitMultiplier)
+                line = moveTopZ
             zSetup = True
         # set default units
         if 'g21' in line:
@@ -646,12 +663,15 @@ with open(inCode, 'r') as fRead:
                     minDiameter = 1.26
                 if not customLen:
                     ocLength = 0.157
-        # check for g41 offset set
-        if 'g41' in line:
-            offsetG41 = True
-        # check for g41 offset cleared
+        # check for g41 or g42 offsets
+        if 'g41' in line or 'g42' in line:
+            offsetG4x = True
+            if 'kerf_width-f]>' in line and unitMultiplier != 1:
+                line = line.replace('#<_hal[qtplasmac.kerf_width-f]>', \
+                                   '[#<_hal[qtplasmac.kerf_width-f]> * {}]'.format(unitMultiplier))
+        # check for g4x offset cleared
         elif 'g40' in line:
-            offsetG41 = False
+            offsetG4x = False
         # are we scribing
         if line.startswith('m3$1s'):
             if pierceOnly:
@@ -663,14 +683,14 @@ with open(inCode, 'r') as fRead:
                 scribing = False
             else:
                 scribing = True
-                print(line)
+                gcodeList.append(line)
                 continue
         # if pierce only mode
         if pierceOnly:
             # Don't pierce spotting operations
             if line.startswith('m3$2'):
                 spotting = True
-                print('(Ignoring spotting operation as pierce-only is active)')
+                gcodeList.append('(Ignoring spotting operation as pierce-only is active)')
                 continue
             # Ignore spotting blocks when pierceOnly
             if spotting:
@@ -682,16 +702,16 @@ with open(inCode, 'r') as fRead:
                 continue
             if line.startswith('m3') and not line.startswith('m3$1'):
                 pierces += 1
-                print('\n(Pierce #{})'.format(pierces))
-                print(rapidLine)
-                print('M3 $0 S1')
-                print('G91')
-                print('G1 X.000001')
-                print('G90\nM5 $0')
+                gcodeList.append('\n(Pierce #{})'.format(pierces))
+                gcodeList.append(rapidLine)
+                gcodeList.append('M3 $0 S1')
+                gcodeList.append('G91')
+                gcodeList.append('G1 X.000001')
+                gcodeList.append('G90\nM5 $0')
                 rapidLine = ''
                 continue
             if not pierces or line.startswith('o') or line.startswith('#'):
-                print(line)
+                gcodeList.append(line)
             continue
         # test for pierce only mode
         if (line.startswith('#<pierce-only>') and line.split('=')[1][0] == '1') or (not pierceOnly and cutType == 1):
@@ -705,13 +725,13 @@ with open(inCode, 'r') as fRead:
                 pierceOnly = True
                 pierces = 0
                 rapidLine = ''
-                print('(pierce only mode)')
+                gcodeList.append('(pierce only mode)')
             if not cutType == 1:
                 continue
         if line.startswith('#<oclength>'):
             ocLength = float(line.split('=')[1])
             customLen = True
-            print('(overcut length = {})'.format(ocLength))
+            gcodeList.append('(overcut length = {})'.format(ocLength))
             continue
         # if hole sensing code
         if line.startswith('#<holes>'):
@@ -728,7 +748,7 @@ with open(inCode, 'r') as fRead:
             else:
                 minDiameter = float(line.split('=')[1])
                 customDia = True
-            print('(small hole diameter = {})'.format(minDiameter))
+            gcodeList.append('(small hole diameter = {})'.format(minDiameter))
             if '#<m_d' in line:
                 dlg = '\n#<m_diameter> is deprecated in favour of #<h_diameter>\n'
             if '#<i_d' in line:
@@ -741,7 +761,7 @@ with open(inCode, 'r') as fRead:
         # if hole velocity command
         if line.startswith('#<h_velocity>'):
             holeVelocity = float(line.split('=')[1].split(';')[0])
-            print('(small hole velocity = {})'.format(holeVelocity))
+            gcodeList.append('(small hole velocity = {})'.format(holeVelocity))
             continue
         # if material change
         if line.startswith('m190'):
@@ -750,13 +770,13 @@ with open(inCode, 'r') as fRead:
                 continue
         # wait for material change
         if 'm66' in line:
-            if offsetG41:
+            if offsetG4x:
                 codeError = True
                 dlg  = '\nCannot validate a material change with cutter compensation acive\n'
                 dlg += '\nError near line #{}.\n'.format(lineNum)
                 dlg += '\nEdit G-Code file to suit.\n'
                 dialog_box('ERROR', dlg)
-            print(line)
+            gcodeList.append(line)
             continue
         # check if unsupported distance mode
         if holeEnable and 'g91' in line and not 'g91.1' in line:
@@ -777,94 +797,113 @@ with open(inCode, 'r') as fRead:
         if holeEnable and 'y' in line: check_math('y')
         if holeEnable and 'i' in line: check_math('i')
         if holeEnable and 'j' in line: check_math('j')
-
+        # check for z axis command
         if not zBypass:
-            # if z axis in line but no other axes comment it
-            if 'z' in line and 1 not in [c in line for c in 'xyabcuvw'] and line.split('z')[1][0].isdigit():
-                print('({})'.format(line))
-                continue
-            # if z axis and other axes in line, comment out the Z axis
-            if 'z' in line and not '(z' in line and line.split('z')[1][0] in '0123456789.- ':
-                if holeEnable:
-                    lastX, lastY = set_last_position(lastX, lastY)
-                result = comment_out_z_commands()
-                print(result)
-                continue
+            # if z axis in line
+            if 'z' in line and line.split('z')[1][0] in '0123456789.- ':
+                # if no other axes comment it
+                if 1 not in [c in line for c in 'xybcuvw']:
+                    if '(' in line:
+                        gcodeList.append('({} {}'.format(line.split('(')[0], line.split('(')[1]))
+                    elif ';' in line:
+                        gcodeList.append('({} {}'.format(line.split(';')[0], line.split(';')[1]))
+                    else:
+                        gcodeList.append('({})'.format(line))
+                    continue
+                # other axes in line, comment out the Z axis
+                if not '(z' in line:
+                    if holeEnable:
+                        lastX, lastY = set_last_position(lastX, lastY)
+                    result = comment_out_z_commands()
+                    gcodeList.append(result)
+                    continue
         # if an arc command
         if (line.startswith('g2') or line.startswith('g3')) and line[2].isalpha():
             if holeEnable:
                 check_if_hole()
             else:
-                print(line)
+                gcodeList.append(line)
             continue
-        # if torch off, flag it then print it
+        # if torch off, flag it then gcodeList.append it
         if line.startswith('m62p3') or line.startswith('m64p3'):
             torchEnable = False
-            print(line)
+            gcodeList.append(line)
             continue
-        # if torch on, flag it then print it
+        # if torch on, flag it then gcodeList.append it
         if line.startswith('m63p3') or line.startswith('m65p3'):
             torchEnable = True
-            print(line)
+            gcodeList.append(line)
             continue
         # if spindle off
         if line.startswith('m5'):
             if len(line) == 2 or (len(line) > 2 and not line[2].isdigit()):
-                print(line)
+                gcodeList.append(line)
                 # restore velocity if required
                 if holeActive:
                     lineNum += 1
-                    print('m68 e3 q0 (arc complete, velocity 100%)')
+                    gcodeList.append('m68 e3 q0 (arc complete, velocity 100%)')
                     holeActive = False
                 # if torch off, allow torch on
                 if not torchEnable:
                     lineNum += 1
-                    print('m65 p3 (enable torch)')
+                    gcodeList.append('m65 p3 (enable torch)')
                     torchEnable = True
             else:
-                print(line)
+                gcodeList.append(line)
             continue
         # if program end
         if line.startswith('m2') or line.startswith('m30') or line.startswith('%'):
             # restore velocity if required
             if holeActive:
                 lineNum += 1
-                print('m68 e3 q0 (arc complete, velocity 100%)')
+                gcodeList.append('m68 e3 q0 (arc complete, velocity 100%)')
                 holeActive = False
             # if torch off, allow torch on
             if not torchEnable:
                 lineNum += 1
-                print('m65 p3 (enable torch)')
+                gcodeList.append('m65 p3 (enable torch)')
                 torchEnable = True
             # restore hole sensing to default
             if holeEnable:
                 lineNum += 1
-                print('(disable hole sensing)')
+                gcodeList.append('(disable hole sensing)')
                 holeEnable = False
             if firstMaterial:
                 hal.set_p('qtplasmac.material_change_number', '{}'.format(firstMaterial))
-            print(line)
-            if codeError:
-                dlg  = '\nThis G-Code file has one or more errors that will affect the quality of the process.\n'
-                dlg += '\nIt is recommended that all errors are fixed before running this file.'
-                dialog_box('ERROR', dlg)
+            gcodeList.append(line)
+            # if codeError:
+            #     dlg  = '\nThis G-Code file has one or more errors that will affect the quality of the process.\n'
+            #     dlg += '\nIt is recommended that all errors are fixed before running this file.'
+            #     dialog_box('ERROR', dlg)
             continue
         # check feed rate
         if 'f' in line:
-            inFeed = line.split('f')[1]
-            if not inFeed.startswith('#<_hal[plasmac.cut-feed-rate]>'):
+            begin, inFeed = line.split('f', 1)
+            if inFeed.startswith('#<_hal[plasmac.cut-feed-rate]>'):
+                if unitMultiplier != 1:
+                    line = begin + '{}f[#<_hal[plasmac.cut-feed-rate]> * {}]\n'.format(begin, unitMultiplier)
+            else:
                 check_f_word(inFeed)
         # restore velocity if required
         if holeActive:
             lineNum += 1
-            print('m67 e3 q0 (arc complete, velocity 100%)')
+            gcodeList.append('m67 e3 q0 (arc complete, velocity 100%)')
             holeActive = False
         # set last X/Y position
         if holeEnable and len(line):
             lastX, lastY = set_last_position(lastX, lastY)
-        print(line)
+        gcodeList.append(line)
 if pierceOnly:
-    print('')
+    gcodeList.append('')
     if rapidLine:
-        print('{}'.format(rapidLine))
-    print('M2 (END)')
+        gcodeList.append('{}'.format(rapidLine))
+    gcodeList.append('M2 (END)')
+if codeError:
+    print('(The original G-Code file)')
+    print('(has one or more errors)')
+    print('\n(All errors require fixing)')
+    print('(before reloading the file)')
+    print('\nM2')
+else:
+    for line in gcodeList:
+        print(line)

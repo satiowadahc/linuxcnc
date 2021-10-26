@@ -2,14 +2,9 @@
 # vim: sts=4 sw=4 et
 
 import linuxcnc
+from gi.repository import GObject
+
 import inspect
-
-import sys
-if sys.version_info.major > 2:
-    from gi.repository import GObject
-else:
-    import gobject as GObject
-
 import _hal
 import hal
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal
@@ -121,9 +116,29 @@ class DummyPin(QObject):
         pass
 
 
-class QComponent:
-    def __init__(self, comp, hal):
-        if isinstance(comp, QComponent):
+class _QHal(object):
+    HAL_BIT = hal.HAL_BIT
+    HAL_FLOAT = hal.HAL_FLOAT
+    HAL_S32 = hal.HAL_S32
+    HAL_U32 = hal.HAL_U32
+
+    HAL_IN = hal.HAL_IN
+    HAL_OUT = hal.HAL_OUT
+    HAL_IO = hal.HAL_IO
+    HAL_RO = hal.HAL_RO
+    HAL_RW = hal.HAL_RW
+
+    def __new__(cls, *a, **kw):
+        instance = super(_QHal, cls).__new__(cls)
+        instance.__init__(*a, **kw)
+        return instance
+
+    def __init__(self, comp=None, hal=None):
+        # only initialize once for all instances
+        if not self.__class__._instance is None:
+            return
+
+        if isinstance(comp, _QHal):
             comp = comp.comp
         self.comp = comp
         self.hal = hal
@@ -135,18 +150,31 @@ class QComponent:
             if log.getEffectiveLevel() == logger.VERBOSE:
                 raise
             t = inspect.getframeinfo(inspect.currentframe().f_back)
-            log.error("QComponent: Error making new HAL pin: {}\n    {}\n    Line {}\n    Function: {}".
+            log.error("Qhal: Error making new HAL pin: {}\n    {}\n    Line {}\n    Function: {}".
                 format(e, t[0], t[1], t[2]))
             p = DummyPin(*a, ERROR=e)
         return p
 
     def getpin(self, *a, **kw): return QPin(_hal.component.getpin(self.comp, *a, **kw))
 
+    def getvalue(self, name):
+        try:
+            return hal.get_value(name)
+        except Exception as e:
+            log.error("Qhal: Error getting value of {}\n {}".format(name, e))
+
     def exit(self, *a, **kw): return self.comp.exit(*a, **kw)
 
     def __getitem__(self, k): return self.comp[k]
     def __setitem__(self, k, v): self.comp[k] = v
 
+class Qhal(_QHal):
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = _QHal.__new__(cls, *args, **kwargs)
+        return cls._instance
 
 ################################################################
 # GStat class
@@ -157,7 +185,7 @@ class Status(GStat):
     _instance = None
     _instanceNum = 0
     __gsignals__ = {
-        'toolfile-stale': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
+        'toolfile-stale': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
     }
     TEMPARARY_MESSAGE = 255
     # only make one instance of the class - pass it to all other
