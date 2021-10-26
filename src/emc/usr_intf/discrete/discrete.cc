@@ -15,7 +15,7 @@
  * ----------------------------------------------------------------------------
  *
  */
-
+#define PY_SSIZE_T_CLEAN
 
 #include <curses.h>
 #include <unistd.h>
