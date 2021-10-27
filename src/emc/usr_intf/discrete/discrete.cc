@@ -19,11 +19,28 @@
 
 #include <curses.h>
 #include <unistd.h>
-#include "emc.hh"
-#include "emc_nml.hh"
+
+
+
+#include "rs274ngc.hh"
+#include "rs274ngc_interp.hh"
+
 #include "kinematics.h"
 #include "config.h"
 #include "inifile.hh"
+#include "rcs_print.hh"
+#include "rcs.hh"
+#include "posemath.h"		// PM_POSE, TO_RAD
+#include "emc.hh"		// EMC NML
+#include "emc_nml.hh"
+#include "canon.hh"		// CANON_UNITS, CANON_UNITS_INCHES,MM,CM
+#include "emcglb.h"		// EMC_NMLFILE, TRAJ_MAX_VELOCITY, etc.
+#include "emccfg.h"		// DEFAULT_TRAJ_MAX_VELOCITY
+#include "inifile.hh"		// INIFILE
+#include "config.h"		// Standard path definitions
+#include "rcs_print.hh"
+#include "emc/usr_intf/shcom.hh"
+#include <rtapi_string.h>
 
 
 // <><><><><><><><><><><><><>
@@ -44,12 +61,14 @@ uint16_t max_h, max_w;
 //      Linuxcnc Update Functions
 //  TODO Move to own file
 // <><><><><><><><><><><><><>
+
+
 void updateDRO(WINDOW *dro){
   mvprintw(0,5  ,"Machine   Program   Offset");
 
-  mvprintw(1,1,"X:  %f  %f  %f",0.123,0.123,0.123);
-  mvprintw(2,1,"Y:  %f  %f  %f",0.123,0.123,0.123);
-  mvprintw(3,1,"Z:  %f  %f  %f",0.123,0.123,0.123);
+  mvprintw(1,1,"X:  %f  %f  %f", emcStatus->motion.traj.actualPosition.tran.x,0.123,0.123);
+  mvprintw(2,1,"Y:  %f  %f  %f", emcStatus->motion.traj.actualPosition.tran.y,0.123,0.123);
+  mvprintw(3,1,"Z:  %f  %f  %f", emcStatus->motion.traj.actualPosition.tran.z,0.123,0.123);
 
 }
 
@@ -109,8 +128,17 @@ int main() {
   waddstr(w_messages, "Messages");
   wrefresh(w_messages);
 
-  int ch;
+// <><><><><><><><><><><><><>
+//      LCNC Setup
+// <><><><><><><><><><><><><>
+  iniLoad(emc_inifile);
 
+  if (tryNml() != 0) {
+    rcs_print_error("can't connect to emc\n");
+    exit(1);
+  }
+
+  int ch;
 // <><><><><><><><><><><><><>
 //      Main Loop
 // <><><><><><><><><><><><><>

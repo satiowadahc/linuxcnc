@@ -1,4 +1,4 @@
-DISCRETESRCS := emc/usr_intf/discrete/discrete.cc
+DISCRETESRCS := emc/usr_intf/discrete/discrete.cc emc/usr_intf/shcom.cc
 
 
 $(call TOOBJSDEPS, $(DISCRETESRCS)) : EXTRAFLAGS = $(ULFLAGS)
@@ -7,7 +7,7 @@ $(call TOOBJSDEPS, $(DISCRETESRCS)) : Makefile.inc
 
 ../bin/discrete: $(call TOOBJS, $(DISCRETESRCS)) ../lib/liblinuxcnchal.so.0 ../lib/liblinuxcnc.a ../lib/libnml.so.0 ../lib/liblinuxcncini.so.0
 	$(ECHO) Linking $(notdir $@)
-	$(CXX) $(LDFLAGS) -o $@ $^ -lm -lepoxy -lcurses
+	$(CXX) $(LDFLAGS) -o $@  $(ULFLAGS)  $^ -lm -lcurses
 
 USERSRCS += $(DISCRETESRCS)
 TARGETS += ../bin/discrete
