@@ -62,6 +62,67 @@ uint16_t max_h, max_w;
 //  TODO Move to own file
 // <><><><><><><><><><><><><>
 
+// <><><><><><><><><><><><><>
+//   Machine Initializations
+// <><><><><><><><><><><><><>
+int init_machine(){
+  iniLoad(emc_inifile);
+
+  if (tryNml() != 0) {
+    rcs_print_error("can't connect to emc\n");
+    exit(1);
+  }
+
+  return 0;
+}
+
+// <><><><><><><><><><><><><>
+//    Machine Closures
+// <><><><><><><><><><><><><>
+void close_machine(){
+
+}
+
+// <><><><><><><><><><><><><>
+//    Window Initializations
+// <><><><><><><><><><><><><>
+void create_dro(){
+
+}
+
+void init_screen(){
+  create_dro();
+
+  mid_top_col = max_w/2;
+  mid_bot_col = max_w/2;
+  mid_right_lines = max_h/2;
+  mid_left_lines = max_h/2;
+  refresh();
+  w_dro = newwin(mid_right_lines, mid_top_col, 0, 0);
+  w_editor = newwin(max_h-mid_right_lines, mid_bot_col, mid_right_lines, 0);
+  w_status = newwin(mid_left_lines, max_w - mid_top_col, 0, mid_top_col);
+  w_messages = newwin(max_h - mid_left_lines, max_w - mid_bot_col, mid_left_lines, mid_bot_col);
+  box(w_dro, 0 , 0);
+  box(w_editor, 0 , 0);
+  box(w_status, 0 , 0);
+  box(w_messages, 0 , 0);
+  keypad(w_dro, true);
+
+  nodelay(w_dro, true);
+  nodelay(w_editor, true);
+  nodelay(w_status, true);
+  nodelay(w_messages, true);
+}
+
+
+
+// <><><><><><><><><><><><><>
+//    Window Closures
+// <><><><><><><><><><><><><>
+void close_screen(){
+
+}
+
 
 void updateDRO(WINDOW *dro){
   mvprintw(0,5  ,"Machine   Program   Offset");
@@ -87,7 +148,9 @@ void updateEditor(WINDOW *editor){
 //  TODO Abstract all functions in here
 // <><><><><><><><><><><><><>
 int main() {
-  // Initialization
+
+  // Screen Initialization
+  // These Can not be abstracted from main
   initscr();
   cbreak();
   noecho();
@@ -95,29 +158,11 @@ int main() {
   getmaxyx(stdscr, max_h, max_w);
   if(max_w < 80 || max_h < 10){
     endwin();
-    printf("Terminal must be larger than 80 characters and 10 lines");
+    printf("Terminal must be larger than 80 characters and 10 lines\n");
     return -1;
   }
 
-  mid_top_col = max_w/2;
-  mid_bot_col = max_w/2;
-  mid_right_lines = max_h/2;
-  mid_left_lines = max_h/2;
-  refresh();
-  w_dro = newwin(mid_right_lines, mid_top_col, 0, 0);
-  w_editor = newwin(max_h-mid_right_lines, mid_bot_col, mid_right_lines, 0);
-  w_status = newwin(mid_left_lines, max_w - mid_top_col, 0, mid_top_col);
-  w_messages = newwin(max_h - mid_left_lines, max_w - mid_bot_col, mid_left_lines, mid_bot_col);
-  box(w_dro, 0 , 0);
-  box(w_editor, 0 , 0);
-  box(w_status, 0 , 0);
-  box(w_messages, 0 , 0);
-  keypad(w_dro, true);
-
-  nodelay(w_dro, true);
-  nodelay(w_editor, true);
-  nodelay(w_status, true);
-  nodelay(w_messages, true);
+  init_screen();
 
   waddstr(w_dro, "DRO");
   wrefresh(w_dro);
@@ -131,12 +176,7 @@ int main() {
 // <><><><><><><><><><><><><>
 //      LCNC Setup
 // <><><><><><><><><><><><><>
-  iniLoad(emc_inifile);
-
-  if (tryNml() != 0) {
-    rcs_print_error("can't connect to emc\n");
-    exit(1);
-  }
+  init_machine();
 
   int ch;
 // <><><><><><><><><><><><><>
