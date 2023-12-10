@@ -106,12 +106,13 @@ void init_screen(){
   box(w_editor, 0 , 0);
   box(w_status, 0 , 0);
   box(w_messages, 0 , 0);
-  keypad(w_dro, true);
 
   nodelay(w_dro, true);
   nodelay(w_editor, true);
   nodelay(w_status, true);
   nodelay(w_messages, true);
+
+  // keypad(w_dro, true);
 }
 
 
@@ -127,12 +128,48 @@ void close_screen(){
 void updateDRO(WINDOW *dro){
   mvprintw(0,5  ,"Machine   Program   Offset");
 
-  mvprintw(1,1,"X:  %f  %f  %f", emcStatus->motion.traj.actualPosition.tran.x,0.123,0.123);
-  mvprintw(2,1,"Y:  %f  %f  %f", emcStatus->motion.traj.actualPosition.tran.y,0.123,0.123);
-  mvprintw(3,1,"Z:  %f  %f  %f", emcStatus->motion.traj.actualPosition.tran.z,0.123,0.123);
+  mvwprintw(dro, 1,1,"X:  %f  %f  %f", emcStatus->motion.traj.actualPosition.tran.x,0.123,0.123);
+  mvwprintw(dro, 2,1,"Y:  %f  %f  %f", emcStatus->motion.traj.actualPosition.tran.y,0.123,0.123);
+  mvwprintw(dro, 3,1,"Z:  %f  %f  %f", emcStatus->motion.traj.actualPosition.tran.z,0.123,0.123);
 
+  wrefresh(dro);
 }
 
+void updateStatus(WINDOW *status){
+  struct timespec current_timespec;
+  clock_gettime(CLOCK_REALTIME_COARSE, &current_timespec);
+  char time_str[21];
+  strftime(time_str, 20, "%F %T",
+           localtime(&current_timespec.tv_sec));
+  mvwprintw(status,1, 1, "Current time: %s", time_str);
+  switch (emcStatus->task.state) {
+    case EMC_TASK_STATE_ESTOP:
+      mvwprintw(status,2, 1, "ESTOP   ");
+      break;
+    case EMC_TASK_STATE_OFF:
+    case EMC_TASK_STATE_ESTOP_RESET:
+      mvwprintw(status,2, 1, "DISABLED");
+      break;
+    case EMC_TASK_STATE_ON:
+      mvwprintw(status,2, 1, "ENABLED ");
+      break;
+    default:
+      mvwprintw(status,2, 1, "Unknown");
+      break;
+  }
+
+  switch(emcStatus->task.execState){
+
+  }
+  switch(emcStatus->task.interpState){
+
+  }
+
+
+
+
+  wrefresh(status);
+}
 
 
 void updateEditor(WINDOW *editor, int line){
@@ -154,7 +191,6 @@ int main() {
   initscr();
   cbreak();
   noecho();
-
   getmaxyx(stdscr, max_h, max_w);
   if(max_w < 80 || max_h < 10){
     endwin();
@@ -173,6 +209,11 @@ int main() {
   waddstr(w_messages, "Messages");
   wrefresh(w_messages);
 
+  nodelay(stdscr, true);
+  intrflush(stdscr, false);
+  keypad(stdscr, true);
+  curs_set(0);
+
 // <><><><><><><><><><><><><>
 //      LCNC Setup
 // <><><><><><><><><><><><><>
@@ -185,13 +226,12 @@ int main() {
  bool run = true;
   while(run){
     ch = getch();
-    if(ch == 'q'){
-      run = false;
-    }
-    else{
-      updateDRO(w_dro);
-    }
+    if(ch == 'q'){run = false;}
+
+    updateDRO(w_dro);
     wrefresh(w_dro);
+
+    updateStatus(w_status);
 
   }
   // Clean up
