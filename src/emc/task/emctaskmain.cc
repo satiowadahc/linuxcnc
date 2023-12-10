@@ -68,6 +68,7 @@
 fpu_control_t __fpu_control = _FPU_IEEE & ~(_FPU_MASK_IM | _FPU_MASK_ZM | _FPU_MASK_OM);
 #endif
 
+#include "config.h"
 #include "rcs.hh"		// NML classes, nmlErrorFormat()
 #include "emc.hh"		// EMC NML
 #include "emc_nml.hh"
@@ -88,7 +89,7 @@ fpu_control_t __fpu_control = _FPU_IEEE & ~(_FPU_MASK_IM | _FPU_MASK_ZM | _FPU_M
 static emcmot_config_t emcmotConfig;
 
 /* time after which the user interface is declared dead
- * because it would'nt read any more messages
+ * because it wouldn't read any more messages
  */
 #define DEFAULT_EMC_UI_TIMEOUT 5.0
 
@@ -107,18 +108,18 @@ EMC_STAT *emcStatus = 0;
 // timer stuff
 static RCS_TIMER *timer = 0;
 
-// flag signifying that ini file [TASK] CYCLE_TIME is <= 0.0, so
+// flag signifying that INI file [TASK] CYCLE_TIME is <= 0.0, so
 // we should not delay at all between cycles. This means also that
 // the EMC_TASK_CYCLE_TIME global will be set to the measured cycle
 // time each cycle, in case other code references this.
 static int emcTaskNoDelay = 0;
 // flag signifying that on the next loop, there should be no delay.
 // this is set when transferring trajectory data from userspace to kernel
-// space, annd reset otherwise.
+// space, and reset otherwise.
 static int emcTaskEager = 0;
 
 static int no_force_homing = 0; // forces the user to home first before allowing MDI and Program run
-//can be overriden by [TRAJ]NO_FORCE_HOMING=1
+//can be overridden by [TRAJ]NO_FORCE_HOMING=1
 
 static double EMC_TASK_CYCLE_TIME_ORIG = 0.0;
 
@@ -149,6 +150,10 @@ int all_homed(void) {
             return 0;
     }
     return 1;
+}
+
+bool jogging_is_active(void) {
+    return emcStatus->motion.jogging_active;
 }
 
 void emctask_quit(int sig)
@@ -2239,7 +2244,7 @@ static int emcTaskIssueCommand(NMLmsg * cmd)
 		    mdi_execute_level = -1;
 		} else if (level > 0) {
 		    // Still insude call. Need another execute(0) call
-		    // but only if we didnt encounter an error
+		    // but only if we didn't encounter an error
 		    if (execRetval == INTERP_ERROR) {
 			mdi_execute_next = 0;
 		    } else {
@@ -3274,7 +3279,7 @@ static int iniLoad(const char *filename)
 }
 
 /*
-  syntax: a.out {-d -ini <inifile>} {-nml <nmlfile>} {-shm <key>}
+  syntax: a.out {-d -ini <INI file>} {-nml <nml file>} {-shm <key>}
   */
 int main(int argc, char *argv[])
 {
@@ -3342,6 +3347,7 @@ int main(int argc, char *argv[])
 
     // inistantiate task methods object, too
     emcTaskOnce(emc_inifile);
+    rtapi_strxcpy(emcStatus->task.ini_filename, emc_inifile);
     if (task_methods == NULL) {
 	set_rcs_print_destination(RCS_PRINT_TO_STDOUT);	// restore diag
 	rcs_print_error("can't initialize Task methods\n");
@@ -3566,7 +3572,7 @@ int main(int argc, char *argv[])
 	emcStatusBuffer->write(emcStatus);
 
 	// wait on timer cycle, if specified, or calculate actual
-	// interval if ini file says to run full out via
+	// interval if INI file says to run full out via
 	// [TASK] CYCLE_TIME <= 0.0d
 	// emcTaskEager = 0;
         endTime = etime();

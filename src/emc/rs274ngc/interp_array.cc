@@ -83,7 +83,7 @@ const int Interp::_gees[] = {
 /*  20 */   1,-1,-1,-1,-1,-1,-1,-1,-1,-1, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
 /*  40 */ //0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
 /*  40 */   0,-1,-1,-1,-1,-1,-1,-1,-1,-1, 1, 1, 1, 0,-1,-1,-1,-1,-1,-1,
-/*  60 */  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+/*  60 */   1, 1, 1, 0,-1,-1,-1,-1,-1,-1,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,	// jjf added G6
 /*  80 */  15,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
 /* 100 */   0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
 /* 120 */  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -321,6 +321,6 @@ const read_function_pointer Interp::default_readers[256] = {
 and _readers. */
 
 /* The notion of "global variables" is a misnomer - These last four should only
-   be accessable by the interpreter and not exported to the rest of emc */
+   be accessible by the interpreter and not exported to the rest of emc */
 
 

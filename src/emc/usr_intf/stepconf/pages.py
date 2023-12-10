@@ -56,7 +56,7 @@ class Pages:
         else:
             return True
 
-    # seaches (self._p.available_page) from the current page forward,
+    # searches (self._p.available_page) from the current page forward,
     # for the next page that is True or till second-to-last page.
     # if state found True: call current page finish function.
     # If that returns False then call the next page prepare function and show page
@@ -84,13 +84,13 @@ class Pages:
         elif u == len(self._p.available_page):
             name,text,state = self._p.available_page[cur]
             self['%s_finish'%name]()
-        # if comming from page 0 to page 1 sensitize 
+        # if coming from page 0 to page 1 sensitize 
         # the back button and change fwd button text
         if cur == 0:
             self.w.button_back.set_sensitive(True)
             self.w.label_fwd.set_text(self._p.MESS_FWD)
 
-    # seaches (self._p.available_page) from the current page backward,
+    # searches (self._p.available_page) from the current page backward,
     # for the next page that is True or till first page.
     # if state found True: call current page finish function.
     # If that returns False then call the next page prepare function and show page
@@ -174,12 +174,11 @@ class Pages:
         for name in self._p.human_input_names: model.append((name,))
         # parport io preset
         self.w.pp1_preset_io_liststore.clear()
+        for myport in self.d.lparport:
+            treeiter = self.w.pp1_preset_io_liststore.append([myport])
         if(self.d.lparport):
-            for myport in self.d.lparport:
-                treeiter = self.w.pp1_preset_io_liststore.append([myport])
-            for count, current_port in enumerate(self.d.lparport):
-                if(current_port == self.d.ioaddr):
-                    self.w.pp1_preset_io_combo.set_active(count)
+            self.w.pp1_preset_io_combo.set_active(0)
+            self.d.ioaddr = self.d.lparport[0]
 
         # pport2 comboboxes
         model = self.w.pp2_output_list
@@ -192,12 +191,11 @@ class Pages:
         for name in self._p.human_input_names: model.append((name,))
         # parport2 io preset
         self.w.pp2_preset_io_liststore.clear()
+        for myport in self.d.lparport:
+            treeiter = self.w.pp2_preset_io_liststore.append([myport])
         if(self.d.lparport):
-            for myport in self.d.lparport:
-                treeiter = self.w.pp2_preset_io_liststore.append([myport])
-            for count, current_port in enumerate(self.d.lparport):
-                if(current_port == self.d.ioaddr):
-                    self.w.pp2_preset_io_combo.set_active(count)
+            self.w.pp2_preset_io_combo.set_active(0)
+            self.d.ioaddr2 = self.d.lparport[0]
 
         self.intro_prepare()
 
@@ -274,10 +272,9 @@ class Pages:
         self.w.dirsetup.set_value(self.d.dirsetup)
         self.w.dirhold.set_value(self.d.dirhold)
         self.w.drivertype.set_active(self.a.drivertype_toindex())
-        #self.w.ioaddr.set_text(self.d.ioaddr)
+        self.w.ioaddr.set_text(self.d.ioaddr)
         self.w.machinename.grab_focus()
-        #self.w.ioaddr2.set_text(self.d.ioaddr2)
-        
+        self.w.ioaddr2.set_text(self.d.ioaddr2) 
         #self.w.ioaddr3.set_text(self.d.ioaddr3)
         #self.w.pp3_direction.set_active(self.d.pp3_direction)
         if self.d.number_pports>2:
@@ -401,11 +398,27 @@ class Pages:
             self.w.qtplasmac_estop_1.set_active(True)
         else:
             self.w.qtplasmac_estop.set_active(True)
+        if self.d.qtplasmacdro == 1:
+            self.w.qtplasmac_dro_1.set_active(True)
+        else:
+            self.w.qtplasmac_dro.set_active(True)
+        if self.d.qtplasmacerror == 1:
+            self.w.qtplasmac_error_1.set_active(True)
+        else:
+            self.w.qtplasmac_error.set_active(True)
+        if self.d.qtplasmacstart == 1:
+            self.w.qtplasmac_start_1.set_active(True)
+        else:
+            self.w.qtplasmac_start.set_active(True)
+        if self.d.qtplasmacpause == 1:
+            self.w.qtplasmac_pause_1.set_active(True)
+        else:
+            self.w.qtplasmac_pause.set_active(True)
+        if self.d.qtplasmacstop == 1:
+            self.w.qtplasmac_stop_1.set_active(True)
+        else:
+            self.w.qtplasmac_stop.set_active(True)
         # set the qtplasmac spinboxes
-        self.w.qtplasmac_cam_x.set_value(self.d.qtplasmacxcam)
-        self.w.qtplasmac_cam_y.set_value(self.d.qtplasmacycam)
-        self.w.qtplasmac_laser_x.set_value(self.d.qtplasmacxlaser)
-        self.w.qtplasmac_laser_y.set_value(self.d.qtplasmacylaser)
         self.w.qtplasmac_pmx_port.set_text(self.d.qtplasmacpmx)
 
     def options_finish(self):
@@ -479,10 +492,11 @@ class Pages:
         self.d.qtplasmacmode = [int(i) for i,r in enumerate(reversed(self.w.qtplasmac_mode.get_group())) if r.get_active()][0]
         self.d.qtplasmacscreen = [int(i) for i,r in enumerate(reversed(self.w.qtplasmac_screen.get_group())) if r.get_active()][0]
         self.d.qtplasmacestop = [int(i) for i,r in enumerate(reversed(self.w.qtplasmac_estop.get_group())) if r.get_active()][0]
-        self.d.qtplasmacxcam = self.w.qtplasmac_cam_x.get_value()
-        self.d.qtplasmacycam = self.w.qtplasmac_cam_y.get_value()
-        self.d.qtplasmacxlaser = self.w.qtplasmac_laser_x.get_value()
-        self.d.qtplasmacylaser = self.w.qtplasmac_laser_y.get_value()
+        self.d.qtplasmacdro = [int(i) for i,r in enumerate(reversed(self.w.qtplasmac_dro.get_group())) if r.get_active()][0]
+        self.d.qtplasmacerror = [int(i) for i,r in enumerate(reversed(self.w.qtplasmac_error.get_group())) if r.get_active()][0]
+        self.d.qtplasmacstart = [int(i) for i,r in enumerate(reversed(self.w.qtplasmac_start.get_group())) if r.get_active()][0]
+        self.d.qtplasmacpause = [int(i) for i,r in enumerate(reversed(self.w.qtplasmac_pause.get_group())) if r.get_active()][0]
+        self.d.qtplasmacstop = [int(i) for i,r in enumerate(reversed(self.w.qtplasmac_stop.get_group())) if r.get_active()][0]
         self.d.qtplasmacpmx = self.w.qtplasmac_pmx_port.get_text()
         self.page_set_state('spindle',((self.a.has_spindle_speed_control() or self.a.has_spindle_encoder()) \
                                         and not self.d.select_qtplasmac))
@@ -662,13 +676,7 @@ class Pages:
         for pin in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17):
             p = 'pin%dinv' % pin
             self.d[p] = self.w[p].get_active()
-        #self.d.ioaddr = self.w.ioaddr.get_text()
-        state = self.w.pp1_preset_io_combo.get_active()
-        if(state > -1):
-            path = Gtk.TreePath(state)
-            treeiter = self.w.pp1_preset_io_liststore.get_iter(path)
-            value = self.w.pp1_preset_io_liststore.get_value(treeiter, 0)
-            self.d.ioaddr = value
+        self.d.ioaddr = self.w.ioaddr.get_text()
         self.page_set_state('spindle',(self.a.has_spindle_speed_control() or self.a.has_spindle_encoder()) )
         for j in "xyzauw":
             if self.jointcount[j] > 1:
@@ -689,6 +697,16 @@ class Pages:
             self.a.preset_tb6560_3axes_outputs()
         elif state ==3:
             self.a.preset_tb6560_4axes_outputs()
+
+    def on_pp1_preset_io_combo_changed(self, widget):
+        state = self.w.pp1_preset_io_combo.get_active()
+        if(state > -1):
+            path = Gtk.TreePath(state)
+            treeiter = self.w.pp1_preset_io_liststore.get_iter(path)
+            value = self.w.pp1_preset_io_liststore.get_value(treeiter, 0)
+            self.w.ioaddr.set_text(value)
+        else:
+            return
 
 #************
 # pport2 PAGE
@@ -711,11 +729,7 @@ class Pages:
         self.w.pp2_pin1.grab_focus()
         self.w.pp2_direction.set_active(self.d.pp2_direction)
         self.on_pp2_direction_changed(self.w.pp2_direction)
-        if(self.d.lparport):
-            for count, current_port in enumerate(self.d.lparport):
-                if(current_port == self.d.ioaddr2):
-                    self.w.pp2_preset_io_combo.set_active(count)
-        #self.w.ioaddr2.set_text(self.d.ioaddr2)
+        self.w.ioaddr2.set_text(self.d.ioaddr2)
         self._p.in_pport_prepare = False
 
     def pport2_finish(self):
@@ -735,13 +749,7 @@ class Pages:
             p = 'pp2_pin%d_in_inv' % pin
             self.d[p] = self.w[p].get_active()
         self.d.pp2_direction = self.w.pp2_direction.get_active()
-        #self.d.ioaddr2 = self.w.ioaddr2.get_text()
-        state = self.w.pp2_preset_io_combo.get_active()
-        if(state > -1):
-            path = Gtk.TreePath(state)
-            treeiter = self.w.pp2_preset_io_liststore.get_iter(path)
-            value = self.w.pp2_preset_io_liststore.get_value(treeiter, 0)
-            self.d.ioaddr2 = value
+        self.d.ioaddr2 = self.w.ioaddr2.get_text()
         self.page_set_state('spindle',(self.a.has_spindle_speed_control() or self.a.has_spindle_encoder()) )
 
     # pport2 callbacks:
@@ -771,19 +779,29 @@ class Pages:
 # THCAD (QtPlasmaC THCAD)
 #************
     def thcad_prepare(self):
-        self.w.voltsmodel.set_active(["5", "10", "300"].index(self.d.voltsmodel))
+        self.w.voltsmodel.set_active(["2 (W1 down)", "2 (W1 up)", "5", "10", "300"].index(self.d.voltsmodel))
         self.w.voltsfjumper.set_active(["1", "32", "64", "128"].index(self.d.voltsfjumper))
         self.w.voltszerof.set_value(self.d.voltszerof)
         self.w.voltsfullf.set_value(self.d.voltsfullf)
         self.w.voltsrdiv.set_value(self.d.voltsrdiv)
 
     def thcad_finish(self):
-        self.d.voltsmodel = ["5", "10", "300"][self.w.voltsmodel.get_active()]
+        self.d.voltsmodel = ["2 (W1 down)", "2 (W1 up)", "5", "10", "300"][self.w.voltsmodel.get_active()]
         self.d.voltsfjumper = ["1", "32", "64", "128"][self.w.voltsfjumper.get_active()]
         self.d.voltszerof = self.w.voltszerof.get_value()
         self.d.voltsfullf = self.w.voltsfullf.get_value()
         self.d.voltsrdiv = self.w.voltsrdiv.get_value()
 
+    def on_pp2_preset_io_combo_changed(self, widget):
+        state = self.w.pp2_preset_io_combo.get_active()
+        if(state > -1):
+            path = Gtk.TreePath(state)
+            treeiter = self.w.pp2_preset_io_liststore.get_iter(path)
+            value = self.w.pp2_preset_io_liststore.get_value(treeiter, 0)
+            self.w.ioaddr2.set_text(value)
+        else:
+            return
+            
 #*******************
 # AXIS X PAGE
 #*******************

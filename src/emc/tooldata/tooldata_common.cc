@@ -42,12 +42,13 @@ struct CANON_TOOL_TABLE tooldata_entry_init()
 {
     struct CANON_TOOL_TABLE tdata;
     tdata.toolno      = -1;
-    tdata.pocketno    =  0;
+    tdata.pocketno    = -1;
     tdata.diameter    =  0;
     tdata.frontangle  =  0;
     tdata.backangle   =  0;
     tdata.orientation =  0;
     ZERO_EMC_POSE(tdata.offset);
+    tdata.comment[0]  =  0;
 
     return tdata;
 } // tooldata_entry_init()
@@ -66,8 +67,7 @@ void tooldata_add_init(int nonrandom_start_idx)
     return;
 } // tooldata_add_init()
 
-int tooldata_read_entry(const char *input_line,
-                        char *ttcomments[])
+int tooldata_read_entry(const char *input_line)
 {
     char work_line[CANON_TOOL_ENTRY_LEN];
     const char *token;
@@ -82,6 +82,7 @@ int tooldata_read_entry(const char *input_line,
         fprintf(stderr,"!!! PROBLEM no init %s\n",__FILE__);
         return -1;
     }
+    if (input_line[0] == ';') {return 0;} //ignore leading ';'
     strcpy(work_line, input_line);
 
     CANON_TOOL_TABLE empty = tooldata_entry_init();
@@ -192,6 +193,14 @@ int tooldata_read_entry(const char *input_line,
 
     if (valid) {
         CANON_TOOL_TABLE tdata = tooldata_entry_init();
+        // verify no prior tool in pocket
+        if (tooldata_get(&tdata,idx) != IDX_OK) { UNEXPECTED_MSG; }
+        if (is_random_toolchanger && tdata.toolno != -1) {
+            fprintf(stderr,"WARNING: Attempt to assign multiple toolno.s to pocket %d\n",realpocket);
+            fprintf(stderr,"         %s %s()\n",__FILE__,__FUNCTION__);
+            fprintf(stderr,"    WAS: pocket=%3d toolno=%3d\n",tdata.pocketno,tdata.toolno);
+            fprintf(stderr,"     IS: pocket=%3d toolno=%3d\n",realpocket,toolno);
+        }
         tdata.toolno      = toolno;
         tdata.pocketno    = realpocket;
         tdata.offset      = offset;
@@ -199,11 +208,20 @@ int tooldata_read_entry(const char *input_line,
         tdata.frontangle  = frontangle;
         tdata.backangle   = backangle;
         tdata.orientation = orientation;
+        if (comment) {
+            strncpy(tdata.comment,comment,CANON_TOOL_COMMENT_SIZE-1);
+            tdata.comment[CANON_TOOL_COMMENT_SIZE-1] = 0;
+            if (strlen(comment) > (CANON_TOOL_COMMENT_SIZE-1) ) {
+                fprintf(stderr,"%s():comment for toolno %d truncated to %d chars:\n   <%s>\n"
+                       ,__FUNCTION__
+                       ,tdata.toolno
+                       ,CANON_TOOL_COMMENT_SIZE-1
+                       ,tdata.comment
+                       );
+            }
+        }
         if (tooldata_put(tdata,idx) == IDX_FAIL) {
             UNEXPECTED_MSG;
-        }
-        if (ttcomments && comment) {
-             strcpy(ttcomments[idx], comment);
         }
     } else {
          return -1;
@@ -212,8 +230,8 @@ int tooldata_read_entry(const char *input_line,
 } // tooldata_read_entry()
 
 void tooldata_format_toolline (int idx,
+                               bool ignore_zero_values,
                                CANON_TOOL_TABLE tdata,
-                               char * ttcomments[],
                                char formatted_line[CANON_TOOL_ENTRY_LEN]
                                )
 {
@@ -222,33 +240,43 @@ void tooldata_format_toolline (int idx,
             ,tdata.toolno
             ,is_random_toolchanger ? idx : tdata.pocketno);
     strncat(formatted_line,tmp,CANON_TOOL_ENTRY_LEN-1);
-#define ITEM(item,fmt) if (tdata.item) { \
-                          snprintf(tmp,sizeof(tmp),fmt,tdata.item); \
-                          strncat(formatted_line,tmp,CANON_TOOL_ENTRY_LEN-1); \
-                       }
-    ITEM(diameter,       " D%+f");
-    ITEM(offset.tran.x,  " X%+f");
-    ITEM(offset.tran.y,  " Y%+f");
-    ITEM(offset.tran.z,  " Z%+f");
-    ITEM(offset.a,       " A%+f");
-    ITEM(offset.b,       " B%+f");
-    ITEM(offset.c,       " C%+f");
-    ITEM(offset.u,       " U%+f");
-    ITEM(offset.v,       " V%+f");
-    ITEM(offset.w,       " W%+f");
-    ITEM(frontangle,     " I%+f");
-    ITEM(backangle,      " J%+f");
-    ITEM(orientation,    " Q%d" );
-#undef ITEM
-    if (ttcomments) {  //ignore if nil pointer
-       snprintf(tmp,sizeof(tmp)," ;%s\n",ttcomments[idx]);
-       strncat(formatted_line,tmp,CANON_TOOL_ENTRY_LEN-1);
-    }
+// format zero float values as %.0f for brevity
+#define F_ITEM(item,letter) if (!ignore_zero_values || tdata.item) { \
+                                if (tdata.item) { \
+                                    snprintf(tmp,sizeof(tmp)," " letter "%+f", tdata.item); \
+                                } else { \
+                                    snprintf(tmp,sizeof(tmp)," " letter "%.0f",tdata.item); \
+                                } \
+                                strncat(formatted_line,tmp,CANON_TOOL_ENTRY_LEN-1); \
+                            }
+#define I_ITEM(item,letter) if (!ignore_zero_values || tdata.item) { \
+                                snprintf(tmp,sizeof(tmp)," " letter "%d",tdata.item); \
+                                strncat(formatted_line,tmp,CANON_TOOL_ENTRY_LEN-1); \
+                            }
+
+    F_ITEM(diameter,       "D");
+    F_ITEM(offset.tran.x,  "X");
+    F_ITEM(offset.tran.y,  "Y");
+    F_ITEM(offset.tran.z,  "Z");
+    F_ITEM(offset.a,       "A");
+    F_ITEM(offset.b,       "B");
+    F_ITEM(offset.c,       "C");
+    F_ITEM(offset.u,       "U");
+    F_ITEM(offset.v,       "V");
+    F_ITEM(offset.w,       "W");
+    F_ITEM(frontangle,     "I");
+    F_ITEM(backangle,      "J");
+    I_ITEM(orientation,    "Q");
+#undef F_ITEM
+#undef I_ITEM
+    if (tdata.comment[0]) {
+        snprintf(tmp,sizeof(tmp)," ;%s\n",tdata.comment); \
+        strncat(formatted_line,tmp,CANON_TOOL_ENTRY_LEN-1); \
+    } 
     return;
 } // tooldata_format_toolline()
 
-int tooldata_load(const char *filename,
-                  char *ttcomments[])
+int tooldata_load(const char *filename)
 {
     FILE *fp;
     char input_line[CANON_TOOL_ENTRY_LEN];
@@ -268,10 +296,6 @@ int tooldata_load(const char *filename,
 
     // clear out tool table
     // (Set vars to indicate no tool in pocket):
-    int  idx;
-    for (idx = 0; idx < CANON_POCKETS_MAX; idx++) {
-        if(ttcomments) ttcomments[idx][0] = '\0';
-    }
     tooldata_reset();
 
     // open tool table file
@@ -298,7 +322,7 @@ int tooldata_load(const char *filename,
         strcpy(orig_line, input_line);
 
         // parse and store one line from tool table file
-        int entry_idx = tooldata_read_entry(input_line, ttcomments);
+        int entry_idx = tooldata_read_entry(input_line);
         if (entry_idx <0) {
             printf("File: %s Unrecognized line skipped:\n    %s",filename, orig_line);
             continue;
@@ -326,7 +350,7 @@ int tooldata_load(const char *filename,
     return 0;
 } // tooldata_load()
 
-static void write_tool_line(FILE* fp,int idx,char *ttcomments[])
+static void write_tool_line(FILE* fp,int idx)
 {
     CANON_TOOL_TABLE tdata;
     if (tooldata_get(&tdata,idx) != IDX_OK) {return;}
@@ -336,14 +360,15 @@ static void write_tool_line(FILE* fp,int idx,char *ttcomments[])
 
     if (tdata.toolno != -1) {
         char theline[CANON_TOOL_ENTRY_LEN] = {0};
-        tooldata_format_toolline (idx,tdata,ttcomments,theline);
+        tooldata_format_toolline (idx,
+                                  1, // ignore_zero_values
+                                  tdata,theline);
         fprintf(fp,"%s",theline);
     }
     return;
 } // write_tool_line()
 
-int tooldata_save(const char *filename,
-                  char *ttcomments[CANON_POCKETS_MAX])
+int tooldata_save(const char *filename)
 {
     int idx;
     FILE *fp;
@@ -366,11 +391,11 @@ int tooldata_save(const char *filename,
 
     if (db_mode == DB_ACTIVE) {
         int spindle_idx = 0;
-        write_tool_line(fp,spindle_idx,ttcomments);
+        write_tool_line(fp,spindle_idx);
     } else {
         start_idx = is_random_toolchanger ? 0 : 1;
         for (idx = start_idx; idx < CANON_POCKETS_MAX; idx++) {
-            write_tool_line(fp,idx,ttcomments);
+            write_tool_line(fp,idx);
         }
     }
     fclose(fp);

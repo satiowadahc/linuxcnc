@@ -24,7 +24,7 @@ parser Hal:
     token END: ";;"
     token PARAMDIRECTION: "rw|r"
     token PINDIRECTION: "in|out|io"
-    token TYPE: "float|bit|signed|unsigned|u32|s32"
+    token TYPE: "float|bit|signed|unsigned|u32|s32|u64|s64|port"
     token NAME: "[a-zA-Z_][a-zA-Z0-9_]*"
     token STARREDNAME: "[*]*[a-zA-Z_][a-zA-Z0-9_]*"
     token HALNAME: "[#a-zA-Z_][-#a-zA-Z0-9_.]*"
@@ -47,6 +47,7 @@ parser Hal:
       | "see_also" String ";"   {{ see_also(String) }}
       | "notes" String ";"   {{ notes(String) }}
       | "description" String ";"   {{ description(String) }}
+      | "examples" String ";"   {{ examples(String) }}
       | "license" String ";"   {{ license(String) }}
       | "author" String ";"   {{ author(String) }}
       | "include" Header ";"   {{ include(Header) }}
@@ -149,7 +150,7 @@ deprmap = {'s32': 'signed', 'u32': 'unsigned'}
 deprecated = ['s32', 'u32']
 
 def initialize():
-    global functions, params, pins, options, comp_name, names, docs, variables
+    global functions, params, pins, comp_name, names, docs, variables
     global modparams, includes
 
     functions = []; params = []; pins = []; options = {}; variables = []
@@ -177,6 +178,9 @@ def comp(name, doc):
 
 def description(doc):
     docs.append(('descr', doc));
+
+def examples(doc):
+    docs.append(('examples', doc));
 
 def license(doc):
     docs.append(('license', doc));
@@ -330,24 +334,24 @@ static int comp_id;
     for name, type, array, dir, value, personality in pins:
         if array:
             if isinstance(array, tuple): array = array[0]
-            print("    hal_%s_t *%s[%s];" % (type, to_c(name), array), file=f)
+            print("    hal_%s_t *%s_p[%s];" % (type, to_c(name), array), file=f)
         else:
-            print("    hal_%s_t *%s;" % (type, to_c(name)), file=f)
+            print("    hal_%s_t *%s_p;" % (type, to_c(name)), file=f)
         names[name] = 1
 
     for name, type, array, dir, value, personality in params:
         if array:
             if isinstance(array, tuple): array = array[0]
-            print("    hal_%s_t %s[%s];" % (type, to_c(name), array), file=f)
+            print("    hal_%s_t %s_p[%s];" % (type, to_c(name), array), file=f)
         else:
-            print("    hal_%s_t %s;" % (type, to_c(name)), file=f)
+            print("    hal_%s_t %s_p;" % (type, to_c(name)), file=f)
         names[name] = 1
 
     for type, name, array, value in variables:
         if array:
-            print("    %s %s[%d];\n" % (type, name, array), file=f)
+            print("    %s %s_p[%d];\n" % (type, name, array), file=f)
         else:
-            print("    %s %s;\n" % (type, name), file=f)
+            print("    %s %s_p;\n" % (type, name), file=f)
     if has_data:
         print("    void *_data;", file=f)
 
@@ -418,20 +422,20 @@ static int comp_id;
                 print("    }", file=f)
             else: cnt = array
             print("    for(j=0; j < (%s); j++) {" % cnt, file=f)
-            print("        r = hal_pin_%s_newf(%s, &(inst->%s[j]), comp_id," % (
+            print("        r = hal_pin_%s_newf(%s, &(inst->%s_p[j]), comp_id," % (
                 type, dirmap[dir], to_c(name)), file=f)
             print("            \"%%s%s\", prefix, j);" % to_hal("." + name), file=f)
             print("        if(r != 0) return r;", file=f)
             if value is not None:
-                print("    *(inst->%s[j]) = %s;" % (to_c(name), value), file=f)
+                print("    *(inst->%s_p[j]) = %s;" % (to_c(name), value), file=f)
             print("    }", file=f)
         else:
-            print("    r = hal_pin_%s_newf(%s, &(inst->%s), comp_id," % (
+            print("    r = hal_pin_%s_newf(%s, &(inst->%s_p), comp_id," % (
                 type, dirmap[dir], to_c(name)), file=f)
             print("        \"%%s%s\", prefix);" % to_hal("." + name), file=f)
             print("    if(r != 0) return r;", file=f)
             if value is not None:
-                print("    *(inst->%s) = %s;" % (to_c(name), value), file=f)
+                print("    *(inst->%s_p) = %s;" % (to_c(name), value), file=f)
         if personality:
             print("}", file=f)
 
@@ -449,19 +453,19 @@ static int comp_id;
                 print("    }", file=f)
             else: cnt = array
             print("    for(j=0; j < (%s); j++) {" % cnt, file=f)
-            print("        r = hal_param_%s_newf(%s, &(inst->%s[j]), comp_id," % (
+            print("        r = hal_param_%s_newf(%s, &(inst->%s_p[j]), comp_id," % (
                 type, dirmap[dir], to_c(name)), file=f)
             print("            \"%%s%s\", prefix, j);" % to_hal("." + name), file=f)
             print("        if(r != 0) return r;", file=f)
             if value is not None:
-                print("    inst->%s[j] = %s;" % (to_c(name), value), file=f)
+                print("    inst->%s_p[j] = %s;" % (to_c(name), value), file=f)
             print("    }", file=f)
         else:
-            print("    r = hal_param_%s_newf(%s, &(inst->%s), comp_id," % (
+            print("    r = hal_param_%s_newf(%s, &(inst->%s_p), comp_id," % (
                 type, dirmap[dir], to_c(name)), file=f)
             print("        \"%%s%s\", prefix);" % to_hal("." + name), file=f)
             if value is not None:
-                print("    inst->%s = %s;" % (to_c(name), value), file=f)
+                print("    inst->%s_p = %s;" % (to_c(name), value), file=f)
             print("    if(r != 0) return r;", file=f)
         if personality:
             print("}", file=f)
@@ -470,10 +474,10 @@ static int comp_id;
         if value is None: continue
         if array:
             print("    for(j=0; j < %s; j++) {" % array, file=f)
-            print("        inst->%s[j] = %s;" % (name, value), file=f)
+            print("        inst->%s_p[j] = %s;" % (name, value), file=f)
             print("    }", file=f)
         else:
-            print("    inst->%s = %s;" % (name, value), file=f)
+            print("    inst->%s_p = %s;" % (name, value), file=f)
 
     for name, fp in functions:
         print("    rtapi_snprintf(buf, sizeof(buf), \"%%s%s\", prefix);"\
@@ -512,7 +516,7 @@ static int comp_id;
             print("RTAPI_MP_ARRAY_INT(personality, %d, \"personality of each %s\");" %(MAX_PERSONALITIES,comp_name), file=f)
 
             # Return personality value.
-            # If requested index excedes MAX_PERSONALITIES, use modulo indexing and give message
+            # If requested index exceeds MAX_PERSONALITIES, use modulo indexing and give message
             print("""
             static int p_value(char* cname, char *name, int idx) {
                 int ans = personality[idx%%%d];
@@ -723,27 +727,30 @@ int __comp_parse_names(int *argc, char **argv) {
         print("#define fperiod (period * 1e-9)", file=f)
         for name, type, array, dir, value, personality in pins:
             print("#undef %s" % to_c(name), file=f)
+            print("#undef %s_ptr" % to_c(name), file=f)
             if array:
+                print("#define %s_ptr(i) (__comp_inst->%s_p[i])" % (to_c(name), to_c(name)), file=f)
                 if dir == 'in':
-                    print("#define %s(i) (0+*(__comp_inst->%s[i]))" % (to_c(name), to_c(name)), file=f)
+                    print("#define %s(i) (0+*(__comp_inst->%s_p[i]))" % (to_c(name), to_c(name)), file=f)
                 else:
-                    print("#define %s(i) (*(__comp_inst->%s[i]))" % (to_c(name), to_c(name)), file=f)
+                    print("#define %s(i) (*(__comp_inst->%s_p[i]))" % (to_c(name), to_c(name)), file=f)
             else:
+                print("#define %s_ptr (__comp_inst->%s_p)" % (to_c(name), to_c(name)), file=f)
                 if dir == 'in':
-                    print("#define %s (0+*__comp_inst->%s)" % (to_c(name), to_c(name)), file=f)
+                    print("#define %s (0+*__comp_inst->%s_p)" % (to_c(name), to_c(name)), file=f)
                 else:
-                    print("#define %s (*__comp_inst->%s)" % (to_c(name), to_c(name)), file=f)
+                    print("#define %s (*__comp_inst->%s_p)" % (to_c(name), to_c(name)), file=f)
         for name, type, array, dir, value, personality in params:
             print("#undef %s" % to_c(name), file=f)
             if array:
-                print("#define %s(i) (__comp_inst->%s[i])" % (to_c(name), to_c(name)), file=f)
+                print("#define %s(i) (__comp_inst->%s_p[i])" % (to_c(name), to_c(name)), file=f)
             else:
-                print("#define %s (__comp_inst->%s)" % (to_c(name), to_c(name)), file=f)
+                print("#define %s (__comp_inst->%s_p)" % (to_c(name), to_c(name)), file=f)
 
         for type, name, array, value in variables:
             name = name.replace("*", "")
             print("#undef %s" % name, file=f)
-            print("#define %s (__comp_inst->%s)" % (name, name), file=f)
+            print("#define %s (__comp_inst->%s_p)" % (name, name), file=f)
 
         if has_data:
             print("#undef data", file=f)
@@ -791,7 +798,9 @@ def build_usr(tempdir, filename, mode, origfilename):
     makefile = os.path.join(tempdir, "Makefile")
     f = open(makefile, "w")
     print("%s: %s" % (binname, filename), file=f)
-    print("\t$(CC) -I$(EMC2_HOME)/include -I/usr/include/linuxcnc -URTAPI -U__MODULE__ -DULAPI -Os %s -o $@ $< -Wl,-rpath,$(LIBDIR) -L$(LIBDIR) -llinuxcnchal %s" % (
+    print("\t$(CC) -I%s -I$(EMC2_HOME)/include -I/usr/include/linuxcnc -URTAPI -U__MODULE__ -DULAPI -Os %s -o $@ $< -Wl,-rpath,$(LIBDIR) -L$(LIBDIR) -llinuxcnchal %s" % (
+
+        os.path.abspath(os.path.dirname(origfilename)),
         options.get("extra_compile_args", ""),
         options.get("extra_link_args", "")), file=f)
     print("include %s" % find_modinc(), file=f)
@@ -880,10 +889,18 @@ def document(filename, outfilename):
         if personality: has_personality = True
         if isinstance(array, tuple): has_personality = True
 
+    print("""
+.\\"*******************************************************************
+.\\"
+.\\" This file was extracted from %s using halcompile.g.
+.\\" Modify the source file.
+.\\"
+.\\"*******************************************************************
+""" % filename, file=f)
+
     print(".TH %s \"%s\" \"%s\" \"LinuxCNC Documentation\" \"HAL Component\"" % (
         comp_name.upper(), "1" if options.get("userspace") else "9",
         time.strftime("%F")), file=f)
-    print(".de TQ\n.br\n.ns\n.TP \\\\$1\n..\n", file=f)
 
     print(".SH NAME\n", file=f)
     doc = finddoc('component')    
@@ -907,7 +924,11 @@ def document(filename, outfilename):
             print(rest, file=f)
         else:
             print(".HP", file=f)
-            if options.get("singleton") or options.get("count_function"):
+            if options.get("homemod"):
+                print("Custom Homing module loaded with \\fB[EMCMOT]HOMEMOD=%s\\fR"%comp_name, file=f)
+            elif options.get("tpmod"):
+                print("Custom Trajectory Planning module loaded with \\fB[TRAJ]TPMOD=%s\\fR"%comp_name, file=f)
+            elif options.get("singleton") or options.get("count_function"):
                 if has_personality:
                     print(".B loadrt %s personality=\\fIP\\fB" % comp_name, end='', file=f)
                 else:
@@ -978,7 +999,7 @@ def document(filename, outfilename):
             print(doc, file=f)
             lead = ".TP"
         else:
-            lead = ".TQ"
+            lead = ".br\n.ns\n.TP"
 
     lead = ".TP"
     if params:
@@ -1003,7 +1024,12 @@ def document(filename, outfilename):
                 print(doc, file=f)
                 lead = ".TP"
             else:
-                lead = ".TQ"
+                lead = ".br\n.ns\n.TP"
+
+    doc = finddoc('examples')
+    if doc and doc[1]:
+        print(".SH EXAMPLES\n", file=f)
+        print("%s" % doc[1], file=f)
 
     doc = finddoc('see_also')    
     if doc and doc[1]:
@@ -1041,6 +1067,9 @@ def process(filename, mode, outfilename):
             raise SystemExit("Component name (%s) does not match filename (%s)" % (comp_name, base_name))
 
         f = open(outfilename, "w")
+
+        if options.get("homemod"): options["singleton"] = 1
+        if options.get("tpmod"):   options["singleton"] = 1
 
         if options.get("userinit") and not options.get("userspace"):
             print("Warning: comp '%s' sets 'userinit' without 'userspace', ignoring" % filename, file=sys.stderr)
@@ -1094,6 +1123,13 @@ Usage:
 
 Option to set maximum 'personalities' items:
     --personalities=integer_value   (default is %(dflt)d)
+
+Options to add compile and link flags (only for userspace, only for .c files)
+    --extra-compile-args="-I/usr/include/..."
+    --extra-link-args="-l..."
+
+Do not use [sudo] for RIP installation.
+
 """ % {'name': os.path.basename(sys.argv[0]),'dflt':MAX_PERSONALITIES})
     raise SystemExit(exitval)
 
@@ -1107,15 +1143,17 @@ def main():
     mode = PREPROCESS
     outfile = None
     userspace = False
+    global options
+    options = {}
     try:
         opts, args = getopt.getopt(sys.argv[1:], "Uluijcpdo:h?P:",
                            ['unix', 'install', 'compile', 'preprocess', 'outfile=',
                             'document', 'help', 'userspace', 'install-doc',
                             'view-doc', 'require-license', 'print-modinc',
-                            'personalities='])
+                            'personalities=', "extra-compile-args=",
+                            'extra-link-args='])
     except getopt.GetoptError:
         usage(1)
-
     for k, v in opts:
         if k in ("-U", "--unix"):
             require_unix_line_endings = True
@@ -1147,6 +1185,10 @@ def main():
                 print("MAX_PERSONALITIES=%d"%(MAX_PERSONALITIES))
             except Exception as detail:
                 raise SystemExit("Bad value for -P (--personalities)=",v,"\n",detail)
+        if k in ("--extra-compile-args"):
+            option("extra_compile_args", v)
+        if k in ("--extra-link-args"):
+            option("extra_link_args", v)
         if k in ("-?", "-h", "--help"):
             usage(0)
 

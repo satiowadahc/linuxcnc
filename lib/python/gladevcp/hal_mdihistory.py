@@ -32,6 +32,15 @@ else:
 
 import linuxcnc
 from hal_glib import GStat
+from gladevcp.core import Info
+
+GSTAT = GStat()
+INFO = Info()
+
+# Set up logging
+from qtvcp import logger
+LOG = logger.getLogger(__name__)
+# LOG.setLevel(logger.INFO) # One of DEBUG, INFO, WARNING, ERROR, CRITICAL, VERBOSE
 
 # path to TCL for external programs eg. halshow
 try:
@@ -39,7 +48,9 @@ try:
 except:
     pass
 
-class EMC_MDIHistory(Gtk.VBox, _EMC_ActionBase):
+import gettext             # to extract the strings to be translated
+
+class EMC_MDIHistory(Gtk.Box, _EMC_ActionBase):
     '''
     EMC_MDIHistory will store each MDI command to a file on your hard drive
     and display the grabbed commands in a treeview so they can be used again
@@ -62,15 +73,11 @@ class EMC_MDIHistory(Gtk.VBox, _EMC_ActionBase):
                    }
 
     def __init__(self, *a, **kw):
-        Gtk.VBox.__init__(self, *a, **kw)
+        Gtk.Box.__init__(self, *a, **kw)
+        self.set_orientation(Gtk.Orientation.VERTICAL)
+
         self.use_double_click = False
-        self.gstat = GStat()
-        # if 'NO_FORCE_HOMING' is true, MDI  commands are allowed before homing.
-        inifile = os.environ.get('INI_FILE_NAME', '/dev/null')
-        self.ini = linuxcnc.ini(inifile)
-        self.no_home_required = int(self.ini.find("TRAJ", "NO_FORCE_HOMING") or 0)
-        path = self.ini.find('DISPLAY', 'MDI_HISTORY_FILE') or '~/.axis_mdi_history'
-        self.filename = os.path.expanduser(path)
+        self.filename = os.path.expanduser(INFO.MDI_HISTORY_PATH)
 
         self.model = Gtk.ListStore(str)
 
@@ -80,7 +87,7 @@ class EMC_MDIHistory(Gtk.VBox, _EMC_ActionBase):
         self.tv.set_model(self.model)
         self.cell = Gtk.CellRendererText()
 
-        self.col = Gtk.TreeViewColumn("Command")
+        self.col = Gtk.TreeViewColumn(_("Command"))
         self.col.pack_start(self.cell, True)
         self.col.add_attribute(self.cell, 'text', 0)
 
@@ -96,7 +103,6 @@ class EMC_MDIHistory(Gtk.VBox, _EMC_ActionBase):
         scroll.props.vscrollbar_policy = Gtk.PolicyType.AUTOMATIC
 
         self.entry = Gtk.Entry()
-        print("Icon from stock")
         self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, "gtk-ok")
         self.entry.modify_font(Pango.FontDescription(self.default_font))
 
@@ -109,13 +115,13 @@ class EMC_MDIHistory(Gtk.VBox, _EMC_ActionBase):
 
         self.pack_start(scroll, True, True, 0)
         self.pack_start(self.entry, False, False, 0)
-        self.gstat.connect('state-off', lambda w: self.set_sensitive(False))
-        self.gstat.connect('state-estop', lambda w: self.set_sensitive(False))
-        self.gstat.connect('interp-idle', lambda w: self.set_sensitive(self.machine_on()))
-        self.gstat.connect('interp-run', lambda w: self.set_sensitive(not self.is_auto_mode()))
-        self.gstat.connect('all-homed', lambda w: self.set_sensitive(self.machine_on()))
+        GSTAT.connect('state-off', lambda w: self.set_sensitive(False))
+        GSTAT.connect('state-estop', lambda w: self.set_sensitive(False))
+        GSTAT.connect('interp-idle', lambda w: self.set_sensitive(self.machine_on()))
+        GSTAT.connect('interp-run', lambda w: self.set_sensitive(not self.is_auto_mode()))
+        GSTAT.connect('all-homed', lambda w: self.set_sensitive(self.machine_on()))
         # this time lambda with two parameters, as not all homed will send also the unhomed joints
-        self.gstat.connect('not-all-homed', lambda w,uj: self.set_sensitive(self.no_home_required) )
+        GSTAT.connect('not-all-homed', lambda w,uj: self.set_sensitive(INFO.NO_HOME_REQUIRED) )
         self.reload()
         self.show_all()
 
@@ -130,12 +136,16 @@ class EMC_MDIHistory(Gtk.VBox, _EMC_ActionBase):
         fp.close()
 
         lines = filter(bool, lines)
+        last = Gtk.TreeIter()
         for l in lines:
-            self.model.append((l,))
-        #path = (len(list(lines))-1,)
-        path = 0 #TODO: breaks the functionality
-        self.tv.scroll_to_cell(path)
-        self.tv.set_cursor(path)
+            last = self.model.append((l,))
+        path = self.model.get_path(last)
+        # if the hal mdi history file is empty, the model is empty and we will get an None iter
+        try:
+            self.tv.scroll_to_cell(path)
+            self.tv.set_cursor(path)
+        except:
+            pass
         self.entry.set_text('')
 
     def submit(self, *a):
@@ -151,7 +161,7 @@ class EMC_MDIHistory(Gtk.VBox, _EMC_ActionBase):
             return
         if not cmd:
             return
-        ensure_mode(self.gstat.stat, self.linuxcnc, linuxcnc.MODE_MDI)
+        ensure_mode(GSTAT.stat, self.linuxcnc, linuxcnc.MODE_MDI)
 
         self.linuxcnc.mdi(cmd)
         self.entry.set_text('')
@@ -263,7 +273,7 @@ class EMC_MDIHistory(Gtk.VBox, _EMC_ActionBase):
         try:
             p = os.popen("tclsh %s/bin/halshow.tcl &" % (TCLPATH))
         except:
-            self.entry.set_text('ERROR loading halshow')
+            self.entry.set_text(_("ERROR loading halshow"))
 
     def _get_iter_last(self, model):
         itr = model.get_iter_first()

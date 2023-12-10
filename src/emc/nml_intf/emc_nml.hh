@@ -14,6 +14,7 @@
 ********************************************************************/
 #ifndef EMC_NML_HH
 #define EMC_NML_HH
+#include "linuxcnc.h"
 #include "emc.hh"
 #include "rcs.hh"
 #include "cmd_msg.hh"
@@ -50,7 +51,7 @@ class EMC_OPERATOR_ERROR:public RCS_CMD_MSG {
 
 /**
  * Send a textual information message to the operator.
- * This is similiar to EMC_OPERATOR_ERROR message except that the messages are
+ * This is similar to EMC_OPERATOR_ERROR message except that the messages are
  * sent in situations not necessarily considered to be errors.
  */
 class EMC_OPERATOR_TEXT:public RCS_CMD_MSG {
@@ -188,7 +189,7 @@ class EMC_JOINT_CMD_MSG:public RCS_CMD_MSG {
 
 /**
  * Set the joint type to linear or angular.
- * Similiar to the JOINT_TYPE field in the ".ini" file.
+ * Similar to the JOINT_TYPE field in the INI file.
  */
 class EMC_JOINT_SET_JOINT:public EMC_JOINT_CMD_MSG {
   public:
@@ -1032,10 +1033,6 @@ class EMC_TRAJ_STAT:public EMC_TRAJ_STAT_MSG {
     double cycleTime;		// cycle time, in seconds
     int joints;			// maximum joint number
     int spindles;			// maximum spindle number
-    union {
-        int deprecated_axes;
-        int axes __attribute__((deprecated));			// maximum axis number
-    };
     int axis_mask;		// mask of axes actually present
     enum EMC_TRAJ_MODE_ENUM mode;	// EMC_TRAJ_MODE_FREE,
     // EMC_TRAJ_MODE_COORD
@@ -1132,7 +1129,7 @@ class EMC_MOTION_SET_AOUT:public EMC_MOTION_CMD_MSG {
     unsigned char index;	// which to set
     double start;		// value at start
     double end;			// value at end
-    unsigned char now;		// wether command is imediate or synched with motion
+    unsigned char now;		// whether command is immediate or synched with motion
 };
 
 class EMC_MOTION_SET_DOUT:public EMC_MOTION_CMD_MSG {
@@ -1147,7 +1144,7 @@ class EMC_MOTION_SET_DOUT:public EMC_MOTION_CMD_MSG {
     unsigned char index;	// which to set
     unsigned char start;	// binary value at start
     unsigned char end;		// binary value at end
-    unsigned char now;		// wether command is imediate or synched with motion
+    unsigned char now;		// whether command is immediate or synched with motion
 };
 
 class EMC_MOTION_ADAPTIVE:public EMC_MOTION_CMD_MSG {
@@ -1231,6 +1228,7 @@ class EMC_MOTION_STAT:public EMC_MOTION_STAT_MSG {
     int external_offsets_applied;
     EmcPose eoffset_pose;
     int numExtraJoints;
+    bool jogging_active;
 };
 
 // declarations for EMC_TASK classes
@@ -1504,6 +1502,7 @@ class EMC_TASK_STAT:public EMC_TASK_STAT_MSG {
     bool input_timeout;		// has a timeout happened on digital input
     char file[LINELEN];
     char command[LINELEN];
+    char ini_filename[LINELEN];
     EmcPose g5x_offset;		// in user units, currently active
     int g5x_index;              // index of active g5x system
     EmcPose g92_offset;		// in user units, currently active
@@ -1667,6 +1666,7 @@ class EMC_TOOL_STAT:public EMC_TOOL_STAT_MSG {
 
     int pocketPrepped;		// idx ready for loading from
     int toolInSpindle;		// tool loaded, 0 is no tool
+    int toolFromPocket;     // tool was loaded from this pocket
 #ifdef TOOL_NML //{
     CANON_TOOL_TABLE toolTable[CANON_POCKETS_MAX];
 #else //}{
@@ -2110,7 +2110,7 @@ class EMC_IO_STAT:public EMC_IO_STAT_MSG {
     double cycleTime;
     int debug;			// copy of EMC_DEBUG global
     int reason;			// to communicate abort/fault cause
-    int fault;                  //  0 on succes, 1 on fault during M6
+    int fault;                  //  0 on success, 1 on fault during M6
     // aggregate of IO-related status classes
     EMC_TOOL_STAT tool;
     EMC_COOLANT_STAT coolant;

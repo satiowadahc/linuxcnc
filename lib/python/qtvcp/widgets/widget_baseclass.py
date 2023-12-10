@@ -43,17 +43,20 @@ class _HalWidgetBase_(object):
         self.__class__.HAL_GCOMP_ = comp
         self.__class__.PATHS_ = path
         self.__class__.QTVCP_INSTANCE_ = window
+        if not window is None:
+            self.__class__.SETTINGS_ = window.settings
         self.__class__._instanceNum += 1
         #print self.__class__._instanceNum >=1
         #print 'comp',comp,self.__class__._instanceNum
 
 
     def hal_init(self, HAL_NAME=None):
+        self.__class__.QTVCP_INSTANCE_.registerHalWidget(self)
         if HAL_NAME is not None:
             self.HAL_NAME_ = str(HAL_NAME)
         else:
             if self.objectName() =='':
-                LOG.warning('No objectName for HAL pin: {}'.format(self))
+                LOG.warning('No objectName or HAL_NAME specified for object: {}'.format(self))
             self.HAL_NAME_ = self.objectName()
         self.QT_OBJECT_ = self
         try:
@@ -73,6 +76,12 @@ class _HalWidgetBase_(object):
     def _designer_init(self):
         """ Child Designer editor plugin initialization functions """
         pass
+
+    def get_full_pinname(self, pin):
+        """ Returns the component and pin name as a combined string """
+        n = self.HAL_GCOMP_.comp.getprefix()
+        p = pin.get_name()
+        return n+'.'+p
 
 # we do this so we can manipulate all instances based on this.
 # we wish to embed variables.

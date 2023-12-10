@@ -6,7 +6,7 @@
 * Author:
 * License: GPL Version 2
 * System: Linux
-*    
+*
 * Copyright (c) 2004 All rights reserved.
 *
 * Last change:
@@ -98,7 +98,7 @@ include an option for suppressing superfluous commands.
 #include "interp_internal.hh"	// interpreter private definitions
 #include "interp_queue.hh"
 #include "rs274ngc_interp.hh"
-
+#include <wordexp.h>
 #include "units.h"
 
 #include <unordered_set>
@@ -134,7 +134,7 @@ Interp::Interp()
   init_named_parameters();  // need this before Python init.
  
   if (!PythonPlugin::instantiate(builtin_modules)) {  // factory
-    Error("Interp ctor: cant instantiate Python plugin");
+    Error("Interp ctor: can\'t instantiate Python plugin");
     return;
   }
 
@@ -276,7 +276,7 @@ Side Effects:
    Calls to canonical machining commands are made.
    The interpreter variables are changed.
    At the end of the program, the file is closed.
-   If using a file, the active G codes and M codes are updated.
+   If using a file, the active G-codes and M codes are updated.
 
 Called By: external programs
 
@@ -315,7 +315,7 @@ int Interp::_execute(const char *command)
   // process control functions -- will skip if skipping
   if ((eblock->o_name != 0) || _setup.mdi_interrupt)  {
       status = convert_control_functions(eblock, &_setup);
-      CHP(status); // relinquish control if INTERP_EXCUTE_FINISH, INTERP_ERROR etc
+      CHP(status); // relinquish control if INTERP_EXECUTE_FINISH, INTERP_ERROR etc
       
       // let MDI code call subroutines.
       // !!!KL not clear what happens if last execution failed while in
@@ -361,7 +361,7 @@ int Interp::_execute(const char *command)
 
   for (n = 0; n < _setup.parameter_occurrence; n++)
   {  // copy parameter settings from parameter buffer into parameter table
-    _setup.parameters[_setup.parameter_numbers[n]]
+    _setup.parameters[_setup.parameter_numbers[n]] 
           = _setup.parameter_values[n];
   }
 
@@ -372,7 +372,7 @@ int Interp::_execute(const char *command)
 
       logDebug("storing param:|%s|", _setup.named_parameters[n]);
       CHP(store_named_param(&_setup, _setup.named_parameters[n],
-                          _setup.named_parameter_values[n]));
+			_setup.named_parameter_values[n]));
   }
   _setup.named_parameter_occurrence = 0;
 
@@ -413,7 +413,7 @@ int Interp::_execute(const char *command)
       // 8. In Auto mode, we do an initial execute(0) to get things going, thereafer
       //   task will do it for us.
       //
-      // 9. When a replacment sub finishes, remap_finished() continues execution of
+      // 9. When a replacement sub finishes, remap_finished() continues execution of
       //   the current remapped block until done.
       //
       if (eblock->remappings.size() > 0) {
@@ -519,7 +519,7 @@ int Interp::_execute(const char *command)
 		      _setup.sub_context[1].filename);
 	  }
       }
-    if ((status != INTERP_OK) &&
+    if ((status != INTERP_OK) && 
         (status != INTERP_EXECUTE_FINISH) && (status != INTERP_EXIT))
       ERP(status);
   } else                        /* blank line is OK */
@@ -853,7 +853,7 @@ int Interp::init()
   _setup.num_spindles = 1;
 
   // default arc radius tolerances
-  // we'll try to override these from the ini file below
+  // we'll try to override these from the INI file below
   _setup.center_arc_radius_tolerance_inch = CENTER_ARC_RADIUS_TOLERANCE_INCH;
   _setup.center_arc_radius_tolerance_mm = CENTER_ARC_RADIUS_TOLERANCE_MM;
 
@@ -1033,7 +1033,7 @@ int Interp::init()
 	      n++;
 	  }
 
-          // if exist and within bounds, apply ini file arc tolerances
+          // if exist and within bounds, apply INI file arc tolerances
           // limiting figures are defined in interp_internal.hh
 
           r = inifile.Find(
@@ -1044,7 +1044,7 @@ int Interp::init()
               "RS274NGC"
           );
           if ((r != IniFile::ERR_NONE) && (r != IniFile::ERR_TAG_NOT_FOUND)) {
-              Error("invalid [RS274NGC]CENTER_ARC_RADIUS_TOLERANCE_INCH in ini file\n");
+              Error("invalid [RS274NGC]CENTER_ARC_RADIUS_TOLERANCE_INCH in INI file\n");
           }
 
           r = inifile.Find(
@@ -1055,15 +1055,15 @@ int Interp::init()
               "RS274NGC"
           );
           if ((r != IniFile::ERR_NONE) && (r != IniFile::ERR_TAG_NOT_FOUND)) {
-              Error("invalid [RS274NGC]CENTER_ARC_RADIUS_TOLERANCE_MM in ini file\n");
+              Error("invalid [RS274NGC]CENTER_ARC_RADIUS_TOLERANCE_MM in INI file\n");
           }
 
-	  // ini file g52/g92 offset persistence default setting
+	  // INI file g52/g92 offset persistence default setting
 	  inifile.Find(&_setup.disable_g92_persistence,
 		       "DISABLE_G92_PERSISTENCE",
 		       "RS274NGC");
 
-	  // ini file m98/m99 subprogram default setting
+	  // INI file m98/m99 subprogram default setting
 	  inifile.Find(&_setup.disable_fanuc_style_sub,
 		       "DISABLE_FANUC_STYLE_SUB",
 		       "RS274NGC");
@@ -1110,7 +1110,7 @@ int Interp::init()
                  _setup.v_origin_offset ,
                  _setup.w_origin_offset);
 
-  // Restore G92 offset if DISABLE_G92_PERSISTENCE not set in .ini file.
+  // Restore G92 offset if DISABLE_G92_PERSISTENCE not set in INI file.
   // This can't be done with the static _required_parameters[], where
   // the .vars file contents would reflect that setting, so instead
   // edit the restored parameters here.
@@ -1167,7 +1167,7 @@ int Interp::init()
   _setup.arc_not_allowed = false;
   _setup.cycle_il_flag = false;
   _setup.distance_mode = MODE_ABSOLUTE;
-  _setup.ijk_distance_mode = MODE_INCREMENTAL;  // backwards compatability
+  _setup.ijk_distance_mode = MODE_INCREMENTAL;  // backwards compatibility
   _setup.feed_mode = UNITS_PER_MINUTE;
 //_setup.feed_override set in Interp::synch
 //_setup.feed_rate set in Interp::synch
@@ -1265,7 +1265,7 @@ int Interp::init()
       catch (const bp::error_already_set&) {
 	  std::string exception_msg;
 	  bool unexpected = false;
-	  // KeyError is ok - this means the namedparams module doesnt exist
+	  // KeyError is ok - this means the namedparams module doesn't exist
 	  if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
 	      // something else, strange
 	      exception_msg = handle_pyerror();
@@ -1401,6 +1401,9 @@ int Interp::open(const char *filename) //!< string: the name of the input NC-pro
   CHKS((strlen(filename) > (LINELEN - 1)), NCE_FILE_NAME_TOO_LONG);
   _setup.file_pointer = fopen(filename, "r");
   CHKS((_setup.file_pointer == NULL), NCE_UNABLE_TO_OPEN_FILE, filename);
+
+	Interp::nurbs_reset_global_variables();	// jf 
+
   line = _setup.linetext;
   for (index = -1; index == -1;) {      /* skip blank lines */
     CHKS((fgets(line, LINELEN, _setup.file_pointer) ==
@@ -1510,7 +1513,7 @@ int Interp::_read(const char *command)  //!< may be NULL or a string to read
   // this input reading code is in the wrong place. It should be executed
   // in sync(), not here. This would make correct parameter values available 
   // without doing a read() (e.g. from Python).
-  // Unfortunately synch() isnt called in preview (gcodemodule)
+  // Unfortunately synch() isn't called in preview (gcodemodule)
 
 #if 0
   if (_setup.probe_flag) {
@@ -1552,7 +1555,7 @@ int Interp::_read(const char *command)  //!< may be NULL or a string to read
   // of times. So they need to be called again post-sync and post-read-input possibly several times.
   // 
   // the task readahead logic assumes a block execution may result in a single INTERP_EXECUTE_FINISH
-  // and readahead is started therafter immediately. Modifying the readahead logic would be a massive
+  // and readahead is started thereafter immediately. Modifying the readahead logic would be a massive
   // change. Therefore we use the trick to suppress reading the next block as required, which means
   // we will get several calls to execute() in a row which are used to finish the handlers. This is
   // needed for remapped codes which might involve up to three Python handlers, and Python oword subs.
@@ -2078,7 +2081,7 @@ interpreter.
 
 Returned Value: none
 
-Side Effects: copies active G codes into the codes array
+Side Effects: copies active G-codes into the codes array
 
 Called By: external programs
 
@@ -2145,7 +2148,7 @@ void Interp::active_settings(double *settings) //!< array of settings to copy in
 
 /**
  * Unpack state information from a motion line tag into
- * TASK_STAT-style arrays of G/M Codes.
+ * TASK_STAT-style arrays of G-/M-Codes.
  *
  * This method allows us to keep the existing infrastructure for g
  * code status / state storage intact.
@@ -2170,7 +2173,7 @@ int Interp::active_modes(int *g_codes,
     g_codes[3] = tag.fields[GM_FIELD_PLANE];
     g_codes[4] = tag.fields[GM_FIELD_CUTTER_COMP];
 
-    // Unpack flags into appropriate G code equivalents
+    // Unpack flags into appropriate G-code equivalents
     g_codes[5] = tag.flags[GM_FLAG_UNITS] ? G_20 : G_21;
     g_codes[6] = tag.flags[GM_FLAG_DISTANCE_MODE] ? G_90 : G_91;
     g_codes[7] = tag.flags[GM_FLAG_FEED_INVERSE_TIME] ? G_93 :
@@ -2504,10 +2507,11 @@ int Interp::ini_load(const char *filename)
         logDebug("did not find PARAMETER_FILE");
     }
     SET_PARAMETER_FILE_NAME(parameter_file_name);
-    CHKS(strlen(parameter_file_name) > 0, _("Parameter file name is missing"));
 
     // close it
     inifile.Close();
+
+    CHKS((strlen(parameter_file_name) == 0), _("Parameter file name is missing"));
 
     return 0;
 }
@@ -2567,6 +2571,14 @@ int Interp::set_tool_parameters()
     default_tool_parameters();
     return 0;
   }
+// test to examine tool comment field for current tool:
+// #define TOOL_COMMENT_SHOW
+#ifdef  TOOL_COMMENT_SHOW //{
+    fprintf(stderr,"%s %s toolno=%d comment=%s\n",
+           __FILE__,__FUNCTION__,
+           _setup.tool_table[0].toolno,
+           _setup.tool_table[0].comment);
+#endif //}
   _setup.parameters[5400] = _setup.tool_table[0].toolno;
   _setup.parameters[5401] = _setup.tool_table[0].offset.tran.x;
   _setup.parameters[5402] = _setup.tool_table[0].offset.tran.y;
@@ -2590,7 +2602,7 @@ int Interp::enter_remap(void)
     _setup.remap_level++;
     if (_setup.remap_level == MAX_NESTED_REMAPS) {
 	_setup.remap_level = 0;
-	ERS("maximum nesting of remapped blocks execeeded");
+	ERS("maximum nesting of remapped blocks exceeded");
     }
 
     // push onto block stack
@@ -2650,6 +2662,12 @@ int Interp::on_abort(int reason, const char *message)
 
 // spun out from interp_o_word so we can use it to test ngc file accessibility during
 // config file parsing (REMAP... ngc=<basename>)
+// Will expand ~ to user's home path
+// searches this sequence until it finds a match:
+// 1) checks if path is already the full path
+// 2) tries adding the INI defined program prefix to path
+// 3) tries adding the INI defined subroutine prefix to path
+// 4) tries adding the INI defined whizard prefix to path
 FILE *Interp::find_ngc_file(setup_pointer settings,const char *basename, char *foundhere )
 {
     FILE *newFP = NULL;
@@ -2657,48 +2675,83 @@ FILE *Interp::find_ngc_file(setup_pointer settings,const char *basename, char *f
     char newFileName[PATH_MAX+1];
     char foundPlace[PATH_MAX+1];
     int  dct;
+    wordexp_t exp_result;
 
-    // look for a new file
-    snprintf(tmpFileName, sizeof(tmpFileName), "%s.ngc", basename);
+    // #1 check if this is the full path already
 
-    // find subroutine by search: program_prefix, subroutines, wizard_root
-    // use first file found
+    // expand user path
+    wordexp(basename, &exp_result, 0);
+    // add .ngc to expanded path
+    snprintf(tmpFileName, sizeof(tmpFileName), "%s.ngc", exp_result.we_wordv[0]);
 
-    // first look in the program_prefix place
-    size_t chk = snprintf(newFileName, sizeof(newFileName), "%s/%s", settings->program_prefix, tmpFileName);
+    // copy to newFileName - in case this is the one...
+    size_t chk = snprintf(newFileName, sizeof(newFileName), "%s", tmpFileName);
+
+    // found a file we can open?
     if (chk < sizeof(newFileName)){
         newFP = fopen(newFileName, "r");
     }
 
-    // then look in the subroutines place
+    // #2 then look in the program_prefix place
     if (!newFP) {
-	for (dct = 0; dct < MAX_SUB_DIRS; dct++) {
-	    if (!settings->subroutines[dct])
-		continue;
-	    chk = snprintf(newFileName, sizeof(newFileName), "%s/%s", settings->subroutines[dct], tmpFileName);
-        if (chk <  sizeof(newFileName)){
-            newFP = fopen(newFileName, "r");
-            if (newFP) {
-            // logOword("fopen: |%s|", newFileName);
-            break; // use first occurrence in dir search
-            }
-	    }
-	}
-    }
-    // if not found, search the wizard tree
-    if (!newFP) {
-	int ret;
-	ret = findFile(settings->wizard_root, tmpFileName, foundPlace);
 
-	if (INTERP_OK == ret) {
-	    // create the long name
-	    chk = snprintf(newFileName, sizeof(newFileName), "%s/%s",
-		    foundPlace, tmpFileName);
-	    if (chk < sizeof(newFileName)) newFP = fopen(newFileName, "r");
-	}
+        // expand '~' into user path
+        wordexp(settings->program_prefix, &exp_result, 0);
+        chk = snprintf(newFileName, sizeof(newFileName), "%s/%s", exp_result.we_wordv[0], tmpFileName);
+
+         // found a file we can open?
+        if (chk < sizeof(newFileName)){
+            newFP = fopen(newFileName, "r");
+        }
     }
+    
+    // #3 then look in the list of subroutines prefixes
+    if (!newFP) {
+        for (dct = 0; dct < MAX_SUB_DIRS; dct++) {
+            if (!settings->subroutines[dct])
+            continue;
+
+            // expand '~' into user path
+            wordexp(settings->subroutines[dct], &exp_result, 0);
+            chk = snprintf(newFileName, sizeof(newFileName), "%s/%s", exp_result.we_wordv[0], tmpFileName);
+
+            // found a file we can open?
+            if (chk <  sizeof(newFileName)){
+                newFP = fopen(newFileName, "r");
+                if (newFP) {
+                // logOword("fopen: |%s|", newFileName);
+                break; // use first occurrence in dir search
+                }
+            }
+         }
+    }
+
+    // #4 if still not found, search the wizard tree
+    // Wiz directory already expands the '~' to user path
+    if (!newFP) {
+        int ret;
+
+        // walks the directory hierarchy ? 
+        ret = findFile(settings->wizard_root, tmpFileName, foundPlace);
+
+        if (INTERP_OK == ret) {
+            // create the long name
+            chk = snprintf(newFileName, sizeof(newFileName), "%s/%s",
+            foundPlace, tmpFileName);
+
+            // found a file we can open?
+            if (chk < sizeof(newFileName)){
+            newFP = fopen(newFileName, "r");
+            }
+        }
+    }
+
+    // pass what we found
     if (foundhere && (newFP != NULL)) 
-	strcpy(foundhere, newFileName);
+        strcpy(foundhere, newFileName);
+
+    // Not sure this is needed but the internet told me
+    wordfree(&exp_result);
     return newFP;
 }
 

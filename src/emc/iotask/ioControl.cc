@@ -33,7 +33,7 @@
 *  only if UEO, EEST are closed when URE gets strobed.
 *  If any of UEO (user requested stop) or EEST (external estop) have been
 *  opened, then EEI will open as well.
-*  After restoring normal condition (UEO and EEST closed), an aditional
+*  After restoring normal condition (UEO and EEST closed), an additional
 *  URE (user-request-enable) is needed, this is either sent by the GUI
 *  (using the EMC_AUX_ESTOP_RESET NML message), or by a hardware button
 *  connected to the ladder driving URE.
@@ -81,7 +81,6 @@ static EMC_IO_STAT emcioStatus;
 static NML *emcErrorBuffer = 0;
 
 static char io_tool_table_file[LINELEN] = "tool.tbl"; // default
-static char *ttcomments[CANON_POCKETS_MAX];
 
 static int      random_toolchanger  = 0;
 static tooldb_t io_db_mode          = DB_NOTUSED;
@@ -102,6 +101,7 @@ struct iocontrol_str {
     hal_bit_t *tool_prepare;        /* output, pin that notifies HAL it needs to prepare a tool */
     hal_s32_t *tool_prep_pocket;/* output, pin that holds the pocketno for the tool table entry matching the tool to be prepared,
                                    only valid when tool-prepare=TRUE */
+    hal_s32_t *tool_from_pocket;/* output, pin indicating pocket current load tool retrieved from*/
     hal_s32_t *tool_prep_index; /* output, pin for internal index (idx) of prepped tool above */
     hal_s32_t *tool_prep_number;/* output, pin that holds the tool number to be prepared, only valid when tool-prepare=TRUE */
     hal_s32_t *tool_number;     /* output, pin that holds the tool number currently in the spindle */
@@ -192,7 +192,7 @@ static int iniLoad(const char *filename)
     const char *inistring;
     bool tooltable_specified = 0;
 
-    /* Open the ini file */
+    /* Open the INI file */
     if (inifile.Open(filename) == false) {
         return -1;
     }
@@ -407,6 +407,16 @@ static int iocontrol_hal_init(void)
         hal_exit(comp_id);
         return -1;
     }
+    // tool-from-pocket
+    retval = hal_pin_s32_newf(HAL_OUT, &(iocontrol_data->tool_from_pocket), comp_id,
+                              "iocontrol.%d.tool-from-pocket", n);
+    if (retval < 0) {
+        rtapi_print_msg(RTAPI_MSG_ERR,
+                        "IOCONTROL: ERROR: iocontrol %d pin tool-from-pocket export failed with err=%i\n",
+                        n, retval);
+        hal_exit(comp_id);
+        return -1;
+    }
     // tool-prepared
     retval = hal_pin_bit_newf(HAL_IN, &(iocontrol_data->tool_prepared), comp_id,
                               "iocontrol.%d.tool-prepared", n);
@@ -483,6 +493,7 @@ static void hal_init_pins(void)
     *(iocontrol_data->tool_prepare)=0;       /* output, pin that notifies HAL it needs to prepare a tool */
     *(iocontrol_data->tool_prep_number)=0;   /* output, pin that holds the tool number to be prepared, only valid when tool-prepare=TRUE */
     *(iocontrol_data->tool_prep_pocket)=0;   /* output, pin that holds the pocketno for the tool to be prepared, only valid when tool-prepare=TRUE */
+    *(iocontrol_data->tool_from_pocket)=0;   /* output, always 0 at startup */
     *iocontrol_data->tool_prep_index=0;      /* output, pin that holds the internal index (idx) of the tool to be prepared, for debug */
     *(iocontrol_data->tool_change)=0;        /* output, notifies a tool-change should happen (emc should be in the tool-change position) */
 }
@@ -529,7 +540,6 @@ static int read_hal_inputs(void)
 void load_tool(int idx) {
     CANON_TOOL_TABLE tdata;
     if(random_toolchanger) {
-        char *comment_temp;
         // swap the tools between the desired pocket and the spindle pocket
 
         CANON_TOOL_TABLE tzero,tpocket;
@@ -538,24 +548,20 @@ void load_tool(int idx) {
             UNEXPECTED_MSG; return;
         }
         // spindle-->pocket (specified by idx)
-        tooldata_db_notify(tzero.toolno,idx,tzero);
+        tooldata_db_notify(SPINDLE_UNLOAD,tzero.toolno,idx,tzero);
         tzero.pocketno = tpocket.pocketno;
         if (tooldata_put(tzero,idx) != IDX_OK) {
             UNEXPECTED_MSG;
         }
 
         // pocket-->spindle (idx==0)
-        tooldata_db_notify(tpocket.toolno,0,tpocket);
+        tooldata_db_notify(SPINDLE_LOAD,tpocket.toolno,0,tpocket);
         tpocket.pocketno = 0;
         if (tooldata_put(tpocket,0) != IDX_OK) {
             UNEXPECTED_MSG;
         }
 
-        comment_temp = ttcomments[0];
-        ttcomments[0] = ttcomments[idx];
-        ttcomments[idx] = comment_temp;
-
-        if (0 != tooldata_save(io_tool_table_file,ttcomments)) {
+        if (0 != tooldata_save(io_tool_table_file)) {
             emcioStatus.status = RCS_ERROR;
         }
     } else if(idx == 0) {
@@ -567,7 +573,7 @@ void load_tool(int idx) {
         if (tooldata_put(tdata,0) != IDX_OK) {
             UNEXPECTED_MSG; return;
         }
-        if (tooldata_db_notify(0,0,tdata)) { UNEXPECTED_MSG; }
+        if (tooldata_db_notify(SPINDLE_UNLOAD,0,0,tdata)) { UNEXPECTED_MSG; }
     } else {
         // just copy the desired tool to the spindle
         if (tooldata_get(&tdata,idx) != IDX_OK) {
@@ -579,7 +585,7 @@ void load_tool(int idx) {
         // notify idx==0 tool in spindle:
         CANON_TOOL_TABLE temp;
         if (tooldata_get(&temp,0) != IDX_OK) { UNEXPECTED_MSG; }
-        if (tooldata_db_notify(temp.toolno,0,temp)) { UNEXPECTED_MSG; }
+        if (tooldata_db_notify(SPINDLE_LOAD,temp.toolno,0,temp)) { UNEXPECTED_MSG; }
     }
 } // load_tool()
 
@@ -623,6 +629,7 @@ static int read_tool_inputs(void)
     if (*iocontrol_data->tool_change && *iocontrol_data->tool_changed) {
         if(!random_toolchanger && emcioStatus.tool.pocketPrepped == 0) {
             emcioStatus.tool.toolInSpindle = 0;
+            emcioStatus.tool.toolFromPocket  =  *(iocontrol_data->tool_from_pocket) = 0;
         } else {
             // the tool now in the spindle is the one that was prepared
             CANON_TOOL_TABLE tdata;
@@ -630,6 +637,10 @@ static int read_tool_inputs(void)
                 UNEXPECTED_MSG; return -1;
             }
             emcioStatus.tool.toolInSpindle = tdata.toolno;
+            emcioStatus.tool.toolFromPocket = *(iocontrol_data->tool_from_pocket) = tdata.pocketno;
+        }
+        if (emcioStatus.tool.toolInSpindle == 0) {
+             emcioStatus.tool.toolFromPocket =  *(iocontrol_data->tool_from_pocket) = 0;
         }
         *(iocontrol_data->tool_number) = emcioStatus.tool.toolInSpindle; //likewise in HAL
         load_tool(emcioStatus.tool.pocketPrepped);
@@ -656,7 +667,7 @@ static void do_hal_exit(void) {
 *                sent to the console indicating which IO command was
 *                executed if debug level is set to RTAPI_MSG_DBG.
 *
-* Return Value: Zero or -1 if ini file not found or failure to connect
+* Return Value: Zero or -1 if INI file not found or failure to connect
 *                to NML buffers.
 *
 * Side Effects: None.
@@ -688,7 +699,7 @@ int main(int argc, char *argv[])
                 return -1;
             } else {
                 if (strlen(argv[t+1]) >= LINELEN) {
-                    rtapi_print_msg(RTAPI_MSG_ERR, "ini file name too long (max %d)\n", LINELEN);
+                    rtapi_print_msg(RTAPI_MSG_ERR, "INI file name too long (max %d)\n", LINELEN);
                     rtapi_print_msg(RTAPI_MSG_ERR, "    %s\n", argv[t+1]);
                     return -1;
                 }
@@ -717,7 +728,7 @@ int main(int argc, char *argv[])
 #endif //}
 
     if (0 != iniLoad(emc_inifile)) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "can't open ini file %s\n",
+        rtapi_print_msg(RTAPI_MSG_ERR, "can't open INI file %s\n",
                         emc_inifile);
         return -1;
     }
@@ -727,9 +738,6 @@ int main(int argc, char *argv[])
                         "can't connect to NML buffers in %s\n",
                         emc_nmlfile);
         return -1;
-    }
-    for(int i=0; i<CANON_POCKETS_MAX; i++) {
-        ttcomments[i] = (char *)malloc(CANON_TOOL_ENTRY_LEN);
     }
 
     tooldata_init(random_toolchanger);
@@ -757,7 +765,6 @@ int main(int argc, char *argv[])
 
     // on nonrandom machines, always start by assuming the spindle is empty
     if(!random_toolchanger) {
-        ttcomments[0][0] = '\0';
         CANON_TOOL_TABLE tdata = tooldata_entry_init();
         tdata.pocketno =  0; //nonrandom init
         tdata.toolno   = -1; //nonrandom init
@@ -765,7 +772,7 @@ int main(int argc, char *argv[])
             UNEXPECTED_MSG;
         }
     }
-    if (0 != tooldata_load(io_tool_table_file, ttcomments)) {
+    if (0 != tooldata_load(io_tool_table_file)) {
         rcs_print_error("can't load tool table.\n");
     }
     done = 0;
@@ -840,7 +847,7 @@ int main(int argc, char *argv[])
             break;
 
         case EMC_TOOL_INIT_TYPE:
-            tooldata_load(io_tool_table_file, ttcomments);
+            tooldata_load(io_tool_table_file);
             reload_tool_number(emcioStatus.tool.toolInSpindle);
             break;
 
@@ -865,7 +872,10 @@ int main(int argc, char *argv[])
                 int idx = 0;
                 int toolno = ((EMC_TOOL_PREPARE*)emcioCommand)->tool;
                 CANON_TOOL_TABLE tdata;
-                idx   = tooldata_find_index_for_tool(toolno);
+                idx  = tooldata_find_index_for_tool(toolno);
+#ifdef TOOL_NML
+                if (!random_toolchanger && toolno == 0) { idx = 0; }
+#endif
                 if (idx == -1) {  // not found
                     emcioStatus.tool.pocketPrepped = -1;
                 } else {
@@ -957,7 +967,7 @@ int main(int argc, char *argv[])
                     ((EMC_TOOL_LOAD_TOOL_TABLE *) emcioCommand)->file;
                 if(!strlen(filename)) filename = io_tool_table_file;
                 rtapi_print_msg(RTAPI_MSG_DBG, "EMC_TOOL_LOAD_TOOL_TABLE\n");
-                if (0 != tooldata_load(filename, ttcomments)) {
+                if (0 != tooldata_load(filename)) {
                     emcioStatus.status = RCS_ERROR;
                 } else {
                     reload_tool_number(emcioStatus.tool.toolInSpindle);
@@ -996,13 +1006,15 @@ int main(int argc, char *argv[])
                 if (tooldata_put(tdata,idx) != IDX_OK) {
                     UNEXPECTED_MSG;
                 }
-                if (0 != tooldata_save(io_tool_table_file, ttcomments)) {
+                if (0 != tooldata_save(io_tool_table_file)) {
                     emcioStatus.status = RCS_ERROR;
                 }
                 if (io_db_mode == DB_ACTIVE) {
                     int pno = idx; // for random_toolchanger
                     if (!random_toolchanger) { pno = tdata.pocketno; }
-                    if (tooldata_db_notify(toolno,pno,tdata)) { UNEXPECTED_MSG; }
+                    if (tooldata_db_notify(TOOL_OFFSET,toolno,pno,tdata)) {
+                        UNEXPECTED_MSG;
+                    }
                 }
             }
             break;
@@ -1028,6 +1040,9 @@ int main(int argc, char *argv[])
                      , emcioStatus.tool.toolInSpindle, idx, tdata.toolno);
                 //likewise in HAL
                 *(iocontrol_data->tool_number) = emcioStatus.tool.toolInSpindle;
+                if (emcioStatus.tool.toolInSpindle == 0) {
+                    emcioStatus.tool.toolFromPocket =  *(iocontrol_data->tool_from_pocket) = 0; // no tool in spindle
+                }
             }
             break;
 
@@ -1129,10 +1144,6 @@ int main(int argc, char *argv[])
     if (emcioCommandBuffer != 0) {
         delete emcioCommandBuffer;
         emcioCommandBuffer = 0;
-    }
-
-    for(int i=0; i<CANON_POCKETS_MAX; i++) {
-        free(ttcomments[i]);
     }
 
     return 0;

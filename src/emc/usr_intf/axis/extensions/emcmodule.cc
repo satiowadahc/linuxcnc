@@ -109,7 +109,7 @@ static int Ini_init(pyIniFile *self, PyObject *a, PyObject *k) {
         self->i = new IniFile();
 
     if (!self->i->Open(inifile)) {
-        PyErr_Format( error, "inifile.open() failed");
+        PyErr_Format( error, "inifile.open(%s) failed", inifile);
         return -1;
     }
     return 0;
@@ -299,8 +299,7 @@ static PyObject *poll(pyStatChannel *s, PyObject *o) {
         initialized=1;
         if (tool_mmap_user()) {
           mmap_available = 0;
-          fprintf(stderr,"mmap tool data not available, continuing %s\n",
-                  __FILE__);
+          fprintf(stderr,"poll(): continuing without tool mmap data\n");
         }
     }
 #endif //}
@@ -313,8 +312,93 @@ static PyObject *poll(pyStatChannel *s, PyObject *o) {
     return Py_None;
 }
 
+static void dict_add(PyObject *d, const char *name, unsigned char v) {
+    PyObject *o;
+    PyDict_SetItemString(d, name, o = PyLong_FromLong(v));
+    Py_XDECREF(o);
+}
+static void dict_add(PyObject *d, const char *name, double v) {
+    PyObject *o;
+    PyDict_SetItemString(d, name, o = PyFloat_FromDouble(v));
+    Py_XDECREF(o);
+}
+static void dict_add(PyObject *d, const char *name, bool v) {
+    PyObject *o;
+    PyDict_SetItemString(d, name, o = PyBool_FromLong((long)v));
+    Py_XDECREF(o);
+}
+static void dict_add(PyObject *d, const char *name, int v) {
+    PyObject *o;
+    PyDict_SetItemString(d, name, o = PyLong_FromLong((long)v));
+    Py_XDECREF(o);
+}
+
+static PyObject *toolinfo(pyStatChannel *s, PyObject *o) {
+    /*Note: this method uses the tooldata interface and is included
+    **      as a Stat method for convenience.
+    **      pyStatChannel is not used but an initial stat poll()
+    **      is required for initialization of mmap
+    */
+    PyObject *res = PyDict_New();
+    CANON_TOOL_TABLE tdata = tooldata_entry_init();
+    int toolno;
+    if (!initialized) {
+        PyErr_Format(PyExc_ValueError,"toolinfo: NOT READY (initial poll reqd)\n");
+        return NULL;
+    }
+    if(!PyArg_ParseTuple(o, "i", &toolno)) return NULL;
+
+#define TOOL_0_EXCEPTION
+#ifdef  TOOL_0_EXCEPTION
+    /* toolno == 0 is not supported here because it would likely be too confusing
+    ** (ref docs/code/code-notes.adoc):
+    **   nonrandom toolchanger: tool 0 means "no tool"
+    **      random toolchanger: tool 0 is like any other *but* conventionally means "no tool"
+    **
+    ** tool_in_spindle data is available using idx=0 with
+    **     linuxcnc.stat.tool_table[idx]
+    */
+    if (toolno == 0) {
+        PyErr_Format(PyExc_ValueError,"toolinfo: for tool in spindle: use linuxnc.stat.tool_table[0]");
+        return NULL;
+    }
+#endif
+
+    int idx  = tooldata_find_index_for_tool(toolno);
+
+    if (tooldata_get(&tdata,idx) != IDX_OK) {
+        PyErr_Format(PyExc_ValueError,"toolinfo: NO tooldata for toolno=%d",toolno);
+        return NULL;
+    }
+    dict_add(res,     "toolno", tdata.toolno);
+    dict_add(res,   "pocketno", tdata.pocketno);
+    dict_add(res,   "diameter", tdata.diameter);
+    dict_add(res, "frontangle", tdata.frontangle);
+    dict_add(res,  "backangle", tdata.backangle);
+    dict_add(res,"orientation", tdata.orientation);
+    dict_add(res,    "xoffset", tdata.offset.tran.x);
+    dict_add(res,    "yoffset", tdata.offset.tran.y);
+    dict_add(res,    "zoffset", tdata.offset.tran.z);
+    dict_add(res,    "aoffset", tdata.offset.a);
+    dict_add(res,    "boffset", tdata.offset.b);
+    dict_add(res,    "coffset", tdata.offset.c);
+    dict_add(res,    "uoffset", tdata.offset.u);
+    dict_add(res,    "voffset", tdata.offset.v);
+    dict_add(res,    "woffset", tdata.offset.w);
+
+    PyDict_SetItemString(res, "comment", o= PyUnicode_FromString(tdata.comment));
+    Py_DECREF(o);
+
+    return res;
+}
+
 static PyMethodDef Stat_methods[] = {
     {"poll", (PyCFunction)poll, METH_NOARGS, "Update current machine state"},
+    {"toolinfo", (PyCFunction)toolinfo, METH_VARARGS,
+         "toolinfo(toolnumber):\n"
+         "   returns dict for toolnumber parameters (pocket,offsets,etc)\n"
+         "   ValueError Exception if toolnumber not available"
+    },
     {NULL}
 };
 
@@ -327,7 +411,13 @@ static PyMemberDef Stat_members[] = {
 
 // task
     {(char*)"task_mode", T_INT, O(task.mode), READONLY},
-    {(char*)"task_state", T_INT, O(task.state), READONLY},
+    {(char*)"task_state", T_INT, O(task.state), READONLY,
+        "Current Task state.  Possible values:\n"
+        "    STATE_ESTOP: E-Stop is active.\n"
+        "    STATE_ESTOP_RESET: E-Stop is reset (cleared) but machine is off.\n"
+        "    STATE_OFF: Same as STATE_ESTOP_RESET, this one is not used.\n"
+        "    STATE_ON: Machine is out of E-Stop and is powered on.\n"
+    },
     {(char*)"exec_state", T_INT, O(task.execState), READONLY},
     {(char*)"interp_state", T_INT, O(task.interpState), READONLY},
     {(char*)"call_level", T_INT, O(task.callLevel), READONLY},
@@ -343,10 +433,10 @@ static PyMemberDef Stat_members[] = {
     {(char*)"task_paused", T_INT, O(task.task_paused), READONLY},
     {(char*)"input_timeout", T_BOOL, O(task.input_timeout), READONLY},
     {(char*)"rotation_xy", T_DOUBLE, O(task.rotation_xy), READONLY},
+    {(char*)"ini_filename", T_STRING_INPLACE, O(task.ini_filename), READONLY},
     {(char*)"delay_left", T_DOUBLE, O(task.delayLeft), READONLY},
     {(char*)"queued_mdi_commands", T_INT, O(task.queuedMDIcommands), READONLY, (char*)"Number of MDI commands queued waiting to run." },
 
-// motion
 //   EMC_TRAJ_STAT traj
     {(char*)"linear_units", T_DOUBLE, O(motion.traj.linearUnits), READONLY},
     {(char*)"angular_units", T_DOUBLE, O(motion.traj.angularUnits), READONLY},
@@ -361,7 +451,7 @@ static PyMemberDef Stat_members[] = {
     {(char*)"queue", T_INT, O(motion.traj.queue), READONLY},
     {(char*)"active_queue", T_INT, O(motion.traj.activeQueue), READONLY},
     {(char*)"queue_full", T_BOOL, O(motion.traj.queueFull), READONLY},
-    {(char*)"id", T_INT, O(motion.traj.id), READONLY},
+    {(char*)"motion_id", T_INT, O(motion.traj.id), READONLY},
     {(char*)"paused", T_BOOL, O(motion.traj.paused), READONLY},
     {(char*)"feedrate", T_DOUBLE, O(motion.traj.scale), READONLY},
     {(char*)"rapidrate", T_DOUBLE, O(motion.traj.rapid_scale), READONLY},
@@ -398,6 +488,10 @@ static PyMemberDef Stat_members[] = {
     },
     {(char*)"tool_in_spindle", T_INT, O(io.tool.toolInSpindle), READONLY,
         (char*)"The tool number of the currently loaded tool, or 0 if no tool is loaded."
+    },
+    {(char*)"tool_from_pocket", T_INT, O(io.tool.toolFromPocket), READONLY,
+        (char*)"The pocket number that the currently loaded tool was retrieved from,\n"
+        "or 0 if no tool is loaded."
     },
 
 // EMC_COOLANT_STAT io.cooland
@@ -548,26 +642,6 @@ static PyObject *Stat_misc_error(pyStatChannel *s){
   return int_array(s->status.motion.misc_error, EMCMOT_MAX_MISC_ERROR);
 }
 
-static void dict_add(PyObject *d, const char *name, unsigned char v) {
-    PyObject *o;
-    PyDict_SetItemString(d, name, o = PyLong_FromLong(v));
-    Py_XDECREF(o);
-}
-static void dict_add(PyObject *d, const char *name, double v) {
-    PyObject *o;
-    PyDict_SetItemString(d, name, o = PyFloat_FromDouble(v));
-    Py_XDECREF(o);
-}
-static void dict_add(PyObject *d, const char *name, bool v) {
-    PyObject *o;
-    PyDict_SetItemString(d, name, o = PyBool_FromLong((long)v));
-    Py_XDECREF(o);
-}
-static void dict_add(PyObject *d, const char *name, int v) {
-    PyObject *o;
-    PyDict_SetItemString(d, name, o = PyLong_FromLong((long)v));
-    Py_XDECREF(o);
-}
 #define F(x) F2(#x, x)
 #define F2(y,x) dict_add(res, y, s->status.motion.joint[jointno].x)
 static PyObject *Stat_joint_one(pyStatChannel *s, int jointno) {
@@ -721,14 +795,6 @@ static PyObject *Stat_tool_table(pyStatChannel *s) {
     return res;
 }
 
-static PyObject *Stat_axes(pyStatChannel *s) {
-    PyErr_WarnEx(PyExc_DeprecationWarning, "stat.axes is deprecated and will be removed in the future", 0);
-    return PyLong_FromLong(s->status.motion.traj.deprecated_axes);
-}
-
-// XXX io.tool.toolTable
-// XXX EMC_JOINT_STAT motion.joint[]
-
 static PyGetSetDef Stat_getsetlist[] = {
     {(char*)"actual_position", (getter)Stat_actual},
     {(char*)"ain", (getter)Stat_ain},
@@ -760,7 +826,6 @@ static PyGetSetDef Stat_getsetlist[] = {
         (char*)"The tooltable, expressed as a list of tools.  Each tool is a dict with the\n"
         "tool id (tool number), diameter, offsets, etc."
     },
-    {(char*)"axes", (getter)Stat_axes},
     {NULL}
 };
 
@@ -922,7 +987,8 @@ static PyObject *spindleoverride(pyCommandChannel *s, PyObject *o) {
 static PyObject *spindle(pyCommandChannel *s, PyObject *o) {
     int dir;
     double arg1 = 0,arg2 = 0;
-    if(!PyArg_ParseTuple(o, "i|dd", &dir, &arg1, &arg2)) return NULL;
+    int arg3 = 0;
+    if(!PyArg_ParseTuple(o, "i|ddi", &dir, &arg1, &arg2, &arg3)) return NULL;
     switch(dir) {
         case LOCAL_SPINDLE_FORWARD:
         case LOCAL_SPINDLE_REVERSE:
@@ -930,6 +996,7 @@ static PyObject *spindle(pyCommandChannel *s, PyObject *o) {
             EMC_SPINDLE_ON m;
             m.speed = dir * arg1;
             m.spindle = (int)arg2;
+            m.wait_for_spindle_at_speed = arg3;
             emcSendCommand(s, m);
         }
             break;
@@ -1089,7 +1156,7 @@ static PyObject *brake(pyCommandChannel *s, PyObject *o) {
 
 static PyObject *load_tool_table(pyCommandChannel *s, PyObject *o) {
     EMC_TOOL_LOAD_TOOL_TABLE m;
-    m.file[0] = '\0'; // don't override the ini file
+    m.file[0] = '\0'; // don't override the INI file
     emcSendCommand(s, m);
     Py_INCREF(Py_None);
     return Py_None;
@@ -1434,7 +1501,14 @@ static PyMethodDef Command_methods[] = {
     {"teleop_enable", (PyCFunction)teleop, METH_VARARGS},
     {"traj_mode", (PyCFunction)set_traj_mode, METH_VARARGS},
     {"wait_complete", (PyCFunction)wait_complete, METH_VARARGS},
-    {"state", (PyCFunction)state, METH_VARARGS},
+    {"state", (PyCFunction)state, METH_VARARGS,
+        "state(NEW_STATE) - Set the machine E-Stop & Power-On state.\n"
+        "Possible values for `NEW_STATE` are:\n"
+        "    STATE_ESTOP: Power off and enter E-Stop mode.\n"
+        "    STATE_ESTOP_RESET: Reset (leave) E-Stop mode, but remain powered off.\n"
+        "    STATE_ON: Power on (only works from STATE_ESTOP_RESET state).\n"
+        "    STATE_OFF: Power off (only works from STATE_ON state).\n"
+    },
     {"mdi", (PyCFunction)mdi, METH_VARARGS},
     {"mode", (PyCFunction)mode, METH_VARARGS},
     {"feedrate", (PyCFunction)feedrate, METH_VARARGS},
@@ -1450,7 +1524,10 @@ static PyMethodDef Command_methods[] = {
     {"abort", (PyCFunction)emcabort, METH_NOARGS},
     {"task_plan_synch", (PyCFunction)task_plan_synch, METH_NOARGS},
     {"override_limits", (PyCFunction)override_limits, METH_NOARGS},
-    {"home", (PyCFunction)home, METH_VARARGS},
+    {"home", (PyCFunction)home, METH_VARARGS,
+        "home(JOINT) - Home the specified joint.\n"
+        "JOINT can be a valid joint number (0-9), or -1 to home all joints.\n"
+    },
     {"unhome", (PyCFunction)unhome, METH_VARARGS},
     {"jog", (PyCFunction)jog, METH_VARARGS,
         "jog(JOG_CONTINUOUS, joint_flag, index, speed)\n"
@@ -1823,10 +1900,12 @@ static PyObject *pygui_respect_offsets (PyObject *s, PyObject *o) {
     if(!PyArg_ParseTuple(o, "si",&coords, &roffsets.respect_offsets)) {
         return NULL;
     }
-    // GEOMETRY rotations only if letters (ABC) included in [TRAJ]COORDINATES
-    if (strchr(coords,'A')) roffsets.axis_mask |= AXIS_MASK_A;
-    if (strchr(coords,'B')) roffsets.axis_mask |= AXIS_MASK_B;
-    if (strchr(coords,'C')) roffsets.axis_mask |= AXIS_MASK_C;
+    if (roffsets.respect_offsets) {
+        // GEOMETRY rotations only if letters (ABC) included in [TRAJ]COORDINATES
+        if (strchr(coords,'A')) roffsets.axis_mask |= AXIS_MASK_A;
+        if (strchr(coords,'B')) roffsets.axis_mask |= AXIS_MASK_B;
+        if (strchr(coords,'C')) roffsets.axis_mask |= AXIS_MASK_C;
+    }
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -1977,7 +2056,7 @@ struct logger_point {
 };
 
 #define NUMCOLORS (6)
-#define MAX_POINTS (10000)
+#define MAX_POINTS (100000)
 typedef struct {
     PyObject_HEAD
     int npts, mpts, lpts;
@@ -2489,6 +2568,9 @@ PyMODINIT_FUNC PyInit_linuxcnc(void)
     ENUMX(4, EMC_DEBUG_INTERP);
     ENUMX(4, EMC_DEBUG_RCS);
     ENUMX(4, EMC_DEBUG_INTERP_LIST);
+    ENUMX(4, EMC_DEBUG_OWORD);
+    ENUMX(4, EMC_DEBUG_REMAP);
+    ENUMX(4, EMC_DEBUG_PYTHON);
     ENUMX(4, EMC_DEBUG_STATE_TAGS);
 
     ENUMX(9, EMC_TASK_EXEC_ERROR);

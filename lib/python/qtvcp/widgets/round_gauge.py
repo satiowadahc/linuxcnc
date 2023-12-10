@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 import sys
 import math
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, QPoint, QPointF, QLine, QRect, QSize, QEvent, pyqtSlot, pyqtProperty
-from PyQt5.QtGui import QPainter, QBrush, QPen, QFont, QColor, QPixmap, QConicalGradient, QRadialGradient
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import Qt, QPoint, QPointF, QLine, QRect, QSize, pyqtSlot, pyqtProperty
+from PyQt5.QtGui import QPainter, QBrush, QPen, QFont, QColor, QRadialGradient
 from qtvcp.widgets.widget_baseclass import _HalWidgetBase, hal
 
 class Gauge(QtWidgets.QWidget, _HalWidgetBase):
     def __init__(self, parent=None):
         super(Gauge, self).__init__(parent)
-        self._threshold = 0.0
+        self._threshold = 0
         self._setpoint = QPointF(0, 0)
         self._num_ticks = 11
         self._max_value = 100
@@ -47,7 +47,7 @@ class Gauge(QtWidgets.QWidget, _HalWidgetBase):
             self.qpa[i] = QPointF(x, y)
 
     def paintEvent(self, event):
-        w = min(event.rect().width(), event.rect().height())
+        w = int(min(event.rect().width(), event.rect().height()))
         painter = QPainter(self)
         painter.setRenderHint(painter.Antialiasing)
         self.draw_background(painter, event, w)
@@ -59,14 +59,14 @@ class Gauge(QtWidgets.QWidget, _HalWidgetBase):
         self.draw_center(painter, event, w)
         self.draw_readout(painter, event, w)
         painter.end()
-        
+
     def draw_background(self, qp, event, w):
         w -= 6
         center = event.rect().center()
         rect = QRect()
         rect.setSize(QSize(w, w))
         rect.moveCenter(center)
-        fp = QPoint(center.x() - w/4, center.y() - w/4)
+        fp = QPoint(int(center.x() - w/4), int(center.y() - w/4))
         bg = QRadialGradient(center, w/2, fp)
         bg.setColorAt(0, QColor(180, 180, 180))
         bg.setColorAt(1, QColor(40, 40, 40))
@@ -77,11 +77,12 @@ class Gauge(QtWidgets.QWidget, _HalWidgetBase):
 
     def draw_zones(self, qp, event, w):
         segment1 = -45
-        span1 = ((self._max_value - self._threshold) * 270) / self._max_value
+        span1 = int(((self._max_value - self._threshold) * 270) / self._max_value)
         segment2 = span1 - 45
         span2 = 270 - span1
         rect = QRect()
-        rect.setSize(QSize(w/2, w/2))
+        w = int(w/2)
+        rect.setSize(QSize(w, w))
         rect.moveCenter(event.rect().center())
         qp.setPen(QPen(self._zone1_color, self.arc_width, cap = Qt.FlatCap))
         qp.drawArc(rect, segment1*16, span1*16)
@@ -90,6 +91,7 @@ class Gauge(QtWidgets.QWidget, _HalWidgetBase):
 
     def draw_gauge(self, qp, event, w):
         w *= 0.6
+        w =int(w)
         rect = QRect()
         rect.setSize(QSize(w, w))
         rect.moveCenter(event.rect().center())
@@ -127,6 +129,7 @@ class Gauge(QtWidgets.QWidget, _HalWidgetBase):
 
     def draw_center(self, qp, event, w):
         w *= 0.2
+        w = int(w)
         rect = QRect()
         rect.setSize(QSize(w, w))
         rect.moveCenter(event.rect().center())
@@ -162,13 +165,13 @@ class Gauge(QtWidgets.QWidget, _HalWidgetBase):
     def draw_readout(self, qp, event, w):
         center = event.rect().center()
         rect = QRect()
-        rect.setSize(QSize(w/4, w/8))
-        rect.moveCenter(QPoint(center.x(), center.y() + w/4))
+        rect.setSize(QSize(int(w/4), int(w/8)))
+        rect.moveCenter(QPoint(center.x(), center.y() + int(w/4)))
         text = "{}".format(self.value)
         qp.setPen(QPen(Qt.white, 4))
         qp.setFont(QFont('Lato Heavy', self._value_font_size))
         qp.drawText(rect, Qt.AlignCenter, text)
-        rect.moveCenter(QPoint(center.x(), center.y() + w/3))
+        rect.moveCenter(QPoint(center.x(), center.y() + int(w/3)))
         text = self._gauge_label
         qp.setFont(QFont('Lato Heavy', self._label_font_size))
         qp.drawText(rect, Qt.AlignCenter, text)
@@ -282,13 +285,13 @@ class Gauge(QtWidgets.QWidget, _HalWidgetBase):
 
     def get_bezel_color(self):
         return self._bezel_color
-        
+
     def reset_bezel_color(self):
         self._bezel_color = QColor("gray")
 
     def sizeHint(self):
         return QtCore.QSize(200, 200)
-        
+
     def set_halpin_option(self, value):
         self._halpin_option = value
 
@@ -313,7 +316,7 @@ class Gauge(QtWidgets.QWidget, _HalWidgetBase):
     #############################
 if __name__ == "__main__":
     import sys
-    from PyQt5.QtWidgets import QSlider, QWidget, QPushButton, QVBoxLayout, QApplication
+    from PyQt5.QtWidgets import QSlider, QWidget, QVBoxLayout
     app = QtWidgets.QApplication(sys.argv)
     w = QWidget()
     w.setGeometry(100, 100, 400, 400)

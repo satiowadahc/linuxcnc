@@ -14,9 +14,8 @@
 # GNU General Public License for more details.
 ###############################################################################
 
-import os
 
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore
 
 from qtvcp.widgets.simple_widgets import ScaledLabel
 from qtvcp.widgets.widget_baseclass import _HalWidgetBase
@@ -125,7 +124,7 @@ class StateLabel(ScaledLabel, _HalWidgetBase):
     def set_fpr_mode(self, data):
         self.fpr_mode = data
         if data:
-            self._toggle_properties('fpr_modee')
+            self._toggle_properties('fpr_mode')
     def get_fpr_mode(self):
         return self.fpr_mode
     def reset_fpr_mode(self):

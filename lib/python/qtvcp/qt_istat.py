@@ -7,7 +7,7 @@ from . import logger
 
 log = logger.getLogger(__name__)
 # Force the log level for this module
-# log.setLevel(logger.INFO) # One of DEBUG, INFO, WARNING, ERROR, CRITICAL
+# log.setLevel(logger.DEBUG) # One of DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 try:
     LINUXCNCVERSION = os.environ['LINUXCNCVERSION']
@@ -43,6 +43,9 @@ class _IStat(object):
         self.PREFERENCE_PATH = '~/.Preferences'
         self.SUB_PATH = None
         self.SUB_PATH_LIST = []
+        self.USER_M_PATH = None
+        self.USER_M_PATH_LIST = []
+
         self.MACRO_PATH_LIST = []
         self.IMAGE_PATH = IMAGEDIR
         self.LIB_PATH = os.path.join(HOME, "share", "qtvcp")
@@ -69,6 +72,10 @@ class _IStat(object):
         self.MAX_FEED_OVERRIDE = 1.5
         self.MAX_SPINDLE_OVERRIDE = 1.5
         self.MIN_SPINDLE_OVERRIDE = 0.5
+        self.TITLE = ""
+        self.ICON = ""
+        # this is updated in qtvcp.py on startup
+        self.IS_SCREEN = False
 
         self.update()
 
@@ -78,8 +85,8 @@ class _IStat(object):
             self.CYCLE_TIME = int(ct * 1000)
         else:
             self.CYCLE_TIME = int(ct)
-        self.GRAPHICS_CYCLE_TIME = float(self.INI.find('DISPLAY', 'GRAPHICS_CYCLE_TIME') or 100) # in seconds
-        self.HALPIN_CYCLE_TIME = float(self.INI.find('DISPLAY', 'HALPIN_CYCLE_TIME') or 100) # in seconds
+        self.GRAPHICS_CYCLE_TIME =int(self.INI.find('DISPLAY', 'GRAPHICS_CYCLE_TIME') or 100) # in seconds
+        self.HALPIN_CYCLE_TIME = int(self.INI.find('DISPLAY', 'HALPIN_CYCLE_TIME') or 100) # in seconds
         self.MDI_HISTORY_PATH = self.INI.find('DISPLAY', 'MDI_HISTORY_FILE') or '~/.axis_mdi_history'
         self.QTVCP_LOG_HISTORY_PATH = self.INI.find('DISPLAY', 'LOG_FILE') or '~/qtvcp.log'
         self.MACHINE_LOG_HISTORY_PATH = self.INI.find('DISPLAY', 'MACHINE_LOG_PATH') or '~/.machine_log_history'
@@ -87,8 +94,16 @@ class _IStat(object):
         self.PROGRAM_PREFIX = self.get_error_safe_setting("DISPLAY", "PROGRAM_PREFIX", '~/linuxcnc/nc_files')
         if not os.path.exists(os.path.expanduser(self.PROGRAM_PREFIX)):
             log.warning('Path not valid in INI File [DISPLAY] PROGRAM_PREFIX section')
-        self.SUB_PATH = (self.INI.find("RS274NGC", "SUBROUTINE_PATH")) or None
+
+        temp = self.INI.find("DISPLAY", "USER_COMMAND_FILE")
+        if not temp is None:
+            self.USER_COMMAND_FILE = os.path.expanduser(temp)
+        else:
+            self.USER_COMMAND_FILE = None
+
         self.STARTUP_CODES = (self.INI.find('RS274NGC', 'RS274NGC_STARTUP_CODE') ) or None
+
+        self.SUB_PATH = (self.INI.find("RS274NGC", "SUBROUTINE_PATH")) or None
         if self.SUB_PATH is not None:
             for mpath in (self.SUB_PATH.split(':')):
                 self.SUB_PATH_LIST.append(mpath)
@@ -98,10 +113,24 @@ class _IStat(object):
             self.MACRO_PATH = mpath or None
         else:
             self.MACRO_PATH = None
-        self.INI_MACROS = self.INI.findall("DISPLAY", "MACRO")
-        self.MACHINE_IS_LATHE = bool(self.INI.find("DISPLAY", "LATHE"))
-        self.MACHINE_IS_QTPLASMAC = (self.INI.find("QTPLASMAC", "MODE")) or None
 
+        self.USER_M_PATH = (self.INI.find("RS274NGC", "USER_M_PATH")) or None
+        if self.USER_M_PATH is not None:
+            for mpath in (self.USER_M_PATH.split(':')):
+                self.USER_M_PATH_LIST.append(mpath)
+
+        self.INI_MACROS = self.INI.findall("DISPLAY", "MACRO")
+
+        self.NGC_SUB_PATH = (self.INI.find("DISPLAY","NGCGUI_SUBFILE_PATH")) or None
+        if not self.NGC_SUB_PATH is None:
+            self.NGC_SUB_PATH = os.path.expanduser(self.NGC_SUB_PATH)
+        self.NGC_SUB = (self.INI.findall("DISPLAY", "NGCGUI_SUBFILE")) or None
+
+        self.MACHINE_IS_LATHE = bool(self.INI.find("DISPLAY", "LATHE"))
+        try:
+            self.MACHINE_IS_QTPLASMAC = 'qtplasmac' in self.INI.find("DISPLAY", "DISPLAY")
+        except:
+            self.MACHINE_IS_QTPLASMAC = False
         extensions = self.INI.findall("FILTER", "PROGRAM_EXTENSION")
         self.PROGRAM_FILTERS = ([e.split(None, 1) for e in extensions]) or None
         self.PROGRAM_FILTERS_EXTENSIONS = self.get_filters_extensions()
@@ -109,15 +138,17 @@ class _IStat(object):
 
         self.PARAMETER_FILE = (self.INI.find("RS274NGC", "PARAMETER_FILE")) or None
         try:
-            # check the ini file if UNITS are set to mm"
+            # check the INI file if UNITS are set to mm"
             # first check the global settings
             units = self.INI.find("TRAJ", "LINEAR_UNITS")
             if units is None:
-                log.critical('Misssing LINEAR_UNITS in TRAJ, guessing units for machine from JOINT 0') 
+                if self.LINUXCNC_IS_RUNNING:
+                    log.critical('Missing LINEAR_UNITS in TRAJ, guessing units for machine from JOINT 0')
                 # else then guess; The joint 0 is usually X axis
                 units = self.INI.find("JOINT_0", "UNITS")
                 if units is None:
-                    log.critical('Misssing UNITS in JOINT_0, assuming metric based machine') 
+                    if self.LINUXCNC_IS_RUNNING:
+                        log.critical('Missing UNITS in JOINT_0, assuming metric based machine')
                     units = 'metric'
         except:
             units = "metric"
@@ -138,6 +169,7 @@ class _IStat(object):
         axes = self.INI.find("TRAJ", "COORDINATES")
         if axes is not None:  # i.e. LCNC is running, not just in Qt Designer
             axes = axes.replace(" ", "")
+            self.TRAJCO = axes.lower()
             log.debug('TRAJ COORDINATES: {}'.format(axes))
             self.AVAILABLE_AXES = []
             self.GET_NAME_FROM_JOINT = {}
@@ -174,8 +206,12 @@ class _IStat(object):
                 av = self.INI.find('AXIS_%s' % letter.upper(), 'MAX_VELOCITY') or None
                 aa = self.INI.find('AXIS_%s' % letter.upper(), 'MAX_ACCELERATION') or None
                 if av is None or aa is None:
-                    log.critical(
-                        'MISSING [AXIS_{}] MAX VeLOCITY or MAX ACCELERATION entry in INI file.'.format(letter.upper()))
+                    # some lathe configs have dummy Y axis for axis rotation G code
+                    if letter == "Y" and self.MACHINE_IS_LATHE:
+                        pass
+                    else:
+                        log.critical(
+                            'MISSING [AXIS_{}] MAX VELOCITY or MAX ACCELERATION entry in INI file.'.format(letter.upper()))
 
         # convert joint number to axis index
         # used by dro_widget
@@ -216,6 +252,7 @@ class _IStat(object):
             self.JOINT_SEQUENCE[j] = int(self.INI.find(section, "HOME_SEQUENCE") or 0)
 
         # jog synchronized sequence
+        # gives a list of joints combined to make an axis
         templist = []
         for j in self.AVAILABLE_JOINTS:
             temp = []
@@ -229,6 +266,21 @@ class _IStat(object):
                 templist.append(temp)
         # remove duplicates
         self.JOINT_SYNCH_LIST = list(set(tuple(sorted(sub)) for sub in templist))
+
+        # This is a list of joints that are related to a joint.
+        #ie. JOINT_RELATIONS_LIST(0) will give a list of joints that go with joint 0
+        # to make an axis or else a list with just 0 in it.
+        # current use case is to find out what other joints should be unhomed if you unhome
+        # a combined joint axis.
+        self.JOINT_RELATIONS_LIST = [None] * jointcount
+        for j in range(jointcount):
+            temp = []
+            for hj, hs in list(self.JOINT_SEQUENCE_LIST.items()):
+                if abs(int(hs)) == abs(int(self.JOINT_SEQUENCE_LIST.get(j))):
+                    temp.append(hj)
+            if temp == []:
+                temp.append(j)
+            self.JOINT_RELATIONS_LIST[j] = temp
 
         # jogging increments
         increments = self.INI.find("DISPLAY", "INCREMENTS")
@@ -244,6 +296,7 @@ class _IStat(object):
                 self.JOG_INCREMENTS = ["Continuous", ".001 mm", ".01 mm", ".1 mm", "1 mm"]
             else:
                 self.JOG_INCREMENTS = ["Continuous", ".0001 in", ".001 in", ".01 in", ".1 in"]
+            log.warning('Missing [DISPLAY] LINEAR_INCREMENTS- using defaults.')
 
         # angular jogging increments
         increments = self.INI.find("DISPLAY", "ANGULAR_INCREMENTS")
@@ -256,6 +309,9 @@ class _IStat(object):
                 self.ANGULAR_INCREMENTS.insert(0, "Continuous")
         else:
             self.ANGULAR_INCREMENTS = ["Continuous", "1", "45", "180", "360"]
+            if self.HAS_ANGULAR_JOINT:
+                log.warning('Missing [DISPLAY] ANGULAR_INCREMENTS- using defaults.')
+
         # grid increments
         grid_increments = self.INI.find("DISPLAY", "GRIDS")
         if grid_increments:
@@ -281,11 +337,18 @@ class _IStat(object):
         else:
             self.TRAJ_COORDINATES = None
         self.JOINT_COUNT = int(self.INI.find("KINS", "JOINTS") or 0)
-        self.DEFAULT_LINEAR_JOG_VEL = float(self.get_error_safe_setting("DISPLAY", "DEFAULT_LINEAR_VELOCITY", 1)) * 60
-        self.MIN_LINEAR_JOG_VEL = float(self.get_error_safe_setting("DISPLAY", "MIN_LINEAR_VELOCITY", 1)) * 60
-        self.MAX_LINEAR_JOG_VEL = float(self.get_error_safe_setting("DISPLAY", "MAX_LINEAR_VELOCITY", 5)) * 60
+
+        # check for weird kinematics like robots
+        self.IS_TRIVIAL_MACHINE = bool('trivkins' in self.get_error_safe_setting("KINS", "KINEMATICS",'trivial'))
+
+        safe = 25 if self.MACHINE_IS_METRIC else 1
+        self.DEFAULT_LINEAR_JOG_VEL = float(self.get_error_safe_setting("DISPLAY", "DEFAULT_LINEAR_VELOCITY", safe)) * 60
+        self.MIN_LINEAR_JOG_VEL = float(self.get_error_safe_setting("DISPLAY", "MIN_LINEAR_VELOCITY", 0)) * 60
+        safe = 125 if self.MACHINE_IS_METRIC else 5
+        self.MAX_LINEAR_JOG_VEL = float(self.get_error_safe_setting("DISPLAY", "MAX_LINEAR_VELOCITY", safe)) * 60
+
         self.DEFAULT_ANGULAR_JOG_VEL = float(self.get_error_safe_setting("DISPLAY", "DEFAULT_ANGULAR_VELOCITY", 6)) * 60
-        self.MIN_ANGULAR_JOG_VEL = float(self.get_error_safe_setting("DISPLAY", "MIN_ANGULAR_VELOCITY", 1)) * 60
+        self.MIN_ANGULAR_JOG_VEL = float(self.get_error_safe_setting("DISPLAY", "MIN_ANGULAR_VELOCITY", 0)) * 60
         self.MAX_ANGULAR_JOG_VEL = float(self.get_error_safe_setting("DISPLAY", "MAX_ANGULAR_VELOCITY", 60)) * 60
         log.debug('DEFAULT_LINEAR_VELOCITY = {}'.format(self.DEFAULT_LINEAR_JOG_VEL))
         log.debug('MIN_LINEAR_VELOCITY = {}'.format(self.MIN_LINEAR_JOG_VEL))
@@ -322,9 +385,11 @@ class _IStat(object):
             self.MIN_SPINDLE_OVERRIDE = self.MIN_SPINDLE_0_OVERRIDE
 
         self.MAX_FEED_OVERRIDE = float(self.get_error_safe_setting("DISPLAY", "MAX_FEED_OVERRIDE", 1.5)) * 100
+        if self.INI.find("TRAJ", "MAX_LINEAR_VELOCITY") is None:
+            if self.LINUXCNC_IS_RUNNING:
+                log.critical('INI Parsing Error, No MAX_LINEAR_VELOCITY Entry in TRAJ')
         self.MAX_TRAJ_VELOCITY = float(self.get_error_safe_setting("TRAJ", "MAX_LINEAR_VELOCITY",
-                                                                   self.get_error_safe_setting("AXIS_X", "MAX_VELOCITY",
-                                                                                               5))) * 60
+                                            self.get_error_safe_setting("AXIS_X", "MAX_VELOCITY", 5))) * 60
 
         # user message dialog system
         self.USRMESS_BOLDTEXT = self.INI.findall("DISPLAY", "MESSAGE_BOLDTEXT")
@@ -341,46 +406,111 @@ class _IStat(object):
             log.warning('Invalid message configuration (missing boldtext) in INI File [DISPLAY] sectioN')
         if len(self.USRMESS_TEXT) != len(self.USRMESS_DETAILS):
             log.warning('Invalid message configuration (missing details) in INI File [DISPLAY] sectioN')
+        if len(self.USRMESS_TEXT) != len(self.USRMESS_ICON):
+            log.warning('Invalid message configuration (missing icon) in INI File [DISPLAY] sectioN')
+            if self.USRMESS_ICON == []:
+                temp = 'INFO'
+            else:
+                temp = self.USRMESS_ICON[0]
+                self.USRMESS_ICON = []
+            for i in self.USRMESS_TEXT:
+                self.USRMESS_ICON.append(temp)
+
         try:
             self.ZIPPED_USRMESS = list(
                 zip(self.USRMESS_BOLDTEXT, self.USRMESS_TEXT, self.USRMESS_DETAILS, self.USRMESS_TYPE,
-                    self.USRMESS_PINNAME))
+                    self.USRMESS_PINNAME, self.USRMESS_ICON))
         except:
             self.ZIPPED_USRMESS = None
 
-        # XEmbed tabs
+        ##############
+        # Embed tabs #
+        ##############
+
         # AXIS panel style:
         self.GLADEVCP = (self.INI.find("DISPLAY", "GLADEVCP")) or None
 
-        # tab style for qtvcp tab style is used everty where
+        # tab style for qtvcp tab. style is used everywhere
+        good_flag = True
         self.TAB_NAMES = (self.INI.findall("DISPLAY", "EMBED_TAB_NAME")) or None
         self.TAB_LOCATIONS = (self.INI.findall("DISPLAY", "EMBED_TAB_LOCATION")) or []
-        self.TAB_CMDS = (self.INI.findall("DISPLAY", "EMBED_TAB_COMMAND")) or None
+        self.TAB_CMDS = (self.INI.findall("DISPLAY", "EMBED_TAB_COMMAND")) or []
         if self.TAB_NAMES is not None and len(self.TAB_NAMES) != len(self.TAB_CMDS):
-            log.critical('Embeded tab configuration -invalaid number of TAB_NAMES vrs TAB_CMDs')
+            log.critical('Embedded tab configuration -invalid number of TAB_NAMES vs TAB_CMDs')
+            good_flag = False
         if self.TAB_NAMES is not None and len(self.TAB_LOCATIONS) != len(self.TAB_NAMES):
-            log.warning('Embeded tab configuration -invalaid number of TAB_NAMES vrs TAB_LOCATION - guessng default.')
+            log.warning('Embedded tab configuration -invalid number of TAB_NAMES vs TAB_LOCATION - guessing default.')
             for num, i in enumerate(self.TAB_NAMES):
                 try:
                     if self.TAB_LOCATIONS[num]:
                         continue
                 except:
                     self.TAB_LOCATIONS.append("default")
-        try:
-            self.ZIPPED_TABS = list(zip(self.TAB_NAMES, self.TAB_LOCATIONS, self.TAB_CMDS))
-        except:
-            self.ZIPPED_TABS = None
 
-        self.MDI_COMMAND_LIST = (self.INI.findall("MDI_COMMAND_LIST", "MDI_COMMAND")) or None
+        # initial/default
+        self.NATIVE_EMBED = []
+        self.ZIPPED_TABS = None
+
+        # if no critical errors
+        if good_flag:
+            # check for duplicate names if qtvcp panels
+            if self.TAB_CMDS is not None:
+                nameList=[]
+                for num,i in enumerate(self.TAB_CMDS):
+                    if 'qtvcp' in i:
+                        nameList.append( self.TAB_NAMES[num])
+                # code to check for duplicate names
+                dup = {x for x in nameList if nameList.count(x) > 1}
+                if not dup == set():
+                    log.error('Embedded Qtvcp panel tab: Duplicate TAB_NAMES:{} in INI.'.format(dup))
+
+            try:
+                self.ZIPPED_TABS = list(zip(self.TAB_NAMES, self.TAB_LOCATIONS, self.TAB_CMDS))
+            except:
+                self.ZIPPED_TABS = None
+
+            # find qtvcp embedded - because they are added directly rather then x11 embedding
+            if self.TAB_CMDS is not None:
+                for i in self.TAB_CMDS:
+                    if i.split()[0].lower() == 'qtvcp':
+                        self.NATIVE_EMBED.append(True)
+                    else:
+                        self.NATIVE_EMBED.append(False)
+
+        ################
+        # MDI commands #
+        ################
+        # users can specify a label for the MDI action button by adding ',Some\nText'
+        # to the end of the MDI command
+        # here we separate them to two lists
+        # action_button takes it from there.
+        self.MDI_COMMAND_LIST = []
+        self.MDI_COMMAND_LABEL_LIST = []
+        temp = (self.INI.findall("MDI_COMMAND_LIST", "MDI_COMMAND")) or None
+        if temp is None:
+            self.MDI_COMMAND_LABEL_LIST.append(None)
+            self.MDI_COMMAND_LABEL_LIST.append(None)
+        else:
+            for i in temp:
+                for num,k in enumerate(i.split(',')):
+                    if num == 0:
+                        self.MDI_COMMAND_LIST.append(k)
+                        if len(i.split(',')) <2:
+                            self.MDI_COMMAND_LABEL_LIST.append(None)
+                    else:
+                        self.MDI_COMMAND_LABEL_LIST.append(k)
+
         self.TOOL_FILE_PATH = self.get_error_safe_setting("EMCIO", "TOOL_TABLE")
         self.POSTGUI_HALFILE_PATH = (self.INI.findall("HAL", "POSTGUI_HALFILE")) or None
+        self.POSTGUI_HAL_COMMANDS = (self.INI.findall("HAL", "POSTGUI_HALCMD")) or None
 
         # Some systems need repeat disabled for keyboard jogging because repeat rate is uneven
         self.DISABLE_REPEAT_KEYS_LIST = self.INI.find("DISPLAY", "DISABLE_REPEAT_KEYS") or None
 
         # maximum number of errors shown in on screen display
         self.MAX_DISPLAYED_ERRORS = int(self.INI.find("DISPLAY", "MAX_DISPLAYED_ERRORS") or 10)
-
+        self.TITLE = (self.INI.find("DISPLAY", "TITLE")) or ""
+        self.ICON = (self.INI.find("DISPLAY", "ICON")) or ""
     ###################
     # helper functions
     ###################
@@ -504,6 +634,39 @@ class _IStat(object):
         elif file_extension.lower() in (self.VALID_PROGRAM_EXTENSIONS):
             return True
         return False
+
+    def get_jnum_from_axisnum(self, axisnum):
+        joint = self.TRAJCO.index( "xyzabcuvw"[axisnum] )
+        return joint
+
+    # check to see if file name plus paths from
+    # SUBROUTINE_PATH, USER_M_PATH or PROGRAM_PREFIX from INI
+    # is an existing path (meaning linuxcnc can find it)
+    # fname should just be the filename
+    # returns the full path or None
+    def check_known_paths(self,fname, prefix = True, sub=True, user_m=True):
+        fname = os.path.split(fname)[1]
+        if prefix:
+            path = os.path.join(self.PROGRAM_PREFIX,fname)
+            if os.path.exists(path): return path
+        if sub:
+            for i in self.SUB_PATH_LIST:
+                path = os.path.expanduser(os.path.join(i,fname))
+                if os.path.exists(path):
+                    return path
+        if user_m:
+            for i in self.USER_M_PATH_LIST:
+                path = os.path.expanduser(os.path.join(i,fname))
+                if os.path.exists(path):
+                    return path
+        return None
+
+    # same as above but just return True or False
+    def is_in_known_paths(self,fname, prefix = True, sub=True, user_m=True):
+        fname = os.path.split(fname)[1]
+        if self.check_known_paths(fname,prefix,sub,user_m) is None:
+            return False
+        return True
 
     def __getitem__(self, item):
         return getattr(self, item)

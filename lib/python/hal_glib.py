@@ -146,6 +146,7 @@ class _GStat(GObject.GObject):
         'current-tool-offset': (GObject.SignalFlags.RUN_FIRST , GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,)),
 
         'motion-mode-changed': (GObject.SignalFlags.RUN_FIRST , GObject.TYPE_NONE, (GObject.TYPE_INT,)),
+        'motion-type-changed': (GObject.SignalFlags.RUN_FIRST , GObject.TYPE_NONE, (GObject.TYPE_INT,)),
         'spindle-control-changed': (GObject.SignalFlags.RUN_FIRST , GObject.TYPE_NONE,
              (GObject.TYPE_INT, GObject.TYPE_BOOLEAN, GObject.TYPE_INT, GObject.TYPE_BOOLEAN)),
         'current-feed-rate': (GObject.SignalFlags.RUN_FIRST , GObject.TYPE_NONE, (GObject.TYPE_FLOAT,)),
@@ -228,6 +229,21 @@ class _GStat(GObject.GObject):
              , linuxcnc.INTERP_IDLE: 'interp-idle'
              }
 
+    TEMPARARY_MESSAGE = 255
+    OPERATOR_ERROR = linuxcnc.OPERATOR_ERROR
+    OPERATOR_TEXT = linuxcnc.OPERATOR_TEXT
+    NML_ERROR = linuxcnc.NML_ERROR
+    NML_TEXT = linuxcnc.NML_TEXT
+
+    MANUAL = linuxcnc.MODE_MANUAL
+    AUTO = linuxcnc.MODE_AUTO
+    MDI = linuxcnc.MODE_MDI
+
+    STATE_ESTOP = linuxcnc.STATE_ESTOP
+    STATE_ESTOP_RESET = linuxcnc.STATE_ESTOP_RESET
+    STATE_ON = linuxcnc.STATE_ON
+    STATE_OFF = linuxcnc.STATE_OFF
+
     def __init__(self, stat = None):
         GObject.Object.__init__(self)
         self.stat = stat or linuxcnc.stat()
@@ -235,6 +251,7 @@ class _GStat(GObject.GObject):
         self._status_active = False
         self.old = {}
         self.old['tool-prep-number'] = 0
+        self.previous_mode = self.MANUAL
         try:
             self.stat.poll()
             self.merge()
@@ -277,6 +294,7 @@ class _GStat(GObject.GObject):
         except RuntimeError:
              self.old['tool-prep-number'] = -1
         self.old['motion-mode'] = self.stat.motion_mode
+        self.old['motion-type'] = self.stat.motion_type
         self.old['spindle-or'] = self.stat.spindle[0]['override']
         self.old['feed-or'] = self.stat.feedrate
         self.old['rapid-or'] = self.stat.rapidrate
@@ -320,7 +338,7 @@ class _GStat(GObject.GObject):
         self.old['hard-limits-list'] = hard_limit_list
         self.old['ferror-current'] = ferror
 
-        # active G codes
+        # active G-codes
         active_gcodes = []
         codes =''
         for i in sorted(self.stat.gcodes[1:]):
@@ -332,7 +350,7 @@ class _GStat(GObject.GObject):
         for i in active_gcodes:
             codes = codes +('%s '%i)
         self.old['g-code'] = codes
-        # extract specific G code modes
+        # extract specific G-code modes
         itime = fpm = fpr = css = rpm = metric = False
         radius = diameter = adm = idm = False
         for num,i in enumerate(active_gcodes):
@@ -364,7 +382,7 @@ class _GStat(GObject.GObject):
         else:
             self.old['spindle-speed']= self.stat.spindle[0]['speed']
 
-        # active M codes
+        # active M-codes
         active_mcodes = []
         mcodes = ''
         for i in sorted(self.stat.mcodes[1:]):
@@ -428,6 +446,7 @@ class _GStat(GObject.GObject):
         mode_old = old.get('mode', 0)
         mode_new = self.old['mode']
         if mode_new != mode_old:
+            self.previous_mode = mode_old
             self.emit(self.MODES[mode_new])
 
         interp_old = old.get('interp', 0)
@@ -489,6 +508,11 @@ class _GStat(GObject.GObject):
         motion_mode_new = self.old['motion-mode']
         if motion_mode_new != motion_mode_old:
             self.emit('motion-mode-changed', motion_mode_new)
+
+        motion_type_old = old.get('motion-type', None)
+        motion_type_new = self.old['motion-type']
+        if motion_type_new != motion_type_old:
+            self.emit('motion-type-changed', motion_type_new)
 
         # if the homed status has changed
         # check number of homed joints against number of available joints
@@ -582,7 +606,9 @@ class _GStat(GObject.GObject):
         max_velocity_or_old = old.get('max-velocity-or', None)
         max_velocity_or_new = self.old['max-velocity-or']
         if max_velocity_or_new != max_velocity_or_old:
-            self.emit('max-velocity-override-changed',max_velocity_or_new * 60)
+            # work around misconfigured config (missing MAX_LINEAR_VELOCITY in TRAJ)
+            if max_velocity_or_new != 1e99:
+                self.emit('max-velocity-override-changed',max_velocity_or_new * 60)
         # feed hold
         feed_hold_old = old.get('feed-hold', None)
         feed_hold_new = self.old['feed-hold']
@@ -611,7 +637,7 @@ class _GStat(GObject.GObject):
         #############################
         # Gcodes
         #############################
-        # G codes
+        # G-codes
         g_code_old = old.get('g-code', None)
         g_code_new = self.old['g-code']
         if g_code_new != g_code_old:
@@ -677,7 +703,7 @@ class _GStat(GObject.GObject):
         ####################################
         # Mcodes
         ####################################
-        # M codes
+        # M-codes
         m_code_old = old.get('m-code', None)
         m_code_new = self.old['m-code']
         if m_code_new != m_code_old:
@@ -746,7 +772,9 @@ class _GStat(GObject.GObject):
         rapid_or_new = self.old['rapid-or']
         self.emit('rapid-override-changed',rapid_or_new  * 100)
         max_velocity_or_new = self.old['max-velocity-or']
-        self.emit('max-velocity-override-changed',max_velocity_or_new * 60)
+        # work around misconfigured config (missing MAX_LINEAR_VELOCITY in TRAJ)
+        if max_velocity_or_new != 1e99:
+            self.emit('max-velocity-override-changed',max_velocity_or_new * 60)
         spindle_or_new = self.old['spindle-or']
         self.emit('spindle-override-changed',spindle_or_new  * 100)
 
@@ -794,7 +822,7 @@ class _GStat(GObject.GObject):
         tool_off_new = self.old['current-tool-offset']
         self.emit('current-tool-offset',tool_off_new)
 
-        # M codes
+        # M-codes
         m_code_new = self.old['m-code']
         self.emit('m-code-changed',m_code_new)
         flood_new = self.old['flood']
@@ -802,7 +830,7 @@ class _GStat(GObject.GObject):
         mist_new = self.old['mist']
         self.emit('mist-changed',mist_new)
 
-        # G codes
+        # G-codes
         g_code_new = self.old['g-code']
         self.emit('g-code-changed',g_code_new)
         # metric units G21
@@ -826,6 +854,10 @@ class _GStat(GObject.GObject):
         # Trajectory Motion mode
         motion_mode_new = self.old['motion-mode']
         self.emit('motion-mode-changed', motion_mode_new)
+
+        # Trajectory Motion type
+        motion_type_new = self.old['motion-type']
+        self.emit('motion-type-changed', motion_type_new)
 
         # Spindle requested speed
         spindle_spd_new = self.old['spindle-speed']
@@ -920,6 +952,9 @@ class _GStat(GObject.GObject):
     def get_current_mode(self):
         return self.old['mode']
 
+    def get_previous_mode(self):
+        return self.previous_mode
+
     # linear - in machine units
     def set_jograte(self, upm):
         self.current_jog_rate = upm
@@ -981,7 +1016,7 @@ class _GStat(GObject.GObject):
 
     def is_joint_homed(self, joint):
         self.stat.poll()
-        return self.stat.homed[joint]
+        return bool(self.stat.homed[joint])
 
     def is_all_homed(self):
         return self._is_all_homed
@@ -996,7 +1031,8 @@ class _GStat(GObject.GObject):
         return self.old['state']  > linuxcnc.STATE_OFF
 
     def estop_is_clear(self):
-        return self.old['state'] > linuxcnc.STATE_ESTOP
+        self.stat.poll()
+        return self.stat.task_state > linuxcnc.STATE_ESTOP
 
     def is_man_mode(self):
         self.stat.poll()
@@ -1065,6 +1101,13 @@ class _GStat(GObject.GObject):
         except:
             return None
         return bool(self.stat.motion_mode == linuxcnc.TRAJ_MODE_FREE)
+
+    def is_world_mode(self):
+        try:
+            self.stat.poll()
+        except:
+            return None
+        return bool(self.stat.motion_mode == linuxcnc.TRAJ_MODE_TELEOP)
 
     def is_status_valid(self):
         return self._status_active

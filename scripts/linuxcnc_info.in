@@ -46,9 +46,10 @@ git_commit () {
 
 # try to find a visual editor to show created file
 # use list with existing preference first, then other common editors
-editors="$VISUAL gedit mousepad geany nedit gvim abiword"
+editors="$VISUAL gedit mousepad geany nedit nano gvim abiword"
+VIEWER=""
 for e in $editors ; do
-  if [  -x "$(which $e)" ] ; then
+  if [  -x "$(command -v $e)" ] ; then
     VIEWER=$e
     break #use first editor found
   fi
@@ -61,6 +62,8 @@ while getopts hs OPT; do
     *) usage;;
   esac
 done
+
+[ -z "$VIEWER" ] && echo "No VIEWER: output to $ofile"
 
 # all subsequent output:
 exec 1>$ofile
@@ -87,7 +90,7 @@ function parse_after_colon () {
 
 function tryversion () {
   prog="$1"
-  if [ $(which "$prog") ] ; then
+  if [ $(command -v "$prog") ] ; then
      ans=$($prog --version 2>/dev/null)
      if [ -z "$ans" ] ; then
        echo "?"
@@ -115,7 +118,7 @@ show "        UTC Date" $(date -u)
 show "    this program" $0
 show "          uptime" $(uptime)
 show " lsb_release -sa" $(lsb_release -sa 2>/dev/null)
-show "  which linuxcnc" $(which linuxcnc)
+show "        linuxcnc" $(command -v linuxcnc)
 show "             pwd" $(pwd -P)
 show "            USER" $USER
 show "         LOGNAME" $LOGNAME

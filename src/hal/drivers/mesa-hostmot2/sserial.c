@@ -385,8 +385,21 @@ int hm2_sserial_get_param_value(hostmot2_t *hm2,
         case LBP_ENCODER:
             break; // Hard to imagine an encoder not in Process data
         case LBP_FLOAT:
-            r = hm2_sserial_get_bytes(hm2, chan, (void*)&(p->float_written),
-                                      g->ParmAddr, g->DataLength/8);
+            {
+                char buf[g->DataLength/8];
+                r = hm2_sserial_get_bytes(hm2, chan, &buf[0], g->ParmAddr, g->DataLength/8);
+                if (g->DataLength == sizeof(float) * 8) {
+                    float temp;
+                    memcpy((void*)&temp, &buf[0], sizeof(float));
+                    p->float_written = temp;
+                } else if (g->DataLength == sizeof(double) * 8) {
+                    double temp;
+                    memcpy((void*)&temp, &buf[0], sizeof(double));
+                    p->float_written = temp;
+                } else {
+                    HM2_ERR("sserial get param value: LBP_FLOAT of bit-length %i not handled\n", g->DataLength);
+                }
+            }
             if (set_hal) p->float_param = p->float_written;
             HM2_DBG("LBP_FLOAT %f %f \n", p->float_param, p->float_written);
             break;
@@ -1523,7 +1536,7 @@ fail1:
                         case LBP_FLOAT:
                         case LBP_NONVOL_FLOAT:
                             // comparing floats that might have different sizes is not trivial
-                            // this does a bitwise comparision of as many mantissa bits as might
+                            // this does a bitwise comparison of as many mantissa bits as might
                             // be expected to have been sent by the sserial remote
                             switch (g->DataLength){
                                 // ( double significand - variable type significand)
@@ -2169,8 +2182,8 @@ void hm2_sserial_setmode(hostmot2_t *hm2, hm2_sserial_instance_t *inst){
 // these are indicated when bit 13 (communication error) is set
 // after a doit command.  Further decoding of communication faults
 // should not be done unless bit 13 is set after a doit.  (but note
-// that for sserial firmware version <= 43, these bits are unintentially
-// sticky and are not reset after a doit)
+// that for sserial firmware version <= 43, these bits are
+// unintentionally sticky and are not reset after a doit)
 //
 // If bit 13 is set, bits 0 through 5 (local communication faults)
 // should be decoded and reported if they meet the inc/dec criteria

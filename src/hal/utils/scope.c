@@ -93,6 +93,12 @@ static void rm_single_button_clicked(GtkWidget * widget, gpointer * gdata);
 static void rm_roll_button_clicked(GtkWidget * widget, gpointer * gdata);
 static void rm_stop_button_clicked(GtkWidget * widget, gpointer * gdata);
 
+static void exit_on_signal(int signum) {
+    fprintf(stderr,"%s Caught signum=%d <%s>\n   killing userspace comp_id=%d\n"
+           ,__FILE__,signum,strsignal(signum),comp_id);
+    exit_from_hal();
+    exit(1);
+}
 /***********************************************************************
 *                        MAIN() FUNCTION                               *
 ************************************************************************/
@@ -204,6 +210,8 @@ int main(int argc, gchar * argv[])
     /* register signal handlers for ctrl-C and SIGTERM */
     signal(SIGINT, quit);
     signal(SIGTERM, quit);
+    signal(SIGSEGV, exit_on_signal);
+    signal(SIGFPE,  exit_on_signal);
 
     /* The interface is now completely set up */
     /* show the window */
@@ -537,17 +545,17 @@ static void define_menubar(GtkWidget *vboxtop) {
     gtk_menu_shell_append(GTK_MENU_SHELL(filemenu), sep1);
     gtk_widget_show(sep1);
 
-    fileopendatafile = gtk_menu_item_new_with_mnemonic(_("O_pen Data File..."));
+    fileopendatafile = gtk_menu_item_new_with_mnemonic(_("O_pen Log File"));
     gtk_menu_shell_append(GTK_MENU_SHELL(filemenu), fileopendatafile);
     g_signal_connect_swapped(fileopendatafile, "activate",
             G_CALLBACK(menuitem_response), "file/open datafile");
     gtk_widget_set_sensitive(GTK_WIDGET(fileopendatafile), FALSE); // XXX
     gtk_widget_show(fileopendatafile);
 
-    filesavedatafile = gtk_menu_item_new_with_mnemonic(_("S_ave Data File..."));
+    filesavedatafile = gtk_menu_item_new_with_mnemonic(_("S_ave Log File"));
     gtk_menu_shell_append(GTK_MENU_SHELL(filemenu), filesavedatafile);
     g_signal_connect_swapped(filesavedatafile, "activate",
-            G_CALLBACK(log_popup), 0);
+            G_CALLBACK(save_log_cb), 0);
     gtk_widget_show(filesavedatafile);
 
     gtk_menu_shell_append(GTK_MENU_SHELL(filemenu), sep2);
@@ -740,7 +748,10 @@ static void init_run_mode_window(void)
 static void exit_from_hal(void)
 {
     rtapi_shmem_delete(shm_id, comp_id);
-    hal_exit(comp_id);
+    if (comp_id >= 0) hal_exit(comp_id);
+    // set comp_id to avoid repeat invocations of hal_exit()
+    // when handling signal with atexit() in use:
+    comp_id = -1;
 }
 
 static void main_window_closed(GtkWidget * widget, gpointer * gdata)

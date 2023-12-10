@@ -26,13 +26,18 @@
 #        the messages are placed correct, until you reached the given max, then
 #        the popup will jump one message height down. As far as I found out till now
 #        it is caused because the height of the first message is not taken in care
-#        calculating the hight of the popup.
+#        calculating the height of the popup.
 
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import Pango
+
+try:
+    from gmoccapy import icon_theme_helper
+except:
+    import icon_theme_helper    # only for testing purpose, otherwise the main method in this file would fail
 
 class Notification(Gtk.Window):
     '''Notification(Gtk.Window)
@@ -57,6 +62,10 @@ class Notification(Gtk.Window):
                     True, GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT),
            'use_frames' : (GObject.TYPE_BOOLEAN, 'Use Frames for messages', 'You can separate the messages using frames, but you will need more space',
                     True, GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT),
+            'icon_theme_path' : (GObject.TYPE_STRING, 'Icon theme lookup path', 'Pathes where to look for icon themes',
+                      "", GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT),
+            'icon_theme_name' : (GObject.TYPE_STRING, 'Icon theme name', 'Name set in gmoccapy preferences',
+                      "classic", GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT),
                       }
     __gproperties = __gproperties__
 
@@ -67,13 +76,11 @@ class Notification(Gtk.Window):
 
     # build the main gui
     def __init__(self):
-        Gtk.Window.__init__(self)
-        self.connect('destroy', lambda*w:Gtk.main_quit())
         self.messages = []
         self.popup = Gtk.Window(type = Gtk.WindowType.POPUP)
         self.vbox = Gtk.VBox()
         self.popup.add(self.vbox)
-        self.icon_size = Gtk.IconSize.LARGE_TOOLBAR
+        self.icon_size = 24
         self.message_width = 200
         self.x_pos = 20
         self.y_pos = 20
@@ -82,13 +89,19 @@ class Notification(Gtk.Window):
         self.top_to_bottom = True
         self.use_frames = False
         self.height = 0
+        self.icon_theme = Gtk.IconTheme()
+
+        # Gtk.Window.__init__() sets all __gproperties__ to their default values.
+        # Therefore it calls do_set_property()
+        # So the Gtk.IconTheme has to ne defined before. The initialization of the
+        # primitive data types above are meaningless (and can be removed?).
+        super().__init__()
+        self.connect('destroy', lambda*w:Gtk.main_quit())
 
     # this will fill the main gui with the frames, containing the messages or errors
     def _show_message(self, message):
         number = message[0]
         text = message[1]
-        if message[2]:
-            icon_file_name = message[2]
         if self.use_frames:
             frame = Gtk.Frame()
             frame.set_label("")
@@ -100,13 +113,16 @@ class Notification(Gtk.Window):
         hbox.pack_start(labelnumber, False, False, 0)
         icon = Gtk.Image()
         if message[2]:
-            icon.set_from_file(icon_file_name)
+            icon_name = message[2]
         else:
-            icon.set_from_stock(Gtk.STOCK_DIALOG_ERROR, self.icon_size)
-        hbox.pack_start(icon, False, False, 0)
+            icon_name = "dialog_warning"
+        default_style = Gtk.Button().get_style_context()
+        pixbuf = icon_theme_helper.load_symbolic_from_icon_theme(self.icon_theme, icon_name, self.icon_size, default_style)
+        icon.set_from_pixbuf(pixbuf)
+        hbox.pack_start(icon, False, False, 3)
         label = Gtk.Label()
         label.set_line_wrap(True)
-        label.set_line_wrap_mode(Pango.WrapMode.CHAR)
+        label.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
         label.set_size_request(self.message_width, -1)
         font_desc = Pango.FontDescription(self.font)
         label.modify_font(font_desc)
@@ -114,23 +130,28 @@ class Notification(Gtk.Window):
         Pango_ok = True
         try:
             # The GError exception is raised if an error occurs while parsing the markup text.
-            Pango.parse_markup(text)        
+            Pango.parse_markup(text)
         except:
             Pango_ok = False
         if Pango_ok:
             label.set_markup(text)
         else:
             label.set_text(text)
+        label.set_xalign(0)
         hbox.pack_start(label, False, False, 0)
         btn_close = Gtk.Button()
+        btn_close.set_name("notification_close")
         image = Gtk.Image()
-        pixbuf = Gtk.IconTheme.get_default().load_icon("gtk-cancel", self.icon_size, 0)
+        pixbuf = icon_theme_helper.load_symbolic_from_icon_theme(self.icon_theme ,"window_close", self.icon_size, default_style)
         image.set_from_pixbuf(pixbuf)
-        
         btn_close.set_image(image)
         btn_close.set_border_width(2)
         btn_close.connect('clicked', self._on_btn_close_clicked, labelnumber.get_text())
-        hbox.pack_start(btn_close, False, False, 0)
+        btn_close.set_size_request(48, 48)
+        btn_box = Gtk.Box.new(Gtk.Orientation.VERTICAL,0)
+        btn_box.set_center_widget(btn_close)
+        btn_box.show()
+        hbox.pack_end(btn_box, False, False, 0)
         if self.use_frames:
             widget = frame
         else:
@@ -149,13 +170,13 @@ class Notification(Gtk.Window):
         #labelnumber.show()
         self.vbox.show()
 
-    # add a message, the message is a string, it will be line wraped
+    # add a message, the message is a string, it will be line wrapped
     # if to long for the frame
-    def add_message(self, message, icon_file_name):
+    def add_message(self, message, icon_name=None):
         '''Notification.add_message(messagetext, icon_file_name)
-        
+
            messagetext = a string to display
-           icon_file_name = a valid absolut path to an icon or None
+           icon_file_name = a valid absolute path to an icon or None
         '''
         self.popup.hide()
         self.popup.resize(1, 1)
@@ -163,7 +184,7 @@ class Notification(Gtk.Window):
         if number_of_messages == self.max_messages:
             self.del_first()
             number_of_messages = len(self.messages)
-        self.messages.append([number_of_messages, message, icon_file_name])
+        self.messages.append([number_of_messages, message, icon_name])
         self._show_message(self.messages[number_of_messages])
         if not self.top_to_bottom:
             self.height = self.popup.get_size()[1]
@@ -192,11 +213,11 @@ class Notification(Gtk.Window):
 
     # this will delete a message, if the user gives a valid number it will be deleted,
     # but the user must take care to use the correct number
-    # if you give a value of "-1" all messages will be deletet
+    # if you give a value of "-1" all messages will be deleted
     def del_message(self, messagenumber):
         '''del_message(messagenumber)
            delete the message with the given number
-           
+
            messagenumber = integer
                            -1 will erase all messages
         '''
@@ -206,7 +227,7 @@ class Notification(Gtk.Window):
             self._refill_messages()
             return True
         elif messagenumber > len(self.messages) or messagenumber < 0:
-            self.add_message(_('Error trying to delet the message with number {0}'.format(messagenumber), None))
+            self.add_message(_('Error trying to delete the message with number {0}'.format(messagenumber), None))
             return False
         try:
             del self.messages[int(messagenumber)]
@@ -216,20 +237,20 @@ class Notification(Gtk.Window):
         return True
 
     # this is the recomendet way to delete a message, by clicking the
-    # close button of the coresponding frame
+    # close button of the corresponding frame
     def _on_btn_close_clicked(self, widget, labelnumber):
         del self.messages[int(labelnumber)]
         self.emit("message_deleted", self.messages)
         self._refill_messages()
 
     def _refill_messages(self):
-        # first we have to hide all messages, otherwise the popup window will mantain
+        # first we have to hide all messages, otherwise the popup window will maintain
         # all the old messages
         childs = self.popup.get_children()[0].get_children()
         for child in childs:
             child.hide()
         # then we rezise the popup window to a very small size, otherwise the dimensions
-        # of the window will be mantained
+        # of the window will be maintained
         self.popup.resize(1, 1)
         # if it was the last message, than we can hide the popup window
         if len(self.messages) == 0:
@@ -257,6 +278,7 @@ class Notification(Gtk.Window):
         try:
             name = property.name.replace('-', '_')
             if name in list(self.__gproperties.keys()):
+                # print("Set property", property, "to", value)
                 setattr(self, name, value)
                 self.queue_draw()
                 if name == 'icon_size':
@@ -275,18 +297,30 @@ class Notification(Gtk.Window):
                     self.top_to_bottom = value
                 if name == 'use_frames':
                     self.use_frames = value
+                if name == 'icon_theme_path':
+                    self.icon_theme.append_search_path(value)
+                if name == 'icon_theme_name':
+                    self.icon_theme.set_custom_theme(value)
             else:
                 raise AttributeError('unknown notification set_property %s' % property.name)
-        except:
-            print('Attribute error', property, "and", type(value) , value)
+        except AttributeError as e:
+            print('Attribute error in property:', property, "type:", type(value) , "value:", value)
+            print("{0} exception occurred {1}".format(type(e).__name__, e.args))
             pass
 
 # for testing without glade editor:
 def main():
 
     notification = Notification()
-    notification.add_message('Halo World out there', '/usr/share/gmoccapy/images/applet-critical.png')
-    notification.add_message('Hallo World ', '/usr/share/gmoccapy/images/std_info.gif')
+    notification.icon_theme.append_search_path("../../../../share/gmoccapy/icons/") # relative from this file location
+    notification.icon_theme.append_search_path("../share/gmoccapy/icons/")
+    notification.icon_theme.append_search_path("/usr/share/gmoccapy/icons/")
+    notification.icon_theme.set_custom_theme("classic")
+    # notification.icon_theme.set_custom_theme("material")
+    # notification.icon_theme.set_custom_theme("material-light")
+    notification.add_message('This is a warning', 'dialog_warning')
+    notification.add_message('Hallo World this is a long string that have a linebreak ', 'dialog_information')
+    notification.add_message('This has a default icon')
     notification.show()
     #def debug(self, text):
     #    print("debug", text)

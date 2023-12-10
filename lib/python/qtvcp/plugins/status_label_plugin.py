@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
-import sip
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtGui import QIcon, QPixmap, QTextFormat
-from PyQt5.QtWidgets import QDialog, QLabel
-from PyQt5.QtCore import pyqtProperty, QVariant
+from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtCore import QVariant
 from PyQt5.QtDesigner import QPyDesignerCustomWidgetPlugin, QExtensionFactory, QPyDesignerTaskMenuExtension, \
     QPyDesignerPropertySheetExtension, QDesignerFormWindowInterface
 
@@ -219,8 +217,6 @@ class StatusLabelTaskMenuFactory(QExtensionFactory):
             return None
         if iid == Q_TYPEID['QDesignerTaskMenuExtension']:
             return StatusLabelMenuEntry(obj, parent)
-        elif iid == Q_TYPEID['QDesignerMemberSheetExtension']:
-            return StatusLabelMemberSheet(obj, parent)
         return None
 
 
@@ -343,8 +339,8 @@ class StatusLabelDialog(QtWidgets.QDialog):
                   ('Tool Diameter', ['tool_diameter', 6], []),
                   ('Tool Offset', ['tool_offset', 3], []),
                   ('Tool Comment', ['tool_comment', 2], []))
-        node_6 = (('Active G Codes', ['gcodes', 2], []),
-                  ('Active M Codes', ['mcodes', 2], []),
+        node_6 = (('Active G-Codes', ['gcodes', 2], []),
+                  ('Active M-Codes', ['mcodes', 2], []),
                   ('Active G5X System', ['user_system', 2], []))
         node_7 = (('File Name', ['filename', 2], []),
                   ('File Path', ['filepath', 2], []))

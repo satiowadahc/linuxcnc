@@ -523,7 +523,7 @@ public:
     void setMacro9(bool enabled);
     //! \sa setMacro9(bool, size_t)
     void setMacro10(bool enabled);
-    //! \sa setMacro10(bool, size_t)        // Hardcoded Absolue/relative Dro
+    //! \sa setMacro10(bool, size_t)        // Hardcoded Absolute/relative Dro
     void setMacro11(bool enabled);
     //! \sa setMacro11(bool, size_t)
     void setMacro12(bool enabled);
@@ -549,6 +549,10 @@ public:
     //! Writes the corresponding counter to to each axis' count.
     //! \param counters values to propagate to each axis
     void setJogCounts(const HandWheelCounters& counters);
+    //! waits until a given pin is set to a requested state 
+    //! \param state requested state
+    //! \param pin requested pin to compare with
+    void checkState(bool state, hal_bit_t *pin);
 
     //! Returns the axis position.
     //! \param absolute true absolute, false relative

@@ -107,7 +107,7 @@ typedef struct {
     hal_bit_t *x4_mode;		/* u:r enables x4 counting (default) */
     hal_bit_t *counter_mode;	/* u:r enables counter mode */
     hal_s32_t *missing_teeth;   /* u:r non-zero enables missing-teeth index */
-    hal_s32_t dt;              /* u:w most recent tooth space */
+    hal_s32_t dt;		/* u:w most recent tooth space */
     hal_s32_t limit_dt;         /* u:r c:w inter-count gap (nS) to define index */
     atomic buf[2];		/* u:w c:r double buffer for atomic data */
     volatile atomic *bp;	/* u:r c:w ptr to in-use buffer */
@@ -156,7 +156,7 @@ static counter_t *counter_array;
    down 1 after glitch), and on both inputs simultaneously (no count
    at all)  In theory, it can count once per cycle, in practice the
    maximum count rate should be at _least_ 10% below the sample rate,
-   and preferrable around half the sample rate.  It counts every
+   and preferable around half the sample rate.  It counts every
    edge of the quadrature waveform, 4 counts per complete cycle.
 */
 static const unsigned char lut_x4[16] = {
@@ -482,8 +482,10 @@ static void capture(void *arg, long period)
 		vel = (delta_counts * cntr->scale ) / (delta_time * 1e-9);
 		*(cntr->vel) = vel;
 		/* decide how many ns to detect missing-pulse index */
-		cntr->limit_dt *= 0.9;
-		cntr->limit_dt += 0.1 * ((*(cntr->missing_teeth) + 0.5) * (delta_time / delta_counts));
+		if (delta_counts) {
+		    cntr->limit_dt *= 0.9;
+		    cntr->limit_dt += 0.1 * ((*(cntr->missing_teeth) + 0.5) * (delta_time / delta_counts));
+		}
 	    }
 	} else {
 	    /* no count */

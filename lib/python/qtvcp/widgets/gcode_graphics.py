@@ -23,7 +23,8 @@ PyQt5 widget for plotting gcode.
 import sys
 import os
 import gcode
-from PyQt5.QtCore import pyqtProperty, QTimer
+import linuxcnc
+from PyQt5.QtCore import pyqtProperty, QTimer, Qt
 from PyQt5.QtGui import QColor
 
 from qt5_graphics import Lcnc_3dGraphics
@@ -54,7 +55,7 @@ class  GCodeGraphics(Lcnc_3dGraphics, _HalWidgetBase):
         self._overlayColor = QColor(0, 0, 0, 0)
 
         self.colors['back'] = (0.0, 0.0, 0.75)  # blue
-        self._backgroundColor = QColor(0, 0, 0.75, 150)
+        self._backgroundColor = QColor(0, 0, 191, 150)
         self._jogColor = QColor(0, 0, 0, 0)
         self._feedColor = QColor(0, 0, 0, 0)
         self._rapidColor = QColor(0, 0, 0, 0)
@@ -65,10 +66,25 @@ class  GCodeGraphics(Lcnc_3dGraphics, _HalWidgetBase):
 
         self.show_overlay = False  # no DRO or DRO overlay
         self._reload_filename = None
+        self.show_small_origin = True
 
         self._view_incr = 20
         self.inhibit_selection = False
         self._block_line_selected = False
+
+        # stop response to external STATUS signals
+        self._disable_STATUS_signals = False
+        self._block_autoLoad = None
+        self._block_reLoad = None
+        self._block_viewChanged = None
+        self._block_lineSelect = None
+
+        self._mouseMode = 0
+
+        if INFO.MACHINE_IS_METRIC:
+            self.mach_units = 'Metric'
+        else:
+            self.mach_units = 'Imperial'
 
     def addTimer(self):
         self.timer = QTimer()
@@ -76,12 +92,16 @@ class  GCodeGraphics(Lcnc_3dGraphics, _HalWidgetBase):
         self.timer.start(INFO.GRAPHICS_CYCLE_TIME)
 
     def _hal_init(self):
-        STATUS.connect('file-loaded', self.load_program)
-        STATUS.connect('reload-display', self.reloadfile)
+        self._block_autoLoad = STATUS.connect('file-loaded', self.load_program)
+        self._block_reLoad = STATUS.connect('reload-display', self.reloadfile)
         STATUS.connect('actual-spindle-speed-changed', self.set_spindle_speed)
         STATUS.connect('metric-mode-changed', lambda w, f: self.set_metric_units(w, f))
-        STATUS.connect('graphics-view-changed', lambda w, v, a: self.set_view_signal(v, a))
-        STATUS.connect('gcode-line-selected', lambda w, l: self.highlight_graphics(l))
+        self._block_viewChanged = STATUS.connect('graphics-view-changed', lambda w, v, a: self.set_view_signal(v, a))
+        self._block_lineSelect = STATUS.connect('gcode-line-selected', lambda w, l: self.highlight_graphics(l))
+        # we do this in this function because the property InhibitControls
+        # is set before the STATUS (GObject) signal ids can be recorded
+        if self._disable_STATUS_signals:
+            self.updateSignals(True)
 
         # If there is a preference file object use it to load the user view position data
         if self.PREFS_:
@@ -94,12 +114,28 @@ class  GCodeGraphics(Lcnc_3dGraphics, _HalWidgetBase):
             lon = self.PREFS_.getpref(self.HAL_NAME_+'-user-lon', lon, float, 'SCREEN_CONTROL_LAST_SETTING')
             self.presetViewSettings(v,z,x,y,lat,lon)
 
-    # external source asked for hightlight,
+    # when qtvcp closes this gets called
+    def _hal_cleanup(self):
+        if self.PREFS_:
+            v,z,x,y,lat,lon = self.getRecordedViewSettings()
+            LOG.debug('Saving {} data to file.'.format(self.HAL_NAME_))
+            self.PREFS_.putpref(self.HAL_NAME_+'-user-view', v, str, 'SCREEN_CONTROL_LAST_SETTING')
+            self.PREFS_.putpref(self.HAL_NAME_+'-user-zoom', z, float, 'SCREEN_CONTROL_LAST_SETTING')
+            self.PREFS_.putpref(self.HAL_NAME_+'-user-panx', x, float, 'SCREEN_CONTROL_LAST_SETTING')
+            self.PREFS_.putpref(self.HAL_NAME_+'-user-pany', y, float, 'SCREEN_CONTROL_LAST_SETTING')
+            self.PREFS_.putpref(self.HAL_NAME_+'-user-lat', lat, float, 'SCREEN_CONTROL_LAST_SETTING')
+            self.PREFS_.putpref(self.HAL_NAME_+'-user-lon', lon, float, 'SCREEN_CONTROL_LAST_SETTING')
+
+    # external source asked for highlight,
     # make sure we block the propagation
     def highlight_graphics(self, line):
         if self._current_file is None: return
         self._block_line_selected = True
         self.set_highlight_line(line)
+
+    # used to clear highlighting externally
+    def clear_highlight(self):
+        self.set_highlight_line(None)
 
     def set_view_signal(self, view, args):
         v = view.lower()
@@ -205,17 +241,49 @@ class  GCodeGraphics(Lcnc_3dGraphics, _HalWidgetBase):
             print('error', self._reload_filename)
             pass
 
-    # when qtvcp closes this gets called
-    def _hal_cleanup(self):
-        if self.PREFS_:
-            v,z,x,y,lat,lon = self.getRecordedViewSettings()
-            LOG.debug('Saving {} data to file.'.format(self.HAL_NAME_))
-            self.PREFS_.putpref(self.HAL_NAME_+'-user-view', v, str, 'SCREEN_CONTROL_LAST_SETTING')
-            self.PREFS_.putpref(self.HAL_NAME_+'-user-zoom', z, float, 'SCREEN_CONTROL_LAST_SETTING')
-            self.PREFS_.putpref(self.HAL_NAME_+'-user-panx', x, float, 'SCREEN_CONTROL_LAST_SETTING')
-            self.PREFS_.putpref(self.HAL_NAME_+'-user-pany', y, float, 'SCREEN_CONTROL_LAST_SETTING')
-            self.PREFS_.putpref(self.HAL_NAME_+'-user-lat', lat, float, 'SCREEN_CONTROL_LAST_SETTING')
-            self.PREFS_.putpref(self.HAL_NAME_+'-user-lon', lon, float, 'SCREEN_CONTROL_LAST_SETTING')
+    def updateSignals(self, state):
+        if self._block_autoLoad == None:
+            return
+        if state:
+            STATUS.handler_block(self._block_autoLoad)
+            STATUS.handler_block(self._block_reLoad)
+            STATUS.handler_block(self._block_viewChanged)
+            STATUS.handler_block(self._block_lineSelect)
+        else:
+            STATUS.handler_unblock(self._block_autoLoad)
+            STATUS.handler_unblock(self._block_reLoad)
+            STATUS.handler_unblock(self._block_viewChanged)
+            STATUS.handler_unblock(self._block_lineSelect)
+
+    def updateMouseMode(self, value):
+        if value == 0:
+            m = Qt.LeftButton;   z = Qt.MiddleButton; r = Qt.RightButton
+        elif value == 1:
+            m = Qt.MiddleButton; z = Qt.RightButton;  r = Qt.LeftButton
+        elif value == 2:
+            m = Qt.MiddleButton; z = Qt.LeftButton;   r = Qt.RightButton
+        elif value == 3:
+            m = Qt.LeftButton;   z = Qt.RightButton;  r = Qt.MiddleButton
+        elif value == 4:
+            m = Qt.RightButton;  z = Qt.LeftButton;   r = Qt.MiddleButton
+        elif value == 5:
+            m = Qt.RightButton;  z = Qt.MiddleButton; r = Qt.LeftButton
+        elif value == 6:
+            m = Qt.LeftButton;   z = Qt.MiddleButton; r = False
+        elif value == 7:
+            m = Qt.MiddleButton; z = Qt.LeftButton;   r = False
+        elif value == 8:
+            m = Qt.RightButton;  z = Qt.LeftButton;   r = False
+        elif value == 9:
+            m = Qt.LeftButton;   z = Qt.RightButton;  r = False
+        elif value == 10:
+            m = Qt.MiddleButton; z = Qt.RightButton;  r = False
+        elif value == 11:
+            m = Qt.RightButton;  z = Qt.MiddleButton; r = False
+        else:
+            return
+        self._buttonList =[m,z,r]
+
 
     ####################################################
     # functions that override qt5_graphics
@@ -255,6 +323,8 @@ class  GCodeGraphics(Lcnc_3dGraphics, _HalWidgetBase):
         super( GCodeGraphics, self).emit_percent(f)
         STATUS.emit('graphics-loading-progress',f)
 
+    def get_joints_mode(self):
+        return STATUS.stat.motion_mode == linuxcnc.TRAJ_MODE_FREE
     #########################################################################
     # This is how designer can interact with our widget properties.
     # property getter/setters
@@ -312,6 +382,14 @@ class  GCodeGraphics(Lcnc_3dGraphics, _HalWidgetBase):
         return self.show_offsets
     _offsets = pyqtProperty(bool, getShowOffsets, setShowOffsets)
 
+    # show small origin
+    def setShowSmallOrigin(self, state):
+        self.show_small_origin = state
+        self.updateGL()
+    def getShowSmallOrigin(self):
+        return self.show_small_origin
+    _small_origin = pyqtProperty(bool, getShowSmallOrigin, setShowSmallOrigin)
+
     def getOverlayColor(self):
         return self._overlayColor
     def setOverlayColor(self, value):
@@ -319,7 +397,7 @@ class  GCodeGraphics(Lcnc_3dGraphics, _HalWidgetBase):
         self.colors['overlay_background'] = (value.redF(), value.greenF(), value.blueF())
         self.updateGL()
     def resetOverlayColor(self):
-        self._overlayColor = QColor(0, 0, .75, 150)
+        self._overlayColor = QColor(0, 0, 191, 150)
     overlay_color = pyqtProperty(QColor, getOverlayColor, setOverlayColor, resetOverlayColor)
 
     def getBackgroundColor(self):
@@ -389,6 +467,37 @@ class  GCodeGraphics(Lcnc_3dGraphics, _HalWidgetBase):
         self._rapidColor = QColor(0, 0, 0, 0)
 
     Rapid_color = pyqtProperty(QColor, getRapidColor, setRapidColor, resetRapidColor)
+
+    # Inhibit external controls
+    def setInhibitControls(self, state):
+        self._disable_STATUS_signals = state
+        self.updateSignals(state)
+    def getInhibitControls(self):
+        return self._disable_STATUS_signals
+    def resetInhibitControls(self):
+        self._disable_STATUS_signals = False
+        self.updateSignals(False)
+    InhibitControls = pyqtProperty(bool, getInhibitControls, setInhibitControls,resetInhibitControls)
+
+    # set Mouse button controls
+    def setMouseButtonMode(self, value):
+        self._mouseMode = value
+        self.updateMouseMode(value)
+    def getMouseButtonMode(self):
+        return self._mouseMode
+    def resetMouseButtonMode(self):
+        self._mouseMode = 0
+        self.updateMouseMode(0)
+    MouseButtonMode = pyqtProperty(int, getMouseButtonMode, setMouseButtonMode,resetMouseButtonMode)
+
+    # set mouse wheel zoom inversion
+    def setMouseWheelInvertZoom(self, state):
+        self._invertWheelZoom = state
+    def getMouseWheelInvertZoom(self):
+        return self._invertWheelZoom
+    def resetMouseWheelInvertZoom(self):
+        self._invertWheelZoom = False
+    MouseWheelInvertZoom = pyqtProperty(bool, getMouseWheelInvertZoom, setMouseWheelInvertZoom, resetMouseWheelInvertZoom)
 
 # For testing purposes, include code to allow a widget to be created and shown
 # if this file is run.

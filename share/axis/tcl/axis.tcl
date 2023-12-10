@@ -73,7 +73,7 @@ setup_menu_accel .menu.file end [_ "_Reload"]
 .menu.file add command \
         -accelerator [_ "Ctrl-S"] \
         -command save_gcode
-setup_menu_accel .menu.file end [_ "_Save gcode as..."]
+setup_menu_accel .menu.file end [_ "_Save G-code as..."]
 
 .menu.file add command \
         -command gcode_properties
@@ -384,7 +384,7 @@ setup_menu_accel .menu.view end [_ "_Clear live plot"]
 	-variable show_pyvcppanel \
 	-accelerator [_ "Ctrl-E"] \
 	-command toggle_show_pyvcppanel
-setup_menu_accel .menu.view end [_ "Show pyVCP pan_el"]
+setup_menu_accel .menu.view end [_ "Show PyVCP pan_el"]
 
 .menu.view add separator
 
@@ -516,7 +516,7 @@ setup_widget_accel .toolbar.file_open {}
 
 Button .toolbar.reload \
 	-command { reload_file } \
-	-helptext [_ "Reopen current file \[Control-R\]"] \
+	-helptext [_ "Reopen current file \[Ctrl-R\]"] \
 	-image [load_image tool_reload] \
 	-relief link \
 	-takefocus 0
@@ -1399,9 +1399,9 @@ label ${pane_top}.ajogspeed.l1
 scale ${pane_top}.ajogspeed.s -bigincrement 0 -from .06 -to 1 -resolution .020 -showvalue 0 -variable ajog_slider_val -command update_ajog_slider_vel -orient h -takefocus 0
 label ${pane_top}.ajogspeed.l -textv jog_aspeed -width 6 -anchor e
 pack ${pane_top}.ajogspeed.l0 -side left
-pack ${pane_top}.ajogspeed.l -side left
-pack ${pane_top}.ajogspeed.l1 -side left
 pack ${pane_top}.ajogspeed.s -side right
+pack ${pane_top}.ajogspeed.l1 -side right
+pack ${pane_top}.ajogspeed.l -side right
 bind . <less> [regsub %W [bind Scale <Left>] ${pane_top}.ajogspeed.s]
 bind . <greater> [regsub %W [bind Scale <Right>] ${pane_top}.ajogspeed.s]
 
@@ -1412,9 +1412,9 @@ label ${pane_top}.jogspeed.l1
 scale ${pane_top}.jogspeed.s -bigincrement 0 -from .06 -to 1 -resolution .020 -showvalue 0 -variable jog_slider_val -command update_jog_slider_vel -orient h -takefocus 0
 label ${pane_top}.jogspeed.l -textv jog_speed -width 6 -anchor e
 pack ${pane_top}.jogspeed.l0 -side left
-pack ${pane_top}.jogspeed.l -side left
-pack ${pane_top}.jogspeed.l1 -side left
 pack ${pane_top}.jogspeed.s -side right
+pack ${pane_top}.jogspeed.l1 -side right
+pack ${pane_top}.jogspeed.l -side right
 bind . , [regsub %W [bind Scale <Left>] ${pane_top}.jogspeed.s]
 bind . . [regsub %W [bind Scale <Right>] ${pane_top}.jogspeed.s]
 
@@ -1424,9 +1424,9 @@ label ${pane_top}.maxvel.l1
 scale ${pane_top}.maxvel.s -bigincrement 0 -from .06 -to 1 -resolution .020 -showvalue 0 -variable maxvel_slider_val -command update_maxvel_slider_vel -orient h -takefocus 0
 label ${pane_top}.maxvel.l -textv maxvel_speed -width 6 -anchor e
 pack ${pane_top}.maxvel.l0 -side left
-pack ${pane_top}.maxvel.l -side left
-pack ${pane_top}.maxvel.l1 -side left
 pack ${pane_top}.maxvel.s -side right
+pack ${pane_top}.maxvel.l1 -side right
+pack ${pane_top}.maxvel.l -side right
 bind . <semicolon> [regsub %W [bind Scale <Left>] ${pane_top}.maxvel.s]
 bind . ' [regsub %W [bind Scale <Right>] ${pane_top}.maxvel.s]
 
@@ -1780,7 +1780,7 @@ proc update_state {args} {
     state  {$interp_state == $INTERP_IDLE && $taskfile != ""} \
         .toolbar.reload {.menu.file "_Reload"}
     state  {$taskfile != ""} \
-        {.menu.file "_Save gcode as..."}
+        {.menu.file "_Save G-code as..."}
     state  {$interp_state == $INTERP_IDLE && $taskfile != "" && $::has_editor} \
         {.menu.file "_Edit..."}
     state  {$taskfile != ""} {.menu.file "_Properties..."}
@@ -2257,7 +2257,7 @@ DynamicHelp::add $_tabs_manual.flood -text [_ "Turn flood on or off \[F8\]"]
 DynamicHelp::add $_tabs_manual.mist -text [_ "Turn mist on or off \[F7\]"]
 DynamicHelp::add $_tabs_manual.jogf.zerohome.home -text [_ "Send active axis home \[Home\]"]
 DynamicHelp::add $_tabs_manual.jogf.zerohome.zero -text [_ "Set G54 offset for active axis \[End\]"]
-DynamicHelp::add $_tabs_manual.jogf.zerohome.tooltouch -text [_ "Set tool offset for loaded tool \[Control-End\]"]
+DynamicHelp::add $_tabs_manual.jogf.zerohome.tooltouch -text [_ "Set tool offset for loaded tool \[Ctrl-End\]"]
 DynamicHelp::add $_tabs_manual.axes.axisx -text [_ "Activate axis \[X\]"]
 DynamicHelp::add $_tabs_manual.axes.axisy -text [_ "Activate axis \[Y\]"]
 DynamicHelp::add $_tabs_manual.axes.axisz -text [_ "Activate axis \[Z\]"]

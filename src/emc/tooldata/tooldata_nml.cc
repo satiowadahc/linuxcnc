@@ -74,8 +74,8 @@ void tooldata_reset()
 toolidx_t tooldata_get(CANON_TOOL_TABLE* pdata,int idx)
 {
     if (idx < 0 || idx >= CANON_POCKETS_MAX) {
-        fprintf(stderr,"!!!%5d PROBLEM tooldata_get(): idx=%d, maxallowed=%d\n",
-                getpid(),idx,CANON_POCKETS_MAX-1);
+        // ui programs may query for nonexistent idx values
+        // and must handle this error
         return IDX_FAIL;
     }
 
@@ -92,6 +92,7 @@ toolidx_t tooldata_get(CANON_TOOL_TABLE* pdata,int idx)
 int tooldata_find_index_for_tool(int toolno)
 {
     int foundidx = -1;
+    if (toolno == -1) {return -1;}
     for(int idx = 0;idx < CANON_POCKETS_MAX;idx++){
         if ((the_table+idx)->toolno == toolno) {
             foundidx = idx;

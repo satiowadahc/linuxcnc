@@ -28,14 +28,14 @@
 */
 
 /** This library is free software; you can redistribute it and/or
-    modify it under the terms of version 2.1 of the GNU Lesser General
+    modify it under the terms of version 2 of the GNU Library General
     Public License as published by the Free Software Foundation.
     This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU Lesser General Public License for more details.
 
-    You should have received a copy of the GNU Lesser General Public
+    You should have received a copy of the GNU Library General Public
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
@@ -108,8 +108,8 @@ static int init_hal_data(void);
     This is done to improve realtime performance.  'shmalloc_up()'
     is used to allocate data that will be accessed by realtime
     code, while 'shmalloc_dn()' is used to allocate the much
-    larger structures that are accessed only occaisionally during
-    init.  This groups all the realtime data together, inproving
+    larger structures that are accessed only occasionally during
+    init.  This groups all the realtime data together, improving
     cache performance.
 */
 static void *shmalloc_up(long int size);
@@ -349,7 +349,7 @@ int hal_exit(int comp_id)
     --ref_cnt;
 #ifdef ULAPI
     if(ref_cnt == 0) {
-        rtapi_print_msg(RTAPI_MSG_DBG, "HAL:  releasing RTAPI resources");
+        rtapi_print_msg(RTAPI_MSG_DBG, "HAL: releasing RTAPI resources\n");
 	/* release RTAPI resources */
 	rtapi_shmem_delete(lib_mem_id, lib_module_id);
 	rtapi_exit(lib_module_id);
@@ -429,6 +429,18 @@ int hal_set_constructor(int comp_id, constructor make) {
 }
 #endif
 
+int hal_set_unready(int comp_id) {
+    hal_comp_t *comp;
+    rtapi_mutex_get(&(hal_data->mutex));
+    comp = halpr_find_comp_by_id(comp_id);
+    if (comp) { comp->ready = 0; }
+    rtapi_mutex_give(&(hal_data->mutex));
+    if (comp) {return 0;}
+    rtapi_print_msg(RTAPI_MSG_ERR,
+         "HAL: ERROR: hal_set_unready(): component %d not found\n", comp_id);
+    return -EINVAL;
+}
+
 int hal_ready(int comp_id) {
     int next;
     hal_comp_t *comp;
@@ -465,6 +477,46 @@ int hal_ready(int comp_id) {
         return -EINVAL;
     }
     comp->ready = 1;
+    rtapi_mutex_give(&(hal_data->mutex));
+    return 0;
+}
+
+int hal_unready(int comp_id) {
+    int next;
+    hal_comp_t *comp;
+
+    rtapi_mutex_get(&(hal_data->mutex));
+
+    /* search component list for 'comp_id' */
+    next = hal_data->comp_list_ptr;
+    if (next == 0) {
+	/* list is empty - should never happen, but... */
+	rtapi_mutex_give(&(hal_data->mutex));
+	rtapi_print_msg(RTAPI_MSG_ERR,
+	    "HAL: ERROR: component %d not found\n", comp_id);
+	return -EINVAL;
+    }
+
+    comp = SHMPTR(next);
+    while (comp->comp_id != comp_id) {
+	/* not a match, try the next one */
+	next = comp->next_ptr;
+	if (next == 0) {
+	    /* reached end of list without finding component */
+	    rtapi_mutex_give(&(hal_data->mutex));
+	    rtapi_print_msg(RTAPI_MSG_ERR,
+		"HAL: ERROR: component %d not found\n", comp_id);
+	    return -EINVAL;
+	}
+	comp = SHMPTR(next);
+    }
+    if(comp->ready < 1) {
+        rtapi_print_msg(RTAPI_MSG_ERR,
+                "HAL: ERROR: Component '%s' already unready\n", comp->name);
+        rtapi_mutex_give(&(hal_data->mutex));
+        return -EINVAL;
+    }
+    comp->ready = 0;
     rtapi_mutex_give(&(hal_data->mutex));
     return 0;
 }
@@ -541,6 +593,18 @@ int hal_pin_s32_new(const char *name, hal_pin_dir_t dir,
     return hal_pin_new(name, HAL_S32, dir, (void **) data_ptr_addr, comp_id);
 }
 
+int hal_pin_u64_new(const char *name, hal_pin_dir_t dir,
+    hal_u64_t ** data_ptr_addr, int comp_id)
+{
+    return hal_pin_new(name, HAL_U64, dir, (void **) data_ptr_addr, comp_id);
+}
+
+int hal_pin_s64_new(const char *name, hal_pin_dir_t dir,
+    hal_s64_t ** data_ptr_addr, int comp_id)
+{
+    return hal_pin_new(name, HAL_S64, dir, (void **) data_ptr_addr, comp_id);
+}
+
 int hal_pin_port_new(const char *name, hal_pin_dir_t dir,
     hal_port_t ** data_ptr_addr, int comp_id)
 {
@@ -607,6 +671,28 @@ int hal_pin_s32_newf(hal_pin_dir_t dir,
     return ret;
 }
 
+int hal_pin_u64_newf(hal_pin_dir_t dir,
+    hal_u64_t ** data_ptr_addr, int comp_id, const char *fmt, ...)
+{
+    va_list ap;
+    int ret;
+    va_start(ap, fmt);
+    ret = hal_pin_newfv(HAL_U64, dir, (void**)data_ptr_addr, comp_id, fmt, ap);
+    va_end(ap);
+    return ret;
+}
+
+int hal_pin_s64_newf(hal_pin_dir_t dir,
+    hal_s64_t ** data_ptr_addr, int comp_id, const char *fmt, ...)
+{
+    va_list ap;
+    int ret;
+    va_start(ap, fmt);
+    ret = hal_pin_newfv(HAL_S64, dir, (void**)data_ptr_addr, comp_id, fmt, ap);
+    va_end(ap);
+    return ret;
+}
+
 int hal_pin_port_newf(hal_pin_dir_t dir,
     hal_port_t **data_ptr_addr, int comp_id, const char *fmt, ...)
 {
@@ -641,9 +727,9 @@ int hal_pin_new(const char *name, hal_type_t type, hal_pin_dir_t dir,
             "HAL: ERROR: pin_new(%s) called with already-initialized memory\n",
             name);
     }
-    if (type != HAL_BIT && type != HAL_FLOAT && type != HAL_S32 && type != HAL_U32 && type != HAL_PORT) {
+    if (type != HAL_BIT && type != HAL_FLOAT && type != HAL_S32 && type != HAL_U32 && type != HAL_S64 && type != HAL_U64 && type != HAL_PORT) {
 	rtapi_print_msg(RTAPI_MSG_ERR,
-	    "HAL: ERROR: pin type not one of HAL_BIT, HAL_FLOAT, HAL_S32, HAL_U32 or HAL_PORT\n");
+	    "HAL: ERROR: pin type not one of HAL_BIT, HAL_FLOAT, HAL_S32, HAL_U32, HAL_S64, HAL_U64 or HAL_PORT\n");
 	return -EINVAL;
     }
     
@@ -925,6 +1011,8 @@ with the C standard.
     case HAL_BIT:
     case HAL_S32:
     case HAL_U32:
+    case HAL_S64:
+    case HAL_U64:
     case HAL_FLOAT:
     case HAL_PORT:
         data_addr = shmalloc_up(sizeof(hal_data_u));
@@ -955,6 +1043,12 @@ with the C standard.
         break;
     case HAL_U32:
 	*((hal_u32_t *) data_addr) = 0;
+        break;
+    case HAL_S64:
+	*((hal_s64_t *) data_addr) = 0;
+        break;
+    case HAL_U64:
+	*((hal_u64_t *) data_addr) = 0;
         break;
     case HAL_FLOAT:
 	*((hal_float_t *) data_addr) = 0.0;
@@ -1145,7 +1239,7 @@ int hal_link(const char *pin_name, const char *sig_name)
 	/* ports can only have one reader */
 	rtapi_mutex_give(&(hal_data->mutex));
 	rtapi_print_msg(RTAPI_MSG_ERR,
-	    "HAL: ERROR: siganl '%s' can only have one input pin\n", sig_name);
+	    "HAL: ERROR: signal '%s' can only have one input pin\n", sig_name);
 	return -EINVAL;
     }
     
@@ -1180,6 +1274,12 @@ int hal_link(const char *pin_name, const char *sig_name)
             break;
         case HAL_U32:
             *((hal_u32_t *) data_addr) = pin->dummysig.u;
+            break;
+        case HAL_S64:
+            *((hal_s64_t *) data_addr) = pin->dummysig.s;
+            break;
+        case HAL_U64:
+            *((hal_u64_t *) data_addr) = pin->dummysig.u;
             break;
         case HAL_FLOAT:
             *((hal_float_t *) data_addr) = pin->dummysig.f;
@@ -1353,9 +1453,9 @@ int hal_param_new(const char *name, hal_type_t type, hal_param_dir_t dir, void *
 	return -EINVAL;
     }
 
-    if (type != HAL_BIT && type != HAL_FLOAT && type != HAL_S32 && type != HAL_U32) {
+    if (type != HAL_BIT && type != HAL_FLOAT && type != HAL_S32 && type != HAL_U32 && type != HAL_S64 && type != HAL_U64) {
 	rtapi_print_msg(RTAPI_MSG_ERR,
-	    "HAL: ERROR: pin type not one of HAL_BIT, HAL_FLOAT, HAL_S32 or HAL_U32\n");
+	    "HAL: ERROR: pin type not one of HAL_BIT, HAL_FLOAT, HAL_S32, HAL_U32, Hal_S64 or HAL_U64\n");
 	return -EINVAL;
     }
 
@@ -1473,6 +1573,16 @@ int hal_param_s32_set(const char *name, signed long value)
     return hal_param_set(name, HAL_S32, &value);
 }
 
+int hal_param_u64_set(const char *name, unsigned long value)
+{
+    return hal_param_set(name, HAL_U64, &value);
+}
+
+int hal_param_s64_set(const char *name, signed long value)
+{
+    return hal_param_set(name, HAL_S64, &value);
+}
+
 /* this is a generic function that does the majority of the work */
 
 int hal_param_set(const char *name, hal_type_t type, void *value_addr)
@@ -1537,6 +1647,12 @@ int hal_param_set(const char *name, hal_type_t type, void *value_addr)
 	break;
     case HAL_U32:
 	*((hal_u32_t *) (d_ptr)) = *((unsigned long *) (value_addr));
+	break;
+    case HAL_S64:
+	*((hal_s64_t *) (d_ptr)) = *((signed long *) (value_addr));
+	break;
+    case HAL_U64:
+	*((hal_u64_t *) (d_ptr)) = *((unsigned long *) (value_addr));
 	break;
     default:
 	/* Shouldn't get here, but just in case... */
@@ -2879,20 +2995,30 @@ static void thread_task(void *arg)
 
 static int init_hal_data(void)
 {
-    /* has the block already been initialized? */
+    /* has the hal_data block already been initialized? */
+
+    /* Lock hal_data by taking the mutex, so that two processes
+    don't both try to initialize hal_data at the same time.  NOTE:
+    The first time through, the hal_data memory buffer is fresh from
+    rtapi_shmem_new(), which means it's initialized to all zero bytes.
+    This means hal_data->mutex is valid and unlocked. */
+    rtapi_mutex_get(&(hal_data->mutex));
+
     if (hal_data->version != 0) {
-	/* yes, verify version code */
-	if (hal_data->version == HAL_VER) {
-	    return 0;
-	} else {
-	    rtapi_print("HAL: version:%d expected:%d\n",hal_data->version,HAL_VER);
-	    rtapi_print_msg(RTAPI_MSG_ERR,
-		"HAL: ERROR: version code mismatch\n");
-	    return -1;
-	}
+        /* hal_data has been initialized already, verify version code */
+        if (hal_data->version == HAL_VER) {
+            rtapi_mutex_give(&(hal_data->mutex));
+            return 0;
+        } else {
+            rtapi_print("HAL: version:%d expected:%d\n",hal_data->version,HAL_VER);
+            rtapi_print_msg(RTAPI_MSG_ERR, "HAL: ERROR: version code mismatch\n");
+            rtapi_mutex_give(&(hal_data->mutex));
+            return -1;
+        }
     }
-    /* no, we need to init it, grab the mutex unconditionally */
-    rtapi_mutex_try(&(hal_data->mutex));
+
+    /* hal_data has *NOT* been initialized yet, we get the honor */
+
     /* set version code so nobody else init's the block */
     hal_data->version = HAL_VER;
     /* initialize everything */
@@ -3316,6 +3442,12 @@ static void unlink_pin(hal_pin_t * pin)
     case HAL_U32:
         dummy_addr->u = sig_data_addr->u;
         break;
+    case HAL_S64:
+        dummy_addr->s = sig_data_addr->s;
+        break;
+    case HAL_U64:
+        dummy_addr->u = sig_data_addr->u;
+        break;
     case HAL_FLOAT:
         dummy_addr->f = sig_data_addr->f;
         break;
@@ -3557,6 +3689,8 @@ static char *halpr_type_string(int type, char *buf, size_t nbuf) {
         case HAL_FLOAT: return "float";
         case HAL_S32: return "s32";
         case HAL_U32: return "u32";
+        case HAL_S64: return "s64";
+        case HAL_U64: return "u64";
         case HAL_PORT: return "port";
         default:
             rtapi_snprintf(buf, nbuf, "UNK#%d", type);
@@ -3641,7 +3775,7 @@ static bool hal_port_compute_copy(unsigned read,
             *beg_bytes_to_read = 0;
             *final_pos = read + count;
         } else {
-            //read porition of buffer with wrap around to beginnning of buffer
+            //read porition of buffer with wrap around to beginning of buffer
             *end_bytes_to_read = end_bytes_avail;
             *beg_bytes_to_read = count - end_bytes_avail;
             *final_pos = *beg_bytes_to_read;
@@ -4141,6 +4275,7 @@ int hal_stream_num_underruns(hal_stream_t *stream) {
 
 EXPORT_SYMBOL(hal_init);
 EXPORT_SYMBOL(hal_ready);
+EXPORT_SYMBOL(hal_set_unready);
 EXPORT_SYMBOL(hal_exit);
 EXPORT_SYMBOL(hal_malloc);
 EXPORT_SYMBOL(hal_comp_name);
@@ -4149,6 +4284,8 @@ EXPORT_SYMBOL(hal_pin_bit_new);
 EXPORT_SYMBOL(hal_pin_float_new);
 EXPORT_SYMBOL(hal_pin_u32_new);
 EXPORT_SYMBOL(hal_pin_s32_new);
+EXPORT_SYMBOL(hal_pin_u64_new);
+EXPORT_SYMBOL(hal_pin_s64_new);
 EXPORT_SYMBOL(hal_pin_port_new);
 EXPORT_SYMBOL(hal_pin_new);
 
@@ -4156,6 +4293,8 @@ EXPORT_SYMBOL(hal_pin_bit_newf);
 EXPORT_SYMBOL(hal_pin_float_newf);
 EXPORT_SYMBOL(hal_pin_u32_newf);
 EXPORT_SYMBOL(hal_pin_s32_newf);
+EXPORT_SYMBOL(hal_pin_u64_newf);
+EXPORT_SYMBOL(hal_pin_s64_newf);
 EXPORT_SYMBOL(hal_pin_port_newf);
 
 
@@ -4168,17 +4307,23 @@ EXPORT_SYMBOL(hal_param_bit_new);
 EXPORT_SYMBOL(hal_param_float_new);
 EXPORT_SYMBOL(hal_param_u32_new);
 EXPORT_SYMBOL(hal_param_s32_new);
+EXPORT_SYMBOL(hal_param_u64_new);
+EXPORT_SYMBOL(hal_param_s64_new);
 EXPORT_SYMBOL(hal_param_new);
 
 EXPORT_SYMBOL(hal_param_bit_newf);
 EXPORT_SYMBOL(hal_param_float_newf);
 EXPORT_SYMBOL(hal_param_u32_newf);
 EXPORT_SYMBOL(hal_param_s32_newf);
+EXPORT_SYMBOL(hal_param_u64_newf);
+EXPORT_SYMBOL(hal_param_s64_newf);
 
 EXPORT_SYMBOL(hal_param_bit_set);
 EXPORT_SYMBOL(hal_param_float_set);
 EXPORT_SYMBOL(hal_param_u32_set);
 EXPORT_SYMBOL(hal_param_s32_set);
+EXPORT_SYMBOL(hal_param_u64_set);
+EXPORT_SYMBOL(hal_param_s64_set);
 EXPORT_SYMBOL(hal_param_set);
 
 EXPORT_SYMBOL(hal_set_constructor);

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.22.1 -->
+<!-- Generated with glade 3.22.2 -->
 <interface>
   <requires lib="gtk+" version="3.0"/>
   <object class="GtkAdjustment" id="atep_pull_l_adjust">
@@ -50,7 +50,7 @@
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
     <property name="type_hint">normal</property>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child internal-child="vbox">
@@ -230,7 +230,7 @@ Field power should be connected to detect all pins.
               <object class="GtkLabel" id="cardname_label1">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Mesa Board Disvovery&lt;</property>
+                <property name="label" translatable="yes">Mesa Board Discovery&lt;</property>
                 <attributes>
                   <attribute name="weight" value="bold"/>
                 </attributes>
@@ -377,7 +377,7 @@ Field power should be connected to detect all pins.
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
     <property name="type_hint">dialog</property>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child internal-child="vbox">
@@ -558,7 +558,7 @@ Please set the data and press ok</property>
     <property name="resizable">False</property>
     <property name="window_position">center-on-parent</property>
     <property name="type_hint">dialog</property>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child internal-child="vbox">
@@ -692,7 +692,7 @@ or discard changes and quit?</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
     <property name="type_hint">dialog</property>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child internal-child="vbox">
@@ -1121,7 +1121,7 @@ or discard changes and quit?</property>
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
     <property name="type_hint">normal</property>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child internal-child="vbox">
@@ -1248,6 +1248,7 @@ or discard changes and quit?</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">●</property>
+                            <property name="width_chars">4</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="adjustment">spindle_gear1_i_adjust</property>
@@ -1277,6 +1278,7 @@ or discard changes and quit?</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">●</property>
+                            <property name="width_chars">4</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="adjustment">spindle_gear1_o_adjust</property>
@@ -1307,6 +1309,7 @@ or discard changes and quit?</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">●</property>
+                            <property name="width_chars">4</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="adjustment">spindle_pull_m_adjust</property>
@@ -1337,6 +1340,7 @@ or discard changes and quit?</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">●</property>
+                            <property name="width_chars">4</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="adjustment">spindle_pull_g_adjust</property>
@@ -1512,6 +1516,7 @@ or discard changes and quit?</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">●</property>
+                            <property name="width_chars">4</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="adjustment">spindle_gear2_i_adjust</property>
@@ -1541,6 +1546,7 @@ or discard changes and quit?</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">●</property>
+                            <property name="width_chars">4</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="adjustment">spindle_gear2_o_adjust</property>
@@ -1853,7 +1859,7 @@ or discard changes and quit?</property>
     <property name="border_width">5</property>
     <property name="window_position">center-on-parent</property>
     <property name="type_hint">dialog</property>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child internal-child="vbox">
@@ -2018,6 +2024,7 @@ or discard changes and quit?</property>
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">●</property>
+                            <property name="width_chars">4</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="adjustment">step_worm_i_adjust</property>
@@ -2048,6 +2055,7 @@ or discard changes and quit?</property>
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">●</property>
+                            <property name="width_chars">4</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="adjustment">step_worm_o_adjust</property>
@@ -2079,6 +2087,7 @@ or discard changes and quit?</property>
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">●</property>
+                            <property name="width_chars">4</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="adjustment">step_pull_m_adjust</property>
@@ -2110,6 +2119,7 @@ or discard changes and quit?</property>
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">●</property>
+                            <property name="width_chars">4</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="adjustment">atep_pull_l_adjust</property>
@@ -2382,6 +2392,7 @@ or discard changes and quit?</property>
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">●</property>
+                            <property name="width_chars">4</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="adjustment">enc_wom_i_adjust</property>
@@ -2412,6 +2423,7 @@ or discard changes and quit?</property>
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">●</property>
+                            <property name="width_chars">4</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="adjustment">enc_worm_o_adjust</property>
@@ -2468,6 +2480,7 @@ or discard changes and quit?</property>
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">●</property>
+                            <property name="width_chars">4</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="adjustment">enc_pull_e_adjust</property>
@@ -2499,6 +2512,7 @@ or discard changes and quit?</property>
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">●</property>
+                            <property name="width_chars">4</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="adjustment">enc_pulll_l_adjust</property>
@@ -3095,6 +3109,12 @@ or discard changes and quit?</property>
                           <placeholder/>
                         </child>
                         <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
                           <object class="GtkLabel" id="maxrpm">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
@@ -3110,6 +3130,12 @@ or discard changes and quit?</property>
                             <property name="y_options"/>
                             <property name="x_padding">4</property>
                           </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
                         </child>
                         <child>
                           <placeholder/>
@@ -3312,7 +3338,7 @@ or discard changes and quit?</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
     <property name="type_hint">dialog</property>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child internal-child="vbox">
@@ -4659,6 +4685,54 @@ or discard changes and quit?</property>
                       <placeholder/>
                     </child>
                     <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
                       <object class="GtkLabel" id="label509">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
@@ -4733,6 +4807,7 @@ or discard changes and quit?</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">●</property>
+                        <property name="width_chars">8</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="adjustment">step_time_adjust</property>
@@ -4750,6 +4825,7 @@ or discard changes and quit?</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">●</property>
+                        <property name="width_chars">8</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="adjustment">step_space_adjust</property>
@@ -4767,6 +4843,7 @@ or discard changes and quit?</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">●</property>
+                        <property name="width_chars">8</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="adjustment">dir_hold_adjust</property>
@@ -4784,6 +4861,7 @@ or discard changes and quit?</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">●</property>
+                        <property name="width_chars">8</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="adjustment">dir_setup_adjust</property>

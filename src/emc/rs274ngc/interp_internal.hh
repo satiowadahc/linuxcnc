@@ -15,7 +15,7 @@
 
 #include <locale.h>
 #include <algorithm>
-#include "config.h"
+#include "linuxcnc.h"
 #include <limits.h>
 #include <stdio.h>
 #include <set>
@@ -55,18 +55,14 @@ inline int round_to_int(T x) {
 
 /* nested remap: a remapped code is found in the body of a subroutine
  * which is executing on behalf of another remapped code
- * example: a user G code command executes a tool change
+ * example: a user G-code command executes a tool change
  */
 #define MAX_NESTED_REMAPS 10
-
-// English - Metric conversion (long number keeps error buildup down)
-#define MM_PER_INCH 25.4
-//#define INCH_PER_MM 0.039370078740157477
 
 /* numerical constants */
 
 /*****************************************************************************
-The default tolerance (if none tighter is specified in the ini file) should be:
+The default tolerance (if none tighter is specified in the INI file) should be:
 2 * 0.001 * sqrt(2) for inch, and 2 * 0.01 * sqrt(2) for mm.
 This would mean that any valid arc where the endpoints and/or centerpoint
 got rounded or truncated to 0.001 inch or 0.01 mm precision would be accepted.
@@ -197,7 +193,7 @@ enum OCodes
     O_ = 18,
 };
 
-// G Codes are symbolic to be dialect-independent in source code
+// G-codes are symbolic to be dialect-independent in source code
 enum GCodes
 {
     G_0 = 0,
@@ -209,6 +205,10 @@ enum GCodes
     G_5_1 = 51,
     G_5_2 = 52,
     G_5_3 = 53,
+    G_6	= 60,
+    G_6_1 = 61,
+    G_6_2 = 62,
+    G_6_3 = 63,
     G_7 = 70,
     G_8 = 80,
     G_10 = 100,
@@ -513,7 +513,7 @@ struct block_struct
 
 
     // there might be several remapped items in a block, but at any point
-    // in time there's only one excuting
+    // in time there's only one executing
     // conceptually blocks[1..n] are also the 'remap frames'
     remap_pointer executing_remap; // refers to config descriptor
     std::set<int> remappings; // all remappings in this block (enum phases)
@@ -522,7 +522,7 @@ struct block_struct
     // the strategy to get the builtin behaviour of a code in a remap procedure is as follows:
     // if recursion is detected in find_remappings() (called by parse_line()), that *step* 
     // (roughly the modal group) is NOT added to the set of remapped steps in a block (block->remappings)
-    // in the convert_* procedures we test if the step is remapped with the macro below, and wether
+    // in the convert_* procedures we test if the step is remapped with the macro below, and whether
     // it is the current code which is remapped (IS_USER_MCODE, IS_USER_GCODE etc). If both
     // are true, we execute the remap procedure; if not, use the builtin code.
 #define STEP_REMAPPED_IN_BLOCK(bp, step) (bp->remappings.find(step) != bp->remappings.end())
@@ -530,7 +530,7 @@ struct block_struct
     // true if in a remap procedure the code being remapped was
     // referenced, which caused execution of the builtin semantics
     // reason for recording the fact: this permits an epilog to do the
-    // right thing depending on wether the builtin was used or not.
+    // right thing depending on whether the builtin was used or not.
     bool builtin_used; 
 };
 
@@ -569,7 +569,7 @@ typedef parameter_map::iterator parameter_map_iterator;
 #define PA_GLOBAL	2
 #define PA_UNSET	4
 #define PA_USE_LOOKUP	8   // use lookup_named_param() to retrieve value
-#define PA_FROM_INI	16  // a variable of the form '_[section]value' was retrieved from the ini file
+#define PA_FROM_INI	16  // a variable of the form '_[section]value' was retrieved from the INI file
 #define PA_PYTHON	32  // call namedparams.<varname>() to retrieve the value
 
 // optional 3rd arg to store_named_param()
@@ -578,7 +578,7 @@ typedef parameter_map::iterator parameter_map_iterator;
 
 #define MAX_REMAPOPTS 20
 // current implementation limits - legal modal groups
-// for M and G codes
+// for M- and G-codes
 #define M_MODE_OK(m) ((m > 3) && (m < 11))
 #define G_MODE_OK(m) (m == 1)
 
@@ -603,8 +603,8 @@ struct context_struct {
     double saved_params[INTERP_SUB_PARAMS];
     parameter_map named_params;
     unsigned char context_status;		// see CONTEXT_ defines below
-    int saved_g_codes[ACTIVE_G_CODES];  // array of active G codes
-    int saved_m_codes[ACTIVE_M_CODES];  // array of active M codes
+    int saved_g_codes[ACTIVE_G_CODES];  // array of active G-codes
+    int saved_m_codes[ACTIVE_M_CODES];  // array of active M-codes
     double saved_settings[ACTIVE_SETTINGS];     // array of feed, speed, etc.
     int call_type; // enum call_types
     pycontext pystuff;
@@ -664,8 +664,8 @@ struct setup
   double v_axis_offset, v_current, v_origin_offset;
   double w_axis_offset, w_current, w_origin_offset;
 
-  int active_g_codes[ACTIVE_G_CODES];  // array of active G codes
-  int active_m_codes[ACTIVE_M_CODES];  // array of active M codes
+  int active_g_codes[ACTIVE_G_CODES];  // array of active G-codes
+  int active_m_codes[ACTIVE_M_CODES];  // array of active M-codes
   double active_settings[ACTIVE_SETTINGS];     // array of feed, speed, etc.
   StateTag state_tag;
 
@@ -712,8 +712,8 @@ struct setup
   FILE *file_pointer;           // file pointer for open NC code file
   bool flood;                 // whether flood coolant is on
   CANON_UNITS length_units;     // millimeters or inches
-  double center_arc_radius_tolerance_inch; // modify with ini setting
-  double center_arc_radius_tolerance_mm;   // modify with ini setting
+  double center_arc_radius_tolerance_inch; // modify with INI setting
+  double center_arc_radius_tolerance_mm;   // modify with INI setting
   int line_length;              // length of line last read
   char linetext[LINELEN];       // text of most recent line read
   bool mist;                  // whether mist coolant is on
@@ -774,13 +774,13 @@ struct setup
   int value_returned;                // the last NGC procedure did/did not return a value
   int call_level;                    // current subroutine level
   context sub_context[INTERP_SUB_ROUTINE_LEVELS];
-  int call_state;                  //  enum call_states - inidicate Py handler reexecution
+  int call_state;                  //  enum call_states - indicate Py handler reexecution
   offset_map_type offset_map;      // store label x name, file, line
 
   bool adaptive_feed;              // adaptive feed is enabled
   bool feed_hold;                  // feed hold is enabled
   int loggingLevel;                  // 0 means logging is off
-  int debugmask;                     // from ini  EMC/DEBUG
+  int debugmask;                     // from INI EMC/DEBUG
   char log_file[PATH_MAX];
   char program_prefix[PATH_MAX];            // program directory
   const char *subroutines[MAX_SUB_DIRS];  // subroutines directories

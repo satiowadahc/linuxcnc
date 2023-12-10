@@ -62,7 +62,6 @@ LANGUAGES = @LANGUAGES@
 
 #still needs discussion
 # do we really need these?
-initd_dir = /etc/init.d
 docsdir = ${prefix}/share/doc/linuxcnc
 sampleconfsdir = ${prefix}/share/doc/linuxcnc/examples/sample-configs
 ncfilesdir = ${prefix}/share/linuxcnc/ncfiles
@@ -101,12 +100,6 @@ GTK_VERSION = @GTK_VER@
 GTK_CFLAGS = @GTK_CFLAGS@
 GTK_LIBS = @GTK_LIBS@
 
-# local flags for GTK2 include
-GTK2_VERSION = @GTK2_VER@
-GTK2_CFLAGS = @GTK2_CFLAGS@
-GTK2_LIBS = @GTK2_LIBS@
-HAVE_GNOMEPRINT = @HAVE_GNOMEPRINT@
-
 # tcl tk cflags, includes and libs
 TCL_DBGX=@TCL_DBGX@
 TK_DBGX=@TK_DBGX@
@@ -132,6 +125,7 @@ YAPPS = @YAPPS@
 BUILD_DOCS = @BUILD_DOCS@
 BUILD_DOCS_PDF = @BUILD_DOCS_PDF@
 BUILD_DOCS_HTML = @BUILD_DOCS_HTML@
+BUILD_DOCS_TRANSLATED = @BUILD_DOCS_TRANSLATED@
 PYTHON = @PYTHON@
 TCLSH = @TCLSH@
 EMC2_TCL_LIB_DIR = @EMC2_TCL_LIB_DIR@
@@ -193,6 +187,7 @@ CONFIG_AT_PID=m
 CONFIG_PID=m
 CONFIG_SUPPLY=m
 CONFIG_CLASSICLADDER_RT=m
+CONFIG_THREADS=m
 CONFIG_TIMEDELAY=m
 CONFIG_SIM_ENCODER=m
 CONFIG_WEIGHTED_SUM=m

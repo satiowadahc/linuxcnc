@@ -23,7 +23,6 @@
 #
 # most entries are default, a few, for axes and joints, to make an XYZ machine
 
-import linuxcnc
 class fakeStatus():
     def __init__(self):
 
@@ -63,7 +62,7 @@ class fakeStatus():
         self.g92_offset = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
         self.gcodes = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         self.homed = (0, 0, 0, 0, 0, 0, 0, 0, 0)
-        self.id = 0
+        self.motion_id = 0
         self.inpos = False
         self.input_timeout = False
         self.interp_state = 0

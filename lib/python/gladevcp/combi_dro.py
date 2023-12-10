@@ -47,7 +47,7 @@ except:
     pass
 
 # This is the main class
-class Combi_DRO(Gtk.VBox):
+class Combi_DRO(Gtk.Box):
     '''
     Combi_DRO will display an linuxcnc DRO with all three types at ones
 
@@ -86,7 +86,7 @@ class Combi_DRO(Gtk.VBox):
                         GObject.ParamFlags.READWRITE),
         'font_size' : (GObject.TYPE_INT, 'Font Size', 'The font size of the big numbers, the small ones will be 2.5 times smaller',
                     8, 96, 25, GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT),
-        'toggle_readout' : (GObject.TYPE_BOOLEAN, 'Enable toggling readout with click', 'The DRO will toggle between Absolute , Relativ and DTG with each mouse click.',
+        'toggle_readout' : (GObject.TYPE_BOOLEAN, 'Enable toggling readout with click', 'The DRO will toggle between Absolute, Relative and DTG with each mouse click.',
                     True, GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT),
         'cycle_time' : (GObject.TYPE_INT, 'Cycle Time', 'Time, in milliseconds, that display will sleep between polls',
                     100, 1000, 150, GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT),
@@ -104,6 +104,7 @@ class Combi_DRO(Gtk.VBox):
     # Init the class
     def __init__(self, joint_number = 0):
         super(Combi_DRO, self).__init__()
+        self.set_orientation(Gtk.Orientation.VERTICAL)
 
         # we have to distinguish this, as we use the joints number to check homing
         # and we do need the axis to check for the positions
@@ -131,16 +132,18 @@ class Combi_DRO(Gtk.VBox):
         self.machine_units = _MM
         self.unit_convert = 1
         self._auto_units = True
-        self.toggle_readout = True
+        self.toggle_readout_enable = True
         self.cycle_time = 150
         self.diameter = False
         self.actual = True
+        self.dtg = 0
+        self.abs_pos = 0
+        self.rel_pos = 0
 
         self.widgets = {}  # will hold all our widgets we need to style
 
         # Make the GUI and connect signals
-        self.css = Gtk.CssProvider()
-        
+
         self.css_text = """
                         .background  {background-color: #000000;}
                         .labelcolor  {color: #FF0000;}
@@ -155,9 +158,10 @@ class Combi_DRO(Gtk.VBox):
         eventbox.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         eventbox.get_style_context().add_class('background')
         self.add(eventbox)
-        vbox_main = Gtk.VBox(homogeneous = False, spacing = 0)
+        vbox_main = Gtk.Box(homogeneous = False, spacing = 0)
+        vbox_main.set_orientation(Gtk.Orientation.VERTICAL)
         eventbox.add(vbox_main)
-        hbox_up = Gtk.HBox(homogeneous = False, spacing = 5)
+        hbox_up = Gtk.Box(homogeneous = False, spacing = 5)
         vbox_main.pack_start(hbox_up, True, True, 0)
         self.widgets["eventbox"] = eventbox
 
@@ -169,12 +173,13 @@ class Combi_DRO(Gtk.VBox):
         hbox_up.pack_start(lbl_axisletter, False, False, 0)
         self.widgets["lbl_axisletter"] = lbl_axisletter
 
-        vbox_ref_type = Gtk.VBox(homogeneous = False, spacing = 0)
+        vbox_ref_type = Gtk.Box(homogeneous = False, spacing = 0)
+        vbox_ref_type.set_orientation(Gtk.Orientation.VERTICAL)
         hbox_up.pack_start(vbox_ref_type, False, False, 0)
         # This label is needed to press the main index (rel,Abs;Dtg) to the upper part
         lbl_space = Gtk.Label(label = "")
         vbox_ref_type.pack_start(lbl_space, True, True, 0)
-        
+
         lbl_sys_main = Gtk.Label(label = self.system)
         lbl_sys_main.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         lbl_sys_main.get_style_context().add_class('background')
@@ -192,7 +197,7 @@ class Combi_DRO(Gtk.VBox):
         hbox_up.pack_start(main_dro, True, True, 0)
         self.widgets["main_dro"] = main_dro
 
-        hbox_down = Gtk.HBox(homogeneous = True, spacing = 5)
+        hbox_down = Gtk.Box(homogeneous = True, spacing = 5)
         vbox_main.pack_start(hbox_down, False, False, 0)
 
         lbl_sys_left = Gtk.Label(label = "Abs")
@@ -221,7 +226,7 @@ class Combi_DRO(Gtk.VBox):
         lbl_sys_right.get_style_context().add_class('size_small')
         hbox_down.pack_start(lbl_sys_right, False, False, 0)
         self.widgets["lbl_sys_right"] = lbl_sys_right
-        
+
         dro_right = Gtk.Label(label = "22.222")
         dro_right.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         dro_right.get_style_context().add_class('background')
@@ -239,12 +244,14 @@ class Combi_DRO(Gtk.VBox):
         self.gstat.connect('all-homed', self._all_homed )
         self.gstat.connect('homed', self._homed )
         self.gstat.connect('current-position', self._position)
+        self.gstat.connect('user-system-changed', self._user_system_changed)
+        self._set_labels()
 
         # This try is only needed because while working with glade
         # linuxcnc may not be working
         try:
             self.inifile = self.linuxcnc.ini(INIPATH)
-            # check the ini file if UNITS are set to mm"
+            # check the INI file if UNITS are set to mm"
             # first check the global settings
             units = self.inifile.find("TRAJ", "LINEAR_UNITS")
             if units == None:
@@ -266,14 +273,15 @@ class Combi_DRO(Gtk.VBox):
             self.emit('axis_clicked', self.widgets["lbl_axisletter"].get_text().lower())
             #self.set_style("labelcolor", "#00FF00")
         else:
-            if not self.toggle_readout:
+            if not self.toggle_readout_enable:
                 return
-            self.toogle_readout()
+            self.toggle_readout()
 
     # Get propertys
     def do_get_property(self, property):
         name = property.name.replace('-', '_')
         if name in list(self.__gproperties.keys()):
+            if name == 'auto_units': name = '_auto_units'
             return getattr(self, name)
         else:
             raise AttributeError('unknown property %s' % property.name)
@@ -326,7 +334,7 @@ class Combi_DRO(Gtk.VBox):
                     self.font_size = int(value)
                     self.set_style("size", self.font_size)
                 if name == "toggle_readout":
-                    self.toggle_readout = value
+                    self.toggle_readout_enable = value
                 if name == "cycle_time":
                     self.cycle_time = value
                 if name in ('metric_units', 'actual', 'diameter'):
@@ -349,14 +357,19 @@ class Combi_DRO(Gtk.VBox):
 
     # Get the units used according to gcode
     def _get_current_units(self):
-            gcode = self.status.gcodes[1:]
-            for code in gcode:
-                if code >= 200 and code <= 210:
-                    return (code / 10)
-            return False
+        self.status.poll()
+        gcode = self.status.gcodes[1:]
+        for code in gcode:
+            if code >= 200 and code <= 210:
+                return (code // 10)
+        return False
 
     # update the labels
     def _set_labels(self):
+        try:
+            self.status.poll()
+        except:
+            pass
         if self._ORDER[0] == "Rel":
             self.widgets["lbl_sys_main"].set_text(self._get_current_system())
         else:
@@ -383,22 +396,22 @@ class Combi_DRO(Gtk.VBox):
         if property == "background":
             for widget in self.widgets:
                 self.widgets[widget].get_style_context().remove_class('background')
-            replacement_string = ".background  {background-color: " + Data + ";}"        
+            replacement_string = ".background  {background-color: " + Data + ";}"
             self.css_text = re.sub(r'[.][b][a][c][k][g][r][o][u][n][d].*', replacement_string, self.css_text, re.IGNORECASE)
-        
+
         elif property == "labelcolor":
             for widget in self.widgets:
                 self.widgets[widget].get_style_context().remove_class('labelcolor')
-            replacement_string = ".labelcolor  {color: " + Data + ";}"        
+            replacement_string = ".labelcolor  {color: " + Data + ";}"
             self.css_text = re.sub(r'[.][l][a][b][e][l][c][o][l][o][r].*', replacement_string, self.css_text, re.IGNORECASE)
-            
-        elif property == "size":            
+
+        elif property == "size":
             for widget in self.widgets:
                 self.widgets[widget].get_style_context().remove_class('size_big')
                 self.widgets[widget].get_style_context().remove_class('size_small')
-            replacement_string = ".size_big    {font-size: " + str(Data) + "px;font-weight: bold;}"        
+            replacement_string = ".size_big    {font-size: " + str(Data) + "px;font-weight: bold;}"
             self.css_text = re.sub(r'[.][s][i][z][e][_][b][i][g].*', replacement_string, self.css_text, re.IGNORECASE)
-            replacement_string = ".size_small    {font-size: " + str(int(Data / 2.5)) + "px;font-weight: bold;}"        
+            replacement_string = ".size_small    {font-size: " + str(int(Data / 2.5)) + "px;font-weight: bold;}"
             self.css_text = re.sub(r'[.][s][i][z][e][_][s][m][a][l][l].*', replacement_string, self.css_text, re.IGNORECASE)
 
         else:
@@ -406,7 +419,7 @@ class Combi_DRO(Gtk.VBox):
             return
 
         self.css.load_from_data(bytes(self.css_text, 'utf-8'))
-        
+
         for widget in self.widgets:
             self.widgets[widget].get_style_context().add_class('background')
             self.widgets[widget].get_style_context().add_class('labelcolor')
@@ -414,8 +427,11 @@ class Combi_DRO(Gtk.VBox):
                 self.widgets[widget].get_style_context().add_class('size_big')
             else:
                 self.widgets[widget].get_style_context().add_class('size_small')
-                
+
         self.queue_draw()
+
+    def _user_system_changed(self, object, system):
+        self._set_labels()
 
     def _position(self, object, p, rel_p, dtg, joint_actual_position):
         # object = hal_glib Object
@@ -423,7 +439,7 @@ class Combi_DRO(Gtk.VBox):
         # rel_p = relative position
         # dtg = distance to go
         # joint_actual_position = joint positions, not needed here
-        
+
         try:
             dtg = dtg[self.axis_no]
             abs_pos = p[self.axis_no]
@@ -431,13 +447,30 @@ class Combi_DRO(Gtk.VBox):
         except:
             return
 
+        if (self._get_current_units() == 20 and self.metric_units) or (self._get_current_units() == 21 and not self.metric_units):
+            if self._auto_units:
+                self.metric_units = not self.metric_units
+            self.emit("units_changed", self.metric_units)
+
+        if self.metric_units and self.machine_units == _INCH:
+            if self.axis_no not in (3, 4, 5):
+                abs_pos = abs_pos * 25.4
+                rel_pos = rel_pos * 25.4
+                dtg = dtg * 25.4
+
+        if not self.metric_units and self.machine_units == _MM:
+            if self.axis_no not in (3, 4, 5):
+                abs_pos = abs_pos / 25.4
+                rel_pos = rel_pos / 25.4
+                dtg = dtg / 25.4
+
         if self._ORDER == ["Rel", "Abs", "DTG"]:
             main, left, right = rel_pos, abs_pos, dtg
         if self._ORDER == ["DTG", "Rel", "Abs"]:
             main, left, right =  dtg, rel_pos, abs_pos
         if self._ORDER == ["Abs", "DTG", "Rel"]:
             main, left, right =  abs_pos, dtg, rel_pos
-        
+
         if self.metric_units:
             tmpl = lambda s: self.mm_text_template % s
         else:
@@ -453,6 +486,9 @@ class Combi_DRO(Gtk.VBox):
         self.widgets["main_dro"].set_label(main_dro)
         self.widgets["dro_left"].set_label(left_dro)
         self.widgets["dro_right"].set_label(right_dro)
+        self.dtg = dtg * scale
+        self.abs_pos = abs_pos * scale
+        self.rel_pos = rel_pos * scale
 
     def _not_all_homed(self, widget, data = None):
         if self.status.kinematics_type == linuxcnc.KINEMATICS_IDENTITY:
@@ -463,7 +499,7 @@ class Combi_DRO(Gtk.VBox):
         if self.homed:
             self.set_style("labelcolor", self.homed_color)
         else:
-            self.set_style("labelcolor", self.unhomed_color)            
+            self.set_style("labelcolor", self.unhomed_color)
 
     def _all_homed(self, widget, data = None):
         if self.status.kinematics_type == linuxcnc.KINEMATICS_IDENTITY:
@@ -524,30 +560,31 @@ class Combi_DRO(Gtk.VBox):
     # this will toggle the DRO around, mainly used to maintain all DRO
     # at the same state, because a click on one will only change that DRO
     # This can be used to change also the others
-    def toogle_readout(self, Data = None):
+    def toggle_readout(self, Data = None):
         '''
         toggles the order of the DRO in the widget
 
         Combi_DRO.toggle_readout()
 
         '''
-        self._ORDER = [self._ORDER[2], self._ORDER[0], self._ORDER[1]]
-        
+        if not Data:
+            self._ORDER = [self._ORDER[2], self._ORDER[0], self._ORDER[1]]
+
         if self._ORDER[0] == "Abs":
             bg_color = self.abs_color
         elif self._ORDER[0] == "DTG":
             bg_color = self.dtg_color
         else:
             bg_color = self.rel_color
-            
-        self.set_style("background", bg_color)
 
-        # if Data is True, we only updated the colors of the background
-        # so we won#t emit a click event
+        self.set_style("background", bg_color)
+        self._set_labels()
+
+        # if Data is True, we only update the colors of the background
+        # so we won't emit a click event
         if Data:
             return
 
-        self._set_labels()
         self.emit("clicked", self.joint_number, self._ORDER)
 
     # You can change the automatic given axisletter using this function
@@ -609,8 +646,7 @@ class Combi_DRO(Gtk.VBox):
                 ["Abs", "DTG", "Rel"]
         '''
         self._ORDER = order
-        self._set_labels()
-        self.toogle_readout(Data=True)
+        self.toggle_readout(Data=True)
 
     # This will return the position information of all three DRO
     # it will be in the order Abs, Rel, DTG
@@ -622,7 +658,7 @@ class Combi_DRO(Gtk.VBox):
 
         returns the position of the DRO as a list of floats
         the order is independent of the order shown on the DRO
-        and will be givven as [Absolute , relative , DTG]
+        and will be given as [Absolute , relative , DTG]
 
         Absolute = the machine coordinates, depends on the actual property
                    will give actual or commanded position
@@ -630,20 +666,15 @@ class Combi_DRO(Gtk.VBox):
         DTG = the distance to go, will mosltly be 0, as this function should not be used
               while the machine is moving, because of time delays
         '''
-        positions = self._position()
-        if self._ORDER == ["Rel", "Abs", "DTG"]:
-            return positions[1], positions[0], positions[2]
-        if self._ORDER == ["DTG", "Rel", "Abs"]:
-            return positions[2], positions[1], positions[0]
-        if self._ORDER == ["Abs", "DTG", "Rel"]:
-            return positions[0], positions[2], positions[1]
+        return self.abs_pos, self.rel_pos, self.dtg
 
 # for testing without glade editor:
 # to show some behavior and setting options
 def main():
     window = Gtk.Window(type = Gtk.WindowType.TOPLEVEL)
 
-    vbox = Gtk.VBox(homogeneous = False, spacing = 5)
+    vbox = Gtk.Box(homogeneous = False, spacing = 5)
+    vbox.set_orientation(Gtk.Orientation.VERTICAL)
     MDRO_X = Combi_DRO(0)
     MDRO_Y = Combi_DRO(1)
     MDRO_Z = Combi_DRO(2)

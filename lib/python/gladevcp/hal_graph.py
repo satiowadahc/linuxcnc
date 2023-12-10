@@ -90,8 +90,8 @@ class HAL_Graph(Gtk.DrawingArea, _HalWidgetBase):
     def __init__(self):
         super(HAL_Graph, self).__init__()
 
-        self.bg_color = Gdk.Color.parse('white')
-        self.fg_color = Gdk.Color.parse('red')
+        self.bg_color = Gdk.Color.parse('white')[1]
+        self.fg_color = Gdk.Color.parse('red')[1]
 
         self.force_radius = None
         self.ticks = deque()
@@ -166,7 +166,7 @@ class HAL_Graph(Gtk.DrawingArea, _HalWidgetBase):
         w, h = w - 2, h - 2
 
         cr.set_line_width(1)
-        cr.set_source_color(self.bg_color)
+        cr.set_source_rgb(self.bg_color.red, self.bg_color.green, self.bg_color.blue)
         cr.rectangle(0, 0, w, h)
         cr.stroke_preserve()
         cr.fill()
@@ -191,7 +191,7 @@ class HAL_Graph(Gtk.DrawingArea, _HalWidgetBase):
         ymin, ymax = self.min, self.max
         yticks = self.yticks
         if self.autoscale:
-            tv = map(lambda x: x[1], self.ticks_saved + list(self.ticks))
+            tv = [x[1] for x in self.ticks_saved + list(self.ticks)]
             if tv:
                 ymin, ymax = min(tv), max(tv)
                 ymin -= abs(ymin) * 0.1
@@ -217,7 +217,7 @@ class HAL_Graph(Gtk.DrawingArea, _HalWidgetBase):
         cr.set_font_size(font_small)
         self.text_at(cr, self.sublabel, w/2, 2.5 * font_large, yalign='top')
 
-        cr.set_source_color(self.fg_color)
+        cr.set_source_rgb(self.fg_color.red, self.fg_color.green, self.fg_color.blue)
 
         if self.ticks_saved:
             self.draw_graph(cr, w, h, ymin, ymax, self.ticks_saved, t2x)

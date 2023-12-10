@@ -2,8 +2,8 @@
 '''
 qtplasmac_sim_handler.py
 
-Copyright (C) 2020, 2021  Phillip A Carter
-Copyright (C) 2020, 2021  Gregory D Carl
+Copyright (C) 2020, 2021, 2022  Phillip A Carter
+Copyright (C) 2020, 2021, 2022  Gregory D Carl
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -20,40 +20,61 @@ with this program; if not, write to the Free Software Foundation, Inc
 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 '''
 
-import linuxcnc
+import os
+import sys
 import hal
-import time
-from subprocess import call as CALL
+from subprocess import run as RUN
 from PyQt5 import QtCore
-from PyQt5.QtGui import QPalette, QColor
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMessageBox
+from qtvcp.core import Info
+from qtvcp.lib.preferences import Access
+
+INFO = Info()
 
 class HandlerClass:
-
-    def __init__(self, halcomp,widgets,paths):
+    def __init__(self, halcomp, widgets, paths):
         self.hal = halcomp
         self.w = widgets
+        self.paths = paths
+        self.iniFile = INFO.INI
         self.w.setWindowFlags(QtCore.Qt.CustomizeWindowHint | \
                               QtCore.Qt.WindowTitleHint | \
                               QtCore.Qt.WindowStaysOnTopHint )
-        self.prefsFile = '{}/qtplasmac.prefs'.format(paths.CONFIGPATH)
+        self.machineName = self.iniFile.find('EMC', 'MACHINE')
+        self.prefs = Access(os.path.join(self.paths.CONFIGPATH, self.machineName + '.prefs'))
         self.styleFile = '{}/qtplasmac_sim.qss'.format(paths.CONFIGPATH)
+        self.set_estop()
         self.set_style()
 
     def initialized__(self):
         self.w.setWindowTitle('QtPlasmaC Sim')
+        self.iconPath = 'share/icons/hicolor/scalable/apps/linuxcnc_alt/linuxcncicon_plasma.svg'
+        appPath = os.path.realpath(os.path.dirname(sys.argv[0]))
+        self.iconBase = '/usr' if appPath == '/usr/bin' else appPath.replace('/bin', '/debian/extras/usr')
+        self.w.setWindowIcon(QIcon(os.path.join(self.iconBase, self.iconPath)))
         self.breakPin = self.hal.newpin('sensor_breakaway', hal.HAL_BIT, hal.HAL_OUT)
         self.floatPin = self.hal.newpin('sensor_float', hal.HAL_BIT, hal.HAL_OUT)
         self.ohmicPin = self.hal.newpin('sensor_ohmic', hal.HAL_BIT, hal.HAL_OUT)
         self.torchPin = self.hal.newpin('torch_on', hal.HAL_BIT, hal.HAL_IN)
         self.statePin = self.hal.newpin('state', hal.HAL_S32, hal.HAL_IN)
         self.zPosPin = self.hal.newpin('z_position', hal.HAL_FLOAT, hal.HAL_IN)
-        self.arcVoltsPin = self.hal.newpin('arc_voltage_out-f', hal.HAL_FLOAT, hal.HAL_OUT)
-        CALL(['halcmd', 'net', 'plasmac:axis-position', 'qtplasmac_sim.z_position'])
-        CALL(['halcmd', 'net', 'plasmac:state', 'qtplasmac_sim.state'])
+        self.materialPin = self.hal.newpin('material_height', hal.HAL_FLOAT, hal.HAL_IN)
+        self.arcVoltsOffsetPin = self.hal.newpin('arc_voltage_offset-f', hal.HAL_FLOAT, hal.HAL_OUT)
+        simStepconf = False
+        for sig in hal.get_info_signals():
+            if sig['NAME'] == 'Zjoint-pos-fb':
+                simStepconf = True
+                break
+        if simStepconf:
+            RUN(['halcmd', 'net', 'Zjoint-pos-fb', 'qtplasmac_sim.z_position'])
+        else:
+            RUN(['halcmd', 'net', 'plasmac:axis-position', 'qtplasmac_sim.z_position'])
+        RUN(['halcmd', 'net', 'plasmac:state', 'qtplasmac_sim.state'])
         self.torchPin.value_changed.connect(self.torch_changed)
         self.zPosPin.value_changed.connect(lambda v:self.z_position_changed(v))
-        self.w.arc_voltage_out.valueChanged.connect(lambda v:self.arc_volts_changed(v))
+        self.statePin.value_changed.connect(lambda v:self.plasmac_state_changed(v))
+        self.w.arc_voltage_offset.valueChanged.connect(lambda v:self.arc_volts_offset_changed(v))
         self.w.sensor_flt.pressed.connect(self.float_pressed)
         self.w.sensor_ohm.pressed.connect(self.ohmic_pressed)
         self.w.sensor_brk.pressed.connect(self.break_pressed)
@@ -78,35 +99,30 @@ class HandlerClass:
         mode = hal.get_value('plasmac.mode')
         self.set_mode(mode)
         hal.set_p('estop_or.in0', '1')
-        zMin = hal.get_value('ini.z.min_limit')
-        self.zProbe = zMin + (10 * hal.get_value('halui.machine.units-per-mm'))
+        self.height = 5 if hal.get_value('halui.machine.units-per-mm') == 1 else 0.2
+        self.materialPin.set(self.height)
         self.w.estop.setStyleSheet('color: {}; background: {}'.format(self.foreColor, self.estopColor))
+        self.floatLatched = False
+        self.ohmicLatched = False
+
+
+    def set_estop(self):
+        if self.prefs.getpref('Estop type', 0, int, 'GUI_OPTIONS') == 2:
+            RUN(['halcmd', 'net', 'sim:estop-1-raw', 'iocontrol.0.user-enable-out', 'estop_not_1.in'])
+            RUN(['halcmd', 'net', 'sim:estop-1-in', 'estop_not_1.out', 'estop_or.in1'])
 
     def set_style(self):
-        self.foreColor = '#ffee06'
-        self.backColor = '#16160e'
-        self.backAlt = '#36362e'
-        self.estopColor = '#ff0000'
-        try:
-            with open(self.prefsFile, 'r') as inFile:
-                for line in inFile:
-                    if line.startswith('Foreground'):
-                        self.foreColor = line.split('=')[1].strip()
-                    elif line.startswith('Background Alt'):
-                        self.backAlt = line.split('=')[1].strip()
-                    elif line.startswith('Background'):
-                        self.backColor = line.split('=')[1].strip()
-                    elif line.startswith('Estop'):
-                        self.estopColor = line.split('=')[1].strip()
-        except:
-            pass
+        self.foreColor = self.prefs.getpref('Foreground', '', str, 'COLOR_OPTIONS')
+        self.backColor = self.prefs.getpref('Background', '', str, 'COLOR_OPTIONS')
+        self.backAlt = self.prefs.getpref('Background Alt', '', str, 'COLOR_OPTIONS')
+        self.estopColor = self.prefs.getpref('Estop', '', str, 'COLOR_OPTIONS')
         with open(self.styleFile, 'w') as outFile:
             outFile.write(
             '\n/****** DEFAULT ************/\n'\
             '* {{\n'\
             '    color: {0};\n'\
             '    background: {1};\n'\
-            '    font: 10pt Lato }}\n'\
+            '    font: 10pt DejaVuSans }}\n'\
             '\n/****** BUTTONS ************/\n'\
             'QPushButton {{\n'\
             '    color: {0};\n'\
@@ -124,6 +140,8 @@ class HandlerClass:
             '    border: 0px solid {0};\n'\
             '    border-radius: 4px;\n'\
             '    width: 24px }}\n'\
+            '\nQSlider::handle:horizontal:disabled {{\n'\
+            '    background: {1} }}\n'\
             '\nQSlider::add-page:horizontal {{\n'\
             '    background: {2};\n'\
             '    border: 1px solid {2};\n'\
@@ -158,14 +176,20 @@ class HandlerClass:
             self.w.arc_ok.setStyleSheet('color: {}; background: {}'.format(self.foreColor, self.backColor))
 
     def float_timer_done(self):
-        if not self.w.sensor_flt.isDown():
-            self.floatPin.set(0)
-            self.w.sensor_flt.setStyleSheet('color: {}; background: {}'.format(self.foreColor, self.backColor))
+        if self.below_material():
+            return
+        if self.w.sensor_flt.isDown():
+            self.floatLatched = True
+            return
+        self.float_reset()
 
     def ohmic_timer_done(self):
-        if not self.w.sensor_ohm.isDown():
-            self.ohmicPin.set(0)
-            self.w.sensor_ohm.setStyleSheet('color: {}; background: {}'.format(self.foreColor, self.backColor))
+        if self.below_material():
+            return
+        if self.w.sensor_ohm.isDown():
+            self.ohmicLatched = True
+            return
+        self.ohmic_reset()
 
     def break_timer_done(self):
         if not self.w.sensor_brk.isDown():
@@ -175,32 +199,44 @@ class HandlerClass:
     def float_pressed(self):
         if self.fTimer.isActive():
             self.fTimer.stop()   # stop timer so next click can start it again
-            self.floatPin.set(1)
-            self.w.sensor_flt.setStyleSheet('color: {}; background: {}'.format(self.backColor, self.foreColor))
+            self.float_set()
         else:
             if self.floatPin.get():
                 self.fTimer.stop()
-                self.floatPin.set(0)
-                self.w.sensor_flt.setStyleSheet('color: {}; background: {}'.format(self.foreColor, self.backColor))
+                self.float_reset()
+                self.floatLatched = False
             else:
-                self.floatPin.set(1)
-                self.w.sensor_flt.setStyleSheet('color: {}; background: {}'.format(self.backColor, self.foreColor))
+                self.float_set()
                 self.fTimer.start()
 
     def ohmic_pressed(self):
         if self.oTimer.isActive():
             self.oTimer.stop()   # stop timer so next click can start it again
-            self.ohmicPin.set(1)
-            self.w.sensor_ohm.setStyleSheet('color: {}; background: {}'.format(self.backColor, self.foreColor))
+            self.ohmic_set()
         else:
             if self.ohmicPin.get():
                 self.oTimer.stop()
-                self.ohmicPin.set(0)
-                self.w.sensor_ohm.setStyleSheet('color: {}; background: {}'.format(self.foreColor, self.backColor))
+                self.ohmic_reset()
+                self.ohmicLatched = False
             else:
-                self.ohmicPin.set(1)
-                self.w.sensor_ohm.setStyleSheet('color: {}; background: {}'.format(self.backColor, self.foreColor))
+                self.ohmic_set()
                 self.oTimer.start()
+
+    def float_set(self):
+        self.floatPin.set(1)
+        self.w.sensor_flt.setStyleSheet('color: {}; background: {}'.format(self.backColor, self.foreColor))
+
+    def float_reset(self):
+        self.floatPin.set(0)
+        self.w.sensor_flt.setStyleSheet('color: {}; background: {}'.format(self.foreColor, self.backColor))
+
+    def ohmic_set(self):
+        self.ohmicPin.set(1)
+        self.w.sensor_ohm.setStyleSheet('color: {}; background: {}'.format(self.backColor, self.foreColor))
+
+    def ohmic_reset(self):
+        self.ohmicPin.set(0)
+        self.w.sensor_ohm.setStyleSheet('color: {}; background: {}'.format(self.foreColor, self.backColor))
 
     def auto_float_pressed(self):
         if self.w.auto_ohm.isChecked:
@@ -239,7 +275,7 @@ class HandlerClass:
                  self.w.move_up, self.w.move_down, self.w.move_label]
         mode1 = [self.w.arc_ok_line, \
                  self.w.move_up, self.w.move_down, self.w.move_label]
-        mode2 = [self.w.arc_voltage_in, self.w.arc_voltage_out, \
+        mode2 = [self.w.offset_label, self.w.arc_voltage_offset, \
                   self.w.arc_voltage_label, self.w.arc_voltage_line]
         if mode == 1:
             self.w.mode_label.setText('Mode 1')
@@ -253,43 +289,46 @@ class HandlerClass:
 
     def torch_changed(self, halpin):
         if halpin:
-            time.sleep(0.1)
-            if hal.get_value('plasmac.mode') == 0 or hal.get_value('plasmac.mode') == 1:
-                self.w.arc_voltage_out.setValue(1000)
-                self.w.arc_voltage_out.setMinimum(900)
-                self.w.arc_voltage_out.setMaximum(1100)
-                self.w.arc_voltage_out.setSingleStep(1)
-                self.w.arc_voltage_out.setPageStep(1)
             if (hal.get_value('plasmac.mode') == 1 or hal.get_value('plasmac.mode') == 2) and not self.w.arc_ok.isChecked():
                 self.w.arc_ok.toggle()
                 self.w.arc_ok_clicked()
         else:
-            self.w.arc_voltage_out.setMinimum(0)
-            self.w.arc_voltage_out.setMaximum(3000)
-            self.w.arc_voltage_out.setValue(0)
-            self.w.arc_voltage_out.setSingleStep(10)
-            self.w.arc_voltage_out.setPageStep(100)
             if self.w.arc_ok.isChecked():
                 self.w.arc_ok.toggle()
                 self.w.arc_ok_clicked()
 
-    def arc_volts_changed(self, value):
-        if self.w.arc_voltage_out.maximum() == 3000:
-            self.arcVoltsPin.set(int(value * 0.1))
+    def arc_volts_offset_changed(self, value):
+            self.arcVoltsOffsetPin.set(value * 0.1)
+            self.w.offset_label.setText('{:0.1f} V'.format(self.arcVoltsOffsetPin.get()))
+
+    def plasmac_state_changed(self, state):
+        if state == 11 and self.torchPin.get():
+            self.w.arc_voltage_offset.setEnabled(True)
         else:
-            self.arcVoltsPin.set(value * 0.1)
+            self.w.arc_voltage_offset.setEnabled(False)
+            self.w.arc_voltage_offset.setValue(0)
 
     def z_position_changed(self, height):
+        if self.statePin.get() == 0:
+            return
         if self.w.auto_flt.isChecked():
-            if height < self.zProbe and not self.floatPin.get() and (self.statePin.get() == 1 or self.statePin.get() == 2):
+            if self.below_material() and not self.floatPin.get():
                 self.float_pressed()
-            elif (height > self.zProbe) and self.floatPin.get() and self.statePin.get() == 3:
+            elif not self.below_material() and self.floatPin.get() and not self.floatLatched:
                 self.float_pressed()
         elif self.w.auto_ohm.isChecked():
-            if height < self.zProbe and not self.ohmicPin.get() and (self.statePin.get() == 1 or self.statePin.get() == 2):
-                self.ohmic_pressed()
-            elif (height > self.zProbe) and self.ohmicPin.get() and self.statePin.get() == 3:
-                self.ohmic_pressed()
+            if self.below_material() and not self.ohmicPin.get():
+                self.ohmic_set()
+            elif not self.below_material() and self.ohmicPin.get() and not self.ohmicLatched:
+                self.ohmic_reset()
+
+    def below_material(self):
+        mThick = self.materialPin.get() if self.materialPin.get() >= 0 else 0
+        mTop = hal.get_value('ini.z.min_limit') + self.height + mThick if mThick else 0
+        if self.zPosPin.get() < mTop:
+            return True
+        else:
+            return False
 
     def help_pressed(self):
         msg = QMessageBox(self.w)

@@ -61,6 +61,10 @@ namespace pp = pyplusplus::containers::static_sized;
 #define IS_STRING(x) (PyObject_IsInstance(x.ptr(), (PyObject*)&PyString_Type))
 #define IS_INT(x) (PyObject_IsInstance(x.ptr(), (PyObject*)&PyInt_Type))
 
+static  spindle_speed_array spindle_speed_wrapper (Interp & inst) {
+    return spindle_speed_array(inst._setup.speed);
+}
+
 static  active_g_codes_array active_g_codes_wrapper ( Interp & inst) {
     return active_g_codes_array(inst._setup.active_g_codes);
 }
@@ -111,7 +115,7 @@ static bp::object errorStack(Interp &interp)
 
     for (int i = 0; i < settings->stack_index; i++)
 	msgs.append(bp::object( (const char *) settings->stack[i]));
-    return msgs;
+    return std::move(msgs);
 }
 
 static bp::object wrap_find_tool_pocket(Interp &interp, int toolno)
@@ -306,8 +310,8 @@ static inline bool get_probe_flag (Interp &interp)  {
 static inline void set_probe_flag(Interp &interp, bool value)  {
     interp._setup.probe_flag = value;
 }
-static inline bool get_speed_override (Interp &interp)  {
-    return interp._setup.speed_override;
+static inline bool get_speed_override (Interp &interp, int spindle)  {
+    return interp._setup.speed_override[spindle];
 }
 static inline void set_speed_override(Interp &interp, int spindle, bool value)  {
     interp._setup.speed_override[spindle] = value;
@@ -378,6 +382,14 @@ static inline double get_CC_origin_offset (Interp &interp)  {
 static inline void set_CC_origin_offset(Interp &interp, double value)  {
     interp._setup.CC_origin_offset = value;
 }
+
+static inline int get_active_spindle (Interp const & interp)  {
+    return interp._setup.active_spindle;
+}
+static inline void set_active_spindle(Interp & interp, int value)  {
+    interp._setup.active_spindle = value;
+}
+
 static inline double get_axis_offset_x (Interp &interp)  {
     return interp._setup.axis_offset_x;
 }
@@ -521,12 +533,6 @@ static inline double get_rotation_xy (Interp &interp)  {
 }
 static inline void set_rotation_xy(Interp &interp, double value)  {
     interp._setup.rotation_xy = value;
-}
-static inline double get_speed (Interp &interp, int spindle)  {
-    return interp._setup.speed[spindle];
-}
-static inline void set_speed(Interp &interp, int spindle, double value)  {
-    interp._setup.speed[spindle] = value;
 }
 static inline double get_traverse_rate (Interp &interp)  {
     return interp._setup.traverse_rate;
@@ -762,6 +768,12 @@ static inline int get_spindle_mode (Interp &interp, int spindle)  {
 static inline void set_spindle_mode(Interp &interp, int spindle, SPINDLE_MODE value)  {
     interp._setup.spindle_mode[spindle] = value;
 }
+static inline int get_num_spindles (Interp &interp)  {
+    return interp._setup.num_spindles;
+}
+static inline void set_num_spindles(Interp &interp, int value)  {
+    interp._setup.num_spindles = value;
+}
 static inline int get_spindle_turning (Interp &interp, int spindle)  {
     return interp._setup.spindle_turning[spindle];
 }
@@ -785,6 +797,24 @@ static inline int get_current_tool(Interp &interp)  {
 }
 static inline void set_current_tool(Interp &interp, int value)  {
     interp._setup.tool_table[0].toolno = value;
+}
+static inline int get_tool_change_at_g30 (Interp &interp)  {
+    return interp._setup.tool_change_at_g30;
+}
+static inline void set_tool_change_at_g30(Interp &interp, int value)  {
+    interp._setup.tool_change_at_g30 = value;
+}
+static inline int get_tool_change_quill_up (Interp &interp)  {
+    return interp._setup.tool_change_quill_up;
+}
+static inline void set_tool_change_quill_up(Interp &interp, int value)  {
+    interp._setup.tool_change_quill_up = value;
+}
+static inline int get_tool_change_with_spindle_on (Interp &interp)  {
+    return interp._setup.tool_change_with_spindle_on;
+}
+static inline void set_tool_change_with_spindle_on(Interp &interp, int value)  {
+    interp._setup.tool_change_with_spindle_on = value;
 }
 
 BOOST_PYTHON_MODULE(interpreter) {
@@ -902,6 +932,7 @@ BOOST_PYTHON_MODULE(interpreter) {
 	.add_property("CC_axis_offset", &get_CC_axis_offset, &set_CC_axis_offset)
 	.add_property("CC_current", &get_CC_current, &set_CC_current)
 	.add_property("CC_origin_offset", &get_CC_origin_offset, &set_CC_origin_offset)
+        .add_property("active_spindle", &get_active_spindle, &set_active_spindle)
 	.add_property("axis_offset_x", &get_axis_offset_x, &set_axis_offset_x)
 	.add_property("axis_offset_y", &get_axis_offset_y, &set_axis_offset_y)
 	.add_property("axis_offset_z", &get_axis_offset_z, &set_axis_offset_z)
@@ -926,7 +957,6 @@ BOOST_PYTHON_MODULE(interpreter) {
 	.add_property("program_z", &get_program_z, &set_program_z)
 	.add_property("return_value", &get_return_value, &set_return_value)
 	.add_property("rotation_xy", &get_rotation_xy, &set_rotation_xy)
-	.add_property("speed", &get_speed, &set_speed)
 	.add_property("traverse_rate", &get_traverse_rate, &set_traverse_rate)
 	.add_property("u_axis_offset", &get_u_axis_offset, &set_u_axis_offset)
 	.add_property("u_origin_offset", &get_u_origin_offset, &set_u_origin_offset)
@@ -967,11 +997,16 @@ BOOST_PYTHON_MODULE(interpreter) {
 	.add_property("sequence_number", &get_sequence_number, &set_sequence_number)
 	.add_property("speed_feed_mode", &get_speed_feed_mode, &set_speed_feed_mode)
 	.add_property("spindle_mode", &get_spindle_mode, &set_spindle_mode)
+	.add_property("num_spindles", &get_num_spindles, &set_num_spindles)
 	.add_property("spindle_turning", &get_spindle_turning, &set_spindle_turning)
 	.add_property("stack_index", &get_stack_index, &set_stack_index)
 	.add_property("value_returned", &get_value_returned, &set_value_returned)
 
 	.add_property("current_tool", &get_current_tool, &set_current_tool)
+	.add_property("tool_change_at_g30", &get_tool_change_at_g30, &set_tool_change_at_g30)
+	.add_property("tool_change_quill_up", &get_tool_change_quill_up, &set_tool_change_quill_up)
+	.add_property("tool_change_with_spindle_on", &get_tool_change_with_spindle_on,
+             &set_tool_change_with_spindle_on)
 
 	.add_property( "params",
 		       bp::make_function( &param_wrapper,
@@ -979,6 +1014,14 @@ BOOST_PYTHON_MODULE(interpreter) {
 
 
 	// _setup arrays
+        .add_property(
+            "speed",
+            bp::make_function(
+                spindle_speed_w(&spindle_speed_wrapper),
+                bp::with_custodian_and_ward_postcall<0, 1>()
+            )
+        )
+
 	.add_property( "active_g_codes",
 		       bp::make_function( active_g_codes_w(&active_g_codes_wrapper),
 					  bp::with_custodian_and_ward_postcall< 0, 1 >()))

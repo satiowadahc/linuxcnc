@@ -5,7 +5,7 @@
 #    Copyright 2007 Jeff Epler <jepler@unpythonic.net>
 #
 #    stepconf 1.1 revamped by Chris Morley 2014
-#    replaced Gnome Druid as that is not available in future linux distrubutions
+#    replaced Gnome Druid as that is not available in future linux distributions
 #    and because of GTK/GLADE bugs, the GLADE file could only be edited with Ubuntu 8.04
 #
 #    This program is free software; you can redistribute it and/or modify
@@ -138,7 +138,7 @@ class Private_Data:
     def __init__(self):
         self.in_pport_prepare = True
         self.distdir = distdir
-        self.available_page =[['intro', _('Stepconf'), True],['start', _('Start'), True],
+        self.available_page =[['intro', 'Stepconf', True],['start', _('Start'), True],
                                 ['base',_('Base Information'),True],
                                 ['pport1', _('Parallel Port 1'),True],['pport2', _('Parallel Port 2'),True],
                                 ['options',_('Options'), True],['halui_page', _('HALUI'), True],
@@ -272,7 +272,7 @@ class Private_Data:
         self.MESS_NO_REALTIME = _("You are using a simulated-realtime version of LinuxCNC, so testing / tuning of hardware is unavailable.")
         self.MESS_KERNEL_WRONG = _("You are using a realtime version of LinuxCNC but didn't load a realtime kernel so testing / tuning of hardware is\
                  unavailable.\nThis is possibly because you updated the OS and it doesn't automatically load the RTAI kernel anymore.\n"+
-            "You are using the  %(actual)s  kernel.\nYou need to use kernel:")% {'actual':os.uname()[2]}
+            "You are using the {} kernel.\nYou need to use kernel:".format(os.uname()[2]))
 
     def __getitem__(self, item):
         return getattr(self, item)
@@ -437,10 +437,11 @@ class Data:
         self.qtplasmacmode = 0
         self.qtplasmacscreen = 0
         self.qtplasmacestop = 0
-        self.qtplasmacxcam = 0.0
-        self.qtplasmacycam = 0.0
-        self.qtplasmacxlaser = 0.0
-        self.qtplasmacylaser = 0.0
+        self.qtplasmacdro = 0
+        self.qtplasmacerror = 0
+        self.qtplasmacstart = 0
+        self.qtplasmacpause = 0
+        self.qtplasmacstop = 0
         self.qtplasmacpmx = ""
         self.qtplasmac_bnames = ["OHMIC\TEST","PROBE\TEST","SINGLE\CUT","NORMAL\CUT","TORCH\PULSE","FRAMING", \
                                  "","","","","","","","","","","","","",""]
@@ -861,19 +862,15 @@ class StepconfApp:
         #self.write_readme(base)
         self.INI.write_inifile(base)
         self.HAL.write_halfile(base)
-        # link to qtplasmac common directory
+        # qtplasmac specific
         if self.d.select_qtplasmac:
+            # copy M190 file
             if BASE == "/usr":
-                commonPath = '/usr/share/doc/linuxcnc/examples/sample-configs/by_machine/qtplasmac/qtplasmac/'
+                m190Path = os.path.join(BASE, 'share/doc/linuxcnc/examples/sample-configs/sim/qtplasmac/M190')
             else:
-                commonPath = '{}/configs/by_machine/qtplasmac/qtplasmac/'.format(BASE)
-            oldDir = '{}/qtplasmac'.format(base)
-            if os.path.islink(oldDir):
-                os.unlink(oldDir)
-            elif os.path.exists(oldDir):
-                os.rename(oldDir, '{}_old_{}'.format(oldDir, time.time()))
-            os.symlink(commonPath, '{}/qtplasmac'.format(base))
-            # different tool table for plasmac
+                m190Path = os.path.join(BASE, 'configs/sim/qtplasmac/M190')
+            shutil.copy(m190Path, os.path.join(base, 'M190'))
+            # different tool table for qtplasmac
             filename = os.path.join(base, "tool.tbl")
             file = open(filename, "w")
             print("T0 P1 X0 Y0 ;torch", file=file)
@@ -1032,7 +1029,7 @@ class StepconfApp:
                     # read base-addr file
                     try:
                         for line in in_file:
-                            # get init_address (Not used)
+                            # get init_address
                             lline=line.split()
                             dec_address=lline[0].strip()
                             init_address=hex(int(dec_address))

@@ -23,7 +23,6 @@ import sys, os
 import string
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from OpenGL.GLUT import *
 BASE = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), ".."))
 sys.path.insert(0, os.path.join(BASE, "lib", "python"))
 
@@ -77,7 +76,7 @@ if "AXIS_NO_HAL" in os.environ:
 else:
     hal_present = 1;
 
-if hal_present == 1 :
+if hal_present == 1:
     import hal
 
 import configparser
@@ -176,6 +175,7 @@ jogincr_index_last = 1
 mdi_history_index= -1
 resume_inhibit = 0
 continuous_jog_in_progress = False
+cjogindices = []
 
 help1 = [
     ("F1", _("Emergency stop")),
@@ -215,20 +215,20 @@ help1 = [
     (_("Right Button"), _("Zoom view")),
     (_("Wheel Button"), _("Rotate view")),
     (_("Rotate Wheel"), _("Zoom view")),
-    (_("Control+Left Button"), _("Zoom view")),
+    (_("Ctrl+Left Button"), _("Zoom view")),
 ]
 help2 = [
     ("F3", _("Manual control")),
     ("F5", _("Code entry (MDI)")),
-    (_("Control-M"), _("Clear MDI history")),
-    (_("Control-H"), _("Copy selected MDI history elements")),
+    (_("Ctrl-M"), _("Clear MDI history")),
+    (_("Ctrl-H"), _("Copy selected MDI history elements")),
     ("",          _("to clipboard")),
-    (_("Control-Shift-H"), _("Paste clipboard to MDI history")),
+    (_("Ctrl-Shift-H"), _("Paste clipboard to MDI history")),
     ("L", _("Override Limits")),
     ("", ""),
     ("O", _("Open program")),
-    (_("Control-R"), _("Reload program")),
-    (_("Control-S"), _("Save g-code as")),
+    (_("Ctrl-R"), _("Reload program")),
+    (_("Ctrl-S"), _("Save G-code as")),
     ("R", _("Run program")),
     ("T", _("Step program")),
     ("P", _("Pause program")),
@@ -244,7 +244,7 @@ help2 = [
     ("F10", _("Turn spindle counterclockwise")),
     ("F11", _("Turn spindle more slowly")),
     ("F12", _("Turn spindle more quickly")),
-    (_("Control-K"), _("Clear live plot")),
+    (_("Ctrl-K"), _("Clear live plot")),
     ("V", _("Cycle among preset views")),
     ("F4", _("Cycle among preview, DRO, and user tabs")),
     ("@", _("toggle Actual/Commanded")),
@@ -271,6 +271,7 @@ def joints_mode():
     return s.motion_mode == linuxcnc.TRAJ_MODE_FREE
 
 def set_motion_teleop(value):
+    if running(): return
     # 1:teleop, 0: joint
     vars.teleop_mode.set(value)
     c.teleop_enable(value)
@@ -777,6 +778,14 @@ class LivePlotter:
             del self.stat
             return
 
+        global continuous_jog_in_progress,cjogindices
+        if continuous_jog_in_progress and not manual_tab_visible():
+            jjogmode = get_jog_mode()
+            for idx in cjogindices:
+                 c.jog(linuxcnc.JOG_STOP, jjogmode,idx)
+            continuous_jog_in_progress = 0
+            cjogindices = []
+
         if  (   (self.stat.motion_mode == linuxcnc.TRAJ_MODE_COORD)
             and (self.stat.task_mode   == linuxcnc.MODE_MANUAL)
             ):
@@ -804,7 +813,7 @@ class LivePlotter:
 
         self.after = self.win.after(update_ms, self.update)
 
-        self.win.set_current_line(self.stat.id or self.stat.motion_line)
+        self.win.set_current_line(self.stat.motion_id or self.stat.motion_line)
 
         speed = self.stat.current_vel
 
@@ -847,7 +856,7 @@ class LivePlotter:
         vupdate(vars.exec_state, self.stat.exec_state)
         vupdate(vars.interp_state, self.stat.interp_state)
         vupdate(vars.queued_mdi_commands, self.stat.queued_mdi_commands)
-        if hal_present == 1 :
+        if hal_present == 1:
             notifications_clear = comp["notifications-clear"]
             if self.notifications_clear != notifications_clear:
                  self.notifications_clear = notifications_clear
@@ -953,7 +962,9 @@ class LivePlotter:
 
 def running(do_poll=True):
     if do_poll: s.poll()
-    return s.task_mode == linuxcnc.MODE_AUTO and s.interp_state != linuxcnc.INTERP_IDLE
+    return ( (s.task_mode == linuxcnc.MODE_AUTO or s.task_mode == linuxcnc.MODE_MDI)
+             and s.interp_state != linuxcnc.INTERP_IDLE)
+
 
 def manual_tab_visible():
     page = root_window.tk.call(widgets.tabs, "raise")
@@ -968,6 +979,7 @@ initiated action (whether an MDI command or a jog) is acceptable.
 This means this function returns True when the mdi tab is visible."""
     if do_poll: s.poll()
     if s.task_state != linuxcnc.STATE_ON: return False
+    if running(): return 0
     return s.interp_state == linuxcnc.INTERP_IDLE or (s.task_mode == linuxcnc.MODE_MDI and s.queued_mdi_commands < vars.max_queued_mdi_commands.get())
 
 # If LinuxCNC is not already in one of the modes given, switch it to the
@@ -1060,6 +1072,15 @@ class AxisCanon(GLCanon, StatMixin):
         self.progress = progress
         self.aborted = False
         self.arcdivision = arcdivision
+        self.timeout_time = None
+
+    def set_timeout(self, timeout):
+        '''Abort loading of G-code if it takes more than timeout seconds from
+        the time this method was called. Set timeout to None to disable.'''
+        if timeout is None or timeout <= 0:
+            self.timeout_time = None
+        else:
+            self.timeout_time = time.time() + timeout
 
     def change_tool(self, pocket):
         GLCanon.change_tool(self, pocket)
@@ -1072,6 +1093,11 @@ class AxisCanon(GLCanon, StatMixin):
 
     def check_abort(self):
         root_window.update()
+
+        if self.timeout_time is not None and self.timeout_time < time.time():
+            notifications.add("info", _("G-code preview loading timed out"))
+            self.aborted = True
+
         if self.aborted: raise KeyboardInterrupt
 
     def next_line(self, st):
@@ -1103,7 +1129,7 @@ def filter_program(program_filter, infilename, outfilename):
             t.update()
             r,w,x = select.select([p.stderr], [], [], 0.100)
             if r:
-                stderr_line = p.stderr.readline()
+                stderr_line = p.stderr.readline().decode()
                 m = progress_re.match(stderr_line)
                 if m:
                     progress.update(int(m.group(1)), 1)
@@ -1112,10 +1138,11 @@ def filter_program(program_filter, infilename, outfilename):
                     sys.stderr.write(stderr_line)
         # .. might be something left on stderr
         for line in p.stderr:
-            m = progress_re.match(line)
+            stderr_line = line.decode()
+            m = progress_re.match(stderr_line)
             if not m:
-                stderr_text.append(line)
-                sys.stderr.write(line)
+                stderr_text.append(stderr_line)
+                sys.stderr.write(stderr_line)
         return p.returncode, "".join(stderr_text)
     finally:
         progress.done()
@@ -1156,7 +1183,7 @@ def open_file_guts(f, filtered=False, addrecent=True):
         loaded_file = f
         program_filter = get_filter(f)
         if program_filter:
-            tempfile = os.path.join(tempdir, os.path.basename(f))
+            tempfile = os.path.join(tempdir, "filtered-" + os.path.basename(f))
             exitcode, stderr = filter_program(program_filter, f, tempfile)
             if exitcode:
                 root_window.tk.call("nf_dialog", (".error", "-ext", stderr),
@@ -1206,6 +1233,10 @@ def open_file_guts(f, filtered=False, addrecent=True):
         if os.path.exists(parameter):
             shutil.copy(parameter, temp_parameter)
         canon.parameter_file = temp_parameter
+
+        timeout = inifile.find("DISPLAY", "PREVIEW_TIMEOUT") or ""
+        if timeout:
+            canon.set_timeout(float(timeout))
 
         initcode = inifile.find("EMC", "RS274NGC_STARTUP_CODE") or ""
         if initcode == "":
@@ -1495,7 +1526,7 @@ def jogspeed_incremental(dir=1):
         cursel = int(cursel)
     if dir == 1:
         if cursel > 0:
-            # If it was "Continous" just before, then don't change last jog increment!
+            # If it was "Continuous" just before, then don't change last jog increment!
             jogincr_index_last += 1
         if jogincr_index_last >= jogincr_size:
             jogincr_index_last = jogincr_size - 1
@@ -1608,7 +1639,7 @@ def prompt_areyousure(title, text):
     return t.run()
 
 class _prompt_float:
-    """ Prompt for a g-code floating point expression """
+    """ Prompt for a G-code floating point expression """
     def __init__(self, title, text, default, unit_str=''):
         self.unit_str = unit_str
         t = self.t = Toplevel(root_window, padx=7, pady=7)
@@ -1785,10 +1816,10 @@ property_names = [
     ('name', _("Name:")), ('size', _("Size:")),
     ('tools', _("Tool order:")), ('g0', _("Rapid distance:")),
     ('g1', _("Feed distance:")), ('g', _("Total distance:")),
-    ('run', _("Run time:")), ('x', _("X bounds:")),
-    ('y', _("Y bounds:")), ('z', _("Z bounds:")),
-    ('a', _("A bounds:")), ('b', _("B bounds:")),
-    ('c', _("C bounds:"))
+    ('run', _("Run time:")),('toollist',_('Tool Change List:')),
+    ('x', _("X bounds:")),('y', _("Y bounds:")),
+    ('z', _("Z bounds:")),('a', _("A bounds:")),
+    ('b', _("B bounds:")),('c', _("C bounds:"))
 ]
 
 def dist(xxx_todo_changeme, xxx_todo_changeme1):
@@ -1844,10 +1875,10 @@ def run_warn():
         machine_limit_min, machine_limit_max = soft_limits()
         for i in range(3): # Does not enforce angle limits
             if not(s.axis_mask & (1<<i)): continue
-            if o.canon.min_extents_notool[i] < machine_limit_min[i]:
+            if o.canon.min_extents_notool[i] + to_internal_linear_unit(o.last_tool_offset[i]) < machine_limit_min[i]:
                 warnings.append(_("Program exceeds machine minimum on axis %s")
                     % "XYZABCUVW"[i])
-            if o.canon.max_extents_notool[i] > machine_limit_max[i]:
+            if o.canon.max_extents_notool[i] + to_internal_linear_unit(o.last_tool_offset[i]) > machine_limit_max[i]:
                 warnings.append(_("Program exceeds machine maximum on axis %s")
                     % "XYZABCUVW"[i])
     if warnings:
@@ -1869,9 +1900,14 @@ def reload_file(refilter=True):
     o.set_highlight_line(None)
 
     if refilter or not get_filter(loaded_file):
-        open_file_guts(loaded_file, False, False)
-    else:
+        # we copy the file to a temporary file so that even if it subsequently
+        # changes on disk, LinuxCNC is parsing the file contents from the time
+        # the user opened the file
         tempfile = os.path.join(tempdir, os.path.basename(loaded_file))
+        shutil.copyfile(loaded_file, tempfile)
+        open_file_guts(tempfile, False, False)
+    else:
+        tempfile = os.path.join(tempdir, "filtered-" + os.path.basename(loaded_file))
         open_file_guts(tempfile, True, False)
     if line:
         o.set_highlight_line(line)
@@ -2007,7 +2043,7 @@ class TclCommands(nf.TclCommands):
 
             size = os.stat(loaded_file).st_size
             lines = int(widgets.text.index("end").split(".")[0])-2
-            props['size'] = _("%(size)s bytes\n%(lines)s gcode lines") % {'size': size, 'lines': lines}
+            props['size'] = _("%(size)s bytes\n%(lines)s G-code lines") % {'size': size, 'lines': lines}
 
             if vars.metric.get():
                 conv = 1
@@ -2044,6 +2080,7 @@ class TclCommands(nf.TclCommands):
                 b = max_extents[i]
                 if a != b:
                     props[c] = _("%(a)f to %(b)f = %(diff)f %(units)s").replace("%f", fmt) % {'a': a, 'b': b, 'diff': b-a, 'units': units}
+            props['toollist'] = o.canon.tool_list
         properties(root_window, _("G-Code Properties"), property_names, props)
 
     def launch_website(event=None):
@@ -3217,8 +3254,9 @@ def jog_on(a, b):
         jog(linuxcnc.JOG_INCREMENT, jjogmode, a, b, distance)
         jog_cont[a] = False
     else:
-        global continuous_jog_in_progress
+        global continuous_jog_in_progress,cjogindices
         continuous_jog_in_progress = True
+        if not a in cjogindices: cjogindices.append(a)
         jog(linuxcnc.JOG_CONTINUOUS, jjogmode, a, b)
         jog_cont[a] = True
         jogging[a] = b
@@ -3327,7 +3365,7 @@ for j in range(jointcount):
 
 axis_type = [None] * linuxcnc.MAX_AXIS
 for a in range(linuxcnc.MAX_AXIS):
-    # supply defaults, supersede with ini [AXIS_*]TYPE
+    # supply defaults, supersede with INI [AXIS_*]TYPE
     letter = "xyzabcuvw"[a]
     if not (letter in trajcoordinates): continue
     if letter in "abc":
@@ -3463,7 +3501,7 @@ if db_program is not None: default_tooleditor = None
 tooleditor = inifile.find("DISPLAY","TOOL_EDITOR") or default_tooleditor
 
 if inifile.find("RS274NGC", "PARAMETER_FILE") is None:
-    raise SystemExit("Missing ini file setting for [RS274NGC]PARAMETER_FILE")
+    raise SystemExit("Missing INI file setting for [RS274NGC]PARAMETER_FILE")
 try:
     lu = units(inifile.find("TRAJ", "LINEAR_UNITS"))
 except TypeError:
@@ -3879,19 +3917,20 @@ if hal_present == 1 :
 
     if vcp:
         import vcpparse
-        comp.setprefix("pyvcp")
         f = Tkinter.Frame(root_window)
         if inifile.find("DISPLAY", "PYVCP_POSITION") == "BOTTOM":
             f.grid(row=4, column=0, columnspan=6, sticky="nw", padx=4, pady=4)
         else:
             f.grid(row=0, column=4, rowspan=6, sticky="nw", padx=4, pady=4)
         vcpparse.filename = vcp
-        vcpparse.create_vcp(f, comp)
+        vcpcomp = hal.component("pyvcp")
+        vcpparse.create_vcp(f, vcpcomp)
+        vcpcomp.ready()
         vcp_frame = f
         root_window.bind("<Control-e>", commands.toggle_show_pyvcppanel)
         help2 += [("Ctrl-E", _("toggle PYVCP panel visibility"))]
     else:
-        widgets.menu_view.delete(_("Show pyVCP pan_el").replace("_", ""))
+        widgets.menu_view.delete(_("Show PyVCP pan_el").replace("_", ""))
 
     gladevcp = inifile.find("DISPLAY", "GLADEVCP")
     if gladevcp:
@@ -3997,17 +4036,32 @@ def _dynamic_tabs(inifile):
     # may forward keyboard events to it
     rxid = root_window.winfo_id()
     os.environ['AXIS_FORWARD_EVENTS_TO'] = str(rxid)
-
     for i,t,c in zip(list(range(len(tab_cmd))), tab_names, tab_cmd):
         w = _dynamic_tab("user_" + str(i), t)
-        f = Tkinter.Frame(w, container=1, borderwidth=0, highlightthickness=0)
-        f.pack(fill="both", expand=1)
-        xid = f.winfo_id()
-        cmd = c.replace('{XID}', str(xid)).split()
-        child = Popen(cmd)
-        wait = cmd[:2] == ['halcmd', 'loadusr']
+        if c.split()[0] == 'pyvcp': # this is a pycvp panel
+            import vcpparse
+            f = Tkinter.Frame(w, borderwidth=0, highlightthickness=0)
+            pyvcp = c.split()
+            if len(pyvcp) != 2:
+                print("Invalid PyVCP tab configuration: EMBED_TAB COMMAND =", c)
+                print("Incorrect number of parameters")
+                continue
+            try:
+                f.pack(fill="y", expand=0)
+                vcpparse.filename = pyvcp[1]
+                vcpparse.create_vcp(f, comp=None, compname=t.lower().replace(' ','_'))
+            except Exception as e:
+                print("Invalid PyVCP tab configuration: EMBED_TAB COMMAND =", c)
+                print(e)
+        else: # this is a gladevcp panel
+            f = Tkinter.Frame(w, container=1, borderwidth=0, highlightthickness=0)
+            f.pack(fill="both", expand=1)
+            xid = f.winfo_id()
+            cmd = c.replace('{XID}', str(xid)).split()
+            child = Popen(cmd)
+            wait = cmd[:2] == ['halcmd', 'loadusr']
 
-        _dynamic_childs[str(w)] = (child, cmd, wait)
+            _dynamic_childs[str(w)] = (child, cmd, wait)
 
 @atexit.register
 def kill_dynamic_childs():
@@ -4104,7 +4158,7 @@ commands.set_spindlerate(100)
 
 def forget(widget, *pins):
     if "AXIS_NO_AUTOCONFIGURE" in os.environ: return
-    if hal_present == 1 :
+    if hal_present == 1:
         for p in pins:
             if hal.pin_has_writer(p): return
     m = widget.winfo_manager()
@@ -4165,7 +4219,7 @@ if os.path.exists(rcfile):
         root_window.tk.call("nf_dialog", ".error", _("Error in ~/.axisrc"),
             tb, "error", 0, _("OK"))
 
-# call an empty function that can be overidden
+# call an empty function that can be overridden
 # by an .axisrc user_hal_pins() function
 # then set HAL component ready if the .axisui didn't
 if hal_present == 1 :

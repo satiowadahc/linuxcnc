@@ -34,7 +34,11 @@ class MaterialConverter(QMainWindow, object):
         self.setCentralWidget(wid)
         self.layout = QHBoxLayout()
         wid.setLayout(self.layout)
-        self.setWindowTitle('QtPlasmaC  Material File Creator')
+        self.iconPath = 'share/icons/hicolor/scalable/apps/linuxcnc_alt/linuxcncicon_plasma.svg'
+        appPath = os.path.realpath(os.path.dirname(sys.argv[0]))
+        self.iconBase = '/usr' if appPath == '/usr/bin' else appPath.replace('/bin', '/debian/extras/usr')
+        self.setWindowIcon(QIcon(os.path.join(self.iconBase, self.iconPath)))
+        self.setWindowTitle('QtPlasmaC Material File Creator')
         self.create_widgets()
         self.inButton.setEnabled(False)
         self.inFile.setEnabled(False)
@@ -65,7 +69,7 @@ class MaterialConverter(QMainWindow, object):
         self.fPE = '0'
         self.fGP = '0'
         self.fCM = '1'
-        wid.setStyleSheet('* {color: #ffee06; background: #16160e; font: 12pt Lato} \
+        wid.setStyleSheet('* {color: #ffee06; background: #16160e; font: 12pt DejaVuSans} \
                           QLabel {height: 20; width: 120} \
                           QPushButton {border: 1px solid #ffee06; border-radius: 4; height: 20; width: 120} \
                           QPushButton:disabled {color: #16160e; border: none} \
@@ -232,6 +236,7 @@ class MaterialConverter(QMainWindow, object):
         if self.inManual.isChecked():
             getParams = self.fusion_dialog()
             if not getParams:
+                self.msgLabel.setText('')
                 return
             self.materialNum = '[MATERIAL_NUMBER_{}]'.format(self.fNUM)
             self.materialName = 'NAME               = {}'.format(self.fNAM)
@@ -339,6 +344,7 @@ class MaterialConverter(QMainWindow, object):
                 lKW = t['geometry']['CW']
                 getParams = self.fusion_dialog()
                 if not getParams:
+                    self.msgLabel.setText('')
                     return
                 self.materialNum = '[MATERIAL_NUMBER_{}]'.format(self.fNUM)
                 self.materialName = 'NAME               = {}'.format(self.fNAM)
@@ -406,6 +412,7 @@ class MaterialConverter(QMainWindow, object):
     def fusion_dialog(self):
         dialog = QDialog()
         dialog.setWindowTitle('Material Maker')
+        dialog.setWindowIcon(QIcon(os.path.join(self.iconBase, self.iconPath)))
         dialog.setModal(True)
         topL = QLabel('Items with a *** are mandatory')
         infL = QLabel('For Material # {}\n{}'.format(self.fNUM,self.fNAM))
@@ -479,6 +486,7 @@ class MaterialConverter(QMainWindow, object):
         dCM = QLineEdit()
         dCM.setText(self.fCM)
         dCM.setAlignment(Qt.AlignRight)
+        vSpace1 = QSpacerItem(0, 25)
         buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         buttonBox = QDialogButtonBox(buttons)
         buttonBox.accepted.connect(dialog.accept)
@@ -518,9 +526,12 @@ class MaterialConverter(QMainWindow, object):
         layout.addWidget(dGP)
         layout.addWidget(dCMl)
         layout.addWidget(dCM)
-        layout.addWidget(buttonBox)
-        dialog.setStyleSheet('* { color: #ffee06; background: #16160e; font: 10pt Lato } \
-                             QLineEdit { border: 1px solid #ffee06; border-radius: 4 }')
+        layout.addItem(vSpace1)
+        layout.addWidget(buttonBox, alignment=Qt.AlignCenter)
+        dialog.setStyleSheet('* { color: #ffee06; background: #16160e; font: 10pt DejaVuSans } \
+                             QLineEdit { border: 1px solid #ffee06; border-radius: 4 } \
+                           QPushButton {border: 1px solid #ffee06; border-radius: 4; height: 20; width: 80} \
+                           QPushButton:pressed {color: #16160e; background: #ffee06}')
         response = dialog.exec_()
         if self.inManual.isChecked():
             self.fNUM = dNU.text()

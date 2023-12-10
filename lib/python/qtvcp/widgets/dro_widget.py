@@ -15,10 +15,8 @@
 # GNU General Public License for more details.
 
 import linuxcnc
-import sys
-import os
 
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore
 
 from qtvcp.widgets.simple_widgets import ScaledLabel
 from qtvcp.widgets.widget_baseclass import _HalWidgetBase
@@ -56,6 +54,7 @@ class DROLabel(ScaledLabel, _HalWidgetBase):
         self.force_radius = False
         self._scale = 1
         self._user = 0
+        self._text =' -000.0000'
 
         # for stylesheet reading
         self._isHomed = False
@@ -91,7 +90,7 @@ class DROLabel(ScaledLabel, _HalWidgetBase):
 
     # update ishomed property
     # polish widget so stylesheet sees the property change
-    # some stylessheets color the text on home/unhome
+    # some stylesheets color the text on home/unhome
     def _home_status_polish(self, d, state):
         if d == self.joint_number or (self.joint_number==10 and d==1):
             self.setProperty('isHomed', state)
@@ -104,7 +103,7 @@ class DROLabel(ScaledLabel, _HalWidgetBase):
         # Joint mode
         elif mode == linuxcnc.TRAJ_MODE_FREE:
             self._mode = False
-        # axis 
+        # axis
         elif mode == linuxcnc.TRAJ_MODE_TELEOP:
             self._mode = True
 
@@ -195,7 +194,6 @@ class DROLabel(ScaledLabel, _HalWidgetBase):
     # _toggle_properties makes it so we can only select one option
     ########################################################################
 
- 
     def _toggle_properties(self, picked):
         data = ('always_display_diameter','always_display_radius',
         'display_as_per_m7m8')
@@ -236,6 +234,14 @@ class DROLabel(ScaledLabel, _HalWidgetBase):
     def reset_follow_m7m8_mode(self):
         self.follow_m7m8_mode = True
     display_as_per_m7m8 = QtCore.pyqtProperty(bool, get_follow_m7m8_mode, set_follow_m7m8_mode, reset_follow_m7m8_mode)
+
+    def set_follow_reference(self, data):
+        self.allow_reference_change_requests = data
+    def get_follow_reference(self):
+        return self.allow_reference_change_requests
+    def reset_follow_reference(self):
+        self.allow_reference_change_requests = True
+    follow_reference_changes = QtCore.pyqtProperty(bool, get_follow_reference, set_follow_reference, reset_follow_reference)
 
     # JOINT Number
     def setjoint_number(self, data):

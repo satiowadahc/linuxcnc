@@ -40,15 +40,16 @@
 ###########################################################################
 
 import os
-import sys
 from PyQt5 import uic
-from PyQt5.QtCore import pyqtSlot, QFile, QRegExp, Qt, QTextStream, QUrl
-from PyQt5.QtWidgets import (QApplication, QDialog, QFileDialog, QMessageBox,
-        QStyleFactory, QWidget, QColorDialog)
+from PyQt5.QtCore import pyqtSlot, QFile, QTextStream, QUrl
+from PyQt5.QtWidgets import (QDialog, QFileDialog, QMessageBox,
+        QColorDialog)
 from PyQt5 import QtGui, QtCore
 
 from qtvcp.core import Info, Path
 from qtvcp.qt_makegui import VCPWindow
+from qtvcp import logger
+LOG = logger.getLogger(__name__)
 INFO = Info()
 PATH = Path()
 WIDGETS = VCPWindow()
@@ -79,6 +80,7 @@ class StyleSheetEditor(QDialog):
             path =  WIDGETS.PREFS_.getpref('style_QSS_Path', 'DEFAULT' , str, 'BOOK_KEEPING')
             self.preferencePath = path
             self.loadedItem.setData( path, role = QtCore.Qt.UserRole + 1)
+            self.lineEdit_path.setText(path)
             self.styleSheetCombo.setToolTip('<b>{}</b>'.format(path))
         self.origStyleSheet = self.parent.styleSheet()
         self.styleTextView.setPlainText(self.origStyleSheet)
@@ -115,7 +117,7 @@ class StyleSheetEditor(QDialog):
         except Exception as e:
             print(e)
 
-        # check for qss in the users's config folder 
+        # check for qss in the users's config folder
         localqss = PATH.CONFIGPATH
         try:
             fileNames= [f for f in os.listdir(localqss) if f.endswith('.qss')]
@@ -158,6 +160,8 @@ class StyleSheetEditor(QDialog):
             DIR = PATH.SCREENDIR
         else:
             DIR = PATH.PANELDIR
+        if os.path.exists(self.preferencePath):
+            DIR = os.path.dirname(self.preferencePath)
 
         dialog = QFileDialog(self)
         options = QFileDialog.Options()
@@ -197,6 +201,8 @@ class StyleSheetEditor(QDialog):
             DIR = PATH.SCREENDIR
         else:
             DIR = PATH.PANELDIR
+        if os.path.exists(self.preferencePath):
+            DIR = os.path.dirname(self.preferencePath)
 
         dialog = QFileDialog(self)
         options = QFileDialog.Options()
@@ -257,6 +263,7 @@ class StyleSheetEditor(QDialog):
                 DIR =PATH.PANELDIR
                 BNAME = PATH.BASENAME
             qssname = os.path.join(DIR, BNAME, sheetName)
+            self.lineEdit_path.setText(qssname)
             file = QFile(qssname)
             file.open(QFile.ReadOnly)
             styleSheet = file.readAll()

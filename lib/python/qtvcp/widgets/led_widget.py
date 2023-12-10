@@ -37,6 +37,7 @@ class LED(QWidget, _HalWidgetBase):
         self._diameter = 15
         self._color = QColor("red")
         self._off_color = QColor("black")
+        self._border_color = QColor("black")
         self._alignment = Qt.AlignCenter
         self.state = False
         self.flash = False
@@ -85,7 +86,7 @@ class LED(QWidget, _HalWidgetBase):
         elif self._alignment & Qt.AlignRight:
             x = self.width() - self._diameter
         elif self._alignment & Qt.AlignHCenter:
-            x = (self.width() - self._diameter) / 2
+            x = (self.width() - self._diameter) // 2
         elif self._alignment & Qt.AlignJustify:
             x = 0
 
@@ -94,7 +95,7 @@ class LED(QWidget, _HalWidgetBase):
         elif self._alignment & Qt.AlignBottom:
             y = self.height() - self._diameter
         elif self._alignment & Qt.AlignVCenter:
-            y = (self.height() - self._diameter) / 2
+            y = (self.height() - self._diameter) // 2
 
         gradient = QRadialGradient(x + self._diameter / 2, y + self._diameter / 2,
                                    self._diameter * 0.4, self._diameter * 0.4, self._diameter * 0.4)
@@ -107,7 +108,7 @@ class LED(QWidget, _HalWidgetBase):
 
         painter.begin(self)
         brush = QBrush(gradient)
-        painter.setPen(self._color)
+        painter.setPen(self._border_color)
         painter.setRenderHint(QPainter.Antialiasing, True)
         painter.setBrush(brush)
         painter.drawEllipse(x, y, self._diameter - 1, self._diameter - 1)
@@ -148,6 +149,14 @@ class LED(QWidget, _HalWidgetBase):
     @pyqtSlot(QColor)
     def setOffColor(self, value):
         self._off_color = value
+        self.update()
+
+    def getBorderColor(self):
+        return self._border_color
+
+    @pyqtSlot(QColor)
+    def setBorderColor(self, value):
+        self._border_color = value
         self.update()
 
     def getAlignment(self):
@@ -221,8 +230,9 @@ class LED(QWidget, _HalWidgetBase):
     halpin_option = pyqtProperty(bool, get_halpin_option, set_halpin_option, reset_halpin_option)
     diameter = pyqtProperty(int, getDiameter, setDiameter)
     color = pyqtProperty(QColor, getColor, setColor)
-    off_color = pyqtProperty(QColor, getColor, setColor)
-    alignment = pyqtProperty(Qt.Alignment, getAlignment, setAlignment,resetAlignment)
+    off_color = pyqtProperty(QColor, getOffColor, setOffColor)
+    border_color = pyqtProperty(QColor, getBorderColor, setBorderColor)
+    alignment = pyqtProperty(Qt.Alignment, getAlignment, setAlignment, resetAlignment)
     currentstate = pyqtProperty(bool, getState, setState, resetState)
     flashing = pyqtProperty(bool, getFlashState, setFlashState)
     flashRate = pyqtProperty(int, getFlashRate, setFlashRate)

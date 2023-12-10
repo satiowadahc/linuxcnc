@@ -18,7 +18,7 @@
 import hal
 
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import pyqtProperty
+from PyQt5.QtCore import pyqtProperty, pyqtSignal
 from qtvcp.widgets.widget_baseclass import _HalWidgetBase
 from qtvcp.core import Status, Action, Info
 from qtvcp import logger
@@ -37,7 +37,42 @@ LOG = logger.getLogger(__name__)
 # LOG.setLevel(logger.INFO) # One of DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 
-class StatusSlider(QtWidgets.QSlider, _HalWidgetBase):
+# Based on https://stackoverflow.com/questions/42820380/use-float-for-qslider
+class DoubleSlider(QtWidgets.QSlider):
+
+    # create our our signal that we can connect to if necessary
+    doubleValueChanged = pyqtSignal(float)
+
+    def __init__(self, *args, **kargs):
+        super(DoubleSlider, self).__init__( *args, **kargs)
+        self._multi = 1 ** 2 # arbitrarily set
+
+        # not needed at this time
+        self.valueChanged.connect(self.emitDoubleValueChanged)
+
+    def emitDoubleValueChanged(self):
+        value = float(super(DoubleSlider, self).value())/self._multi
+        self.doubleValueChanged.emit(value)
+
+    def value(self):
+        return float(super(DoubleSlider, self).value()) / self._multi
+
+    def setMinimum(self, value):
+        return super(DoubleSlider, self).setMinimum(int(value * self._multi))
+
+    def setMaximum(self, value):
+        return super(DoubleSlider, self).setMaximum(int(value * self._multi))
+
+    def setSingleStep(self, value):
+        return super(DoubleSlider, self).setSingleStep(value * self._multi)
+
+    def singleStep(self):
+        return float(super(DoubleSlider, self).singleStep()) / self._multi
+
+    def setValue(self, value):
+        super(DoubleSlider, self).setValue(int(value * self._multi))
+
+class StatusSlider(DoubleSlider, _HalWidgetBase):
     def __init__(self, parent=None):
         super(StatusSlider, self).__init__(parent)
         self._block_signal = False
@@ -59,6 +94,7 @@ class StatusSlider(QtWidgets.QSlider, _HalWidgetBase):
         STATUS.connect('state-estop-reset', lambda w: self.setEnabled(True))
         if self.rapid:
             STATUS.connect('rapid-override-changed', lambda w, data: self.setValue(data))
+            self.setMaximum(100)
         elif self.feed:
             STATUS.connect('feed-override-changed', lambda w, data: self.setValue(data))
             self.setMaximum(int(INFO.MAX_FEED_OVERRIDE))
@@ -68,9 +104,11 @@ class StatusSlider(QtWidgets.QSlider, _HalWidgetBase):
             self.setMinimum(int(INFO.MIN_SPINDLE_OVERRIDE))
         elif self.jograte:
             STATUS.connect('jograte-changed', lambda w, data: self.setValue(data))
+            self.setMinimum(int(INFO.MIN_LINEAR_JOG_VEL))
             self.setMaximum(int(INFO.MAX_LINEAR_JOG_VEL))
         elif self.jograte_angular:
             STATUS.connect('jograte-angular-changed', lambda w, data: self.setValue(data))
+            self.setMinimum(int(INFO.MIN_ANGULAR_JOG_VEL))
             self.setMaximum(int(INFO.MAX_ANGULAR_JOG_VEL))
         elif self.max_velocity:
             STATUS.connect('max-velocity-override-changed', lambda w, data: self.setValue(data))
@@ -86,15 +124,9 @@ class StatusSlider(QtWidgets.QSlider, _HalWidgetBase):
             self.hal_pin = self.HAL_GCOMP_.newpin(str(pname), hal.HAL_FLOAT, hal.HAL_OUT)
 
         # connect a signal and callback function to the button
-        self.valueChanged.connect(self._action)
+        self.doubleValueChanged.connect(self._action)
         # If the widget uses dynamic properties in stylesheet...
         self._style_polish(state= self.get_alert_cmd(self.value()))
-
-    # catch any programmed settings and update HAL pin
-    def setValue(self, v):
-        super(StatusSlider, self).setValue(v)
-        if self._halpin_option:
-            self.hal_pin.set(v)
 
     # catch any programmed settings and update HAL pin
     def setValue(self, v):
@@ -131,7 +163,7 @@ class StatusSlider(QtWidgets.QSlider, _HalWidgetBase):
             return'normal'
 
     # polish widget so stylesheet sees the property change
-    # some stylessheets color the widget based on the abritrary hi/lo range
+    # some stylesheets color the widget based on the arbitrary hi/lo range
     def _style_polish(self, prop = 'alertState',state = 'normal'):
         if self._alertState != state:
             self.setProperty(prop, state)

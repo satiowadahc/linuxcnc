@@ -43,25 +43,35 @@
 */
 
 enum CanonBool {
-    OFF,
-    ON
+	OFF,
+	ON
 };
 
-struct CONTROL_POINT {          /* type for NURBS control points */
-    double X,
-    Y,
-    W;
+struct NURBS_PLANE_POINT {
+	double NURBS_X,
+	NURBS_Y;
 };
 
-struct PLANE_POINT
-{
-    double X,
-    Y;
+struct NURBS_CONTROL_POINT {  // type for NURBS control points 
+        double NURBS_X,      		// in questa struttura vengono dichiarati i seguenti elementi: coordinate X, Y dei punti di controllo           
+               NURBS_Y,      		// Per l'algoritmo DE-Boor
+               NURBS_W;					// Algoritmo di suddivisione
 };
 
+struct NURBS_G6_CONTROL_POINT {           /* type for NURBS G6 control points */
+	double	NURBS_X,
+		NURBS_Y,
+		NURBS_R,	// this is the R value from gcode
+		NURBS_K;
+};
 
-enum CANON_PLANE
-{
+struct NURBS_G6_DPLANE_POINT {
+        double DX,
+	DY;
+};	//è impiegata per salvare le derivate x'(u) y'(u).
+
+
+enum CANON_PLANE {
     CANON_PLANE_XY = 1,
     CANON_PLANE_YZ,
     CANON_PLANE_XZ,
@@ -213,9 +223,9 @@ extern void SET_G92_OFFSET(double x, double y, double z,
 extern void SET_XY_ROTATION(double t);
 
 /* Offset the origin to the point with absolute coordinates x, y, z,
-a, b, and c. Values of x, y, z, a, b, and c are real numbers. The units
-are whatever length units are being used at the time this command is
-given. */
+a, b, c, u, v, and w. Values of x, y, z, a, b, c, u, v, and w are real 
+numbers. The units are whatever length units are being used at the time 
+this command is given. */
 
 extern void CANON_UPDATE_END_POINT(double x, double y, double z, 
 				   double a, double b, double c,
@@ -287,13 +297,22 @@ workpiece.
 
 2. If the feed_reference mode is CANON_XYZ:
 A. For motion including one rotational axis only: degrees per minute.
-B. For motion including two rotational axes only: degrees per minute
-   In this case, the rate applies to the axis with the larger angle
-   to cover, and the second rotational axis rotates so that it has
-   always completed the same proportion of its required motion as has
-   the rotational axis to which the feed rate applies.
-C. For motion involving one or more of the XYZ axes (with or without
-   simultaneous rotational axis motion): length units (inches or
+B. For motion of two or three rotational axes with X, Y, Z, U, V, and W 
+   axes not moving, the rate is applied as follows. Let dA, dB, and dC 
+   be the angles in degrees through which the A, B, and C axes, 
+   respectively, must move. Let D = sqrt(dA*dA + dB*dB + dC*dC). 
+   Conceptually, D is a measure of total angular motion, using the usual 
+   Euclidean metric. Let T be the amount of time required to move through 
+   D degrees at the current feed rate in degrees per minute. The 
+   rotational axes should be moved in coordinated linear motion so that 
+   the elapsed time from the start to the end of the motion is T plus any 
+   time required for acceleration or deceleration.
+C. For motion of secondary linear axes (U, V, and/or W) with X, Y, and Z 
+   axes not moving (with or without simultaneous rotational axis motion): 
+   length units (inches or millimeters according to the setting of 
+   CANON_UNITS) per minute in the UVW cartesian system.
+D. For motion involving one or more of the XYZ axes (with or without
+   simultaneous motion of other axes): length units (inches or
    millimeters according to the setting of CANON_UNITS) per minute
    along the programmed XYZ path.
 
@@ -457,28 +476,94 @@ extern void STRAIGHT_FEED(int lineno,
                           double a, double b, double c,
                           double u, double v, double w);
 
-/* Additional functions needed to calculate nurbs points */
+/* Additional functions needed to calculate nurbs G5 points */
 
-extern std::vector<unsigned int> knot_vector_creator(unsigned int n, unsigned int k);
-extern double Nmix(unsigned int i, unsigned int k, double u, 
-                    std::vector<unsigned int> knot_vector);
-extern double Rden(double u, unsigned int k,
-                  std::vector<CONTROL_POINT> nurbs_control_points,
+extern std::vector<unsigned int> nurbs_G5_knot_vector_creator(unsigned int n, unsigned int k);
+
+extern double nurbs_G5_Nmix(unsigned int i, unsigned int k, double u, std::vector<unsigned int> knot_vector);
+
+extern double nurbs_G5_Rden(double u, unsigned int k,
+                  std::vector<NURBS_CONTROL_POINT> nurbs_control_points,
                   std::vector<unsigned int> knot_vector);
-extern PLANE_POINT nurbs_point(double u, unsigned int k, 
-                  std::vector<CONTROL_POINT> nurbs_control_points,
+
+extern NURBS_PLANE_POINT nurbs_G5_point(double u, unsigned int k, 
+                  std::vector<NURBS_CONTROL_POINT> nurbs_control_points,
                   std::vector<unsigned int> knot_vector);
-extern PLANE_POINT nurbs_tangent(double u, unsigned int k,
-                  std::vector<CONTROL_POINT> nurbs_control_points,
+
+extern NURBS_PLANE_POINT nurbs_G5_tangent(double u, unsigned int k,
+                  std::vector<NURBS_CONTROL_POINT> nurbs_control_points,
                   std::vector<unsigned int> knot_vector);
-extern double alpha_finder(double dx, double dy);
+
+/* Additional functions needed to calculate nurbs points G_6_2*/
+
+extern std::vector<double> nurbs_g6_knot_vector_creator(unsigned int n, unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points);
+
+std::vector<double> nurbs_interval_span_knot_vector_creator(unsigned int n, unsigned int k, std::vector<double> knot_vector_);
+
+extern double nurbs_lderv(double u, unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, std::vector<double> knot_vector_);
+
+extern double nurbs_Sa1_b1_length_(double a1, double b1, unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points,	std::vector<double> knot_vector_);
+
+extern std::vector<double> nurbs_lenght_vector_creator(unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, std::vector<double> knot_vector_, std::vector<double> span_knot_vector);
+
+extern double nurbs_lenght_tot(int j, std::vector<double> span_knot_vector, std::vector<double> lenght_vector);
+
+extern double nurbs_lenght_l_u(double u, unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, std::vector<double> knot_vector_, std::vector<double> span_knot_vector, std::vector<double> lenght_vector);
+
+extern std::vector<double> nurbs_Du_span_knot_vector_creator(unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, std::vector<double> knot_vector_, std::vector<double> span_knot_vector);
+
+extern std::vector<double> nurbs_costant_crator(std::vector<double> span_knot_vector, std::vector<double> lenght_vector, std::vector<double> Du_span_knot_vector);
+
+extern double nurbs_uj_l(double l, std::vector<double> span_knot_vector, std::vector<double> lenght_vector, std::vector<double> nurbs_costant);
+
+/* Funzioni di supporto all'algoritmo di suddivisione */
+extern  std::vector<double> nurbs_G6_new_control_point_nurbs1(double u, unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, std::vector<double> knot_vector_ );
+
+extern std::vector<double> nurbs_G6_new_control_point_nurbs2(double u, unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, std::vector<double> knot_vector_ );
+
+extern std::vector<double> nurbs_G6_knot_vector_new_creator_sgment(unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points);
+/* ... */
+
+extern double nurbs_G6_Nmix(unsigned int i, unsigned int k, double u, std::vector<double> knot_vector_);
+
+extern std::vector< std::vector<double> > nurbs_G6_Nmix_creator(double u, unsigned int k, double n, std::vector<double> knot_vector_);
+
+extern double nurbs_G6_Rden(double u, unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, std::vector<double> knot_vector_);
+
+extern NURBS_PLANE_POINT nurbs_G6_point(double u, unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, std::vector<double> knot_vector_);
+
+extern double nurbs_G6_Rdenx(double u, unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, std::vector<double> knot_vector_, std::vector< std::vector<double> > A6);
+
+extern NURBS_PLANE_POINT nurbs_G6_pointx(double u, unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, std::vector<double> knot_vector_, std::vector< std::vector<double> > A6);
+
+extern NURBS_PLANE_POINT nurbs_G6_point_x(double u, unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, std::vector<double> knot_vector_); 
+
+extern NURBS_PLANE_POINT nurbs_G6_tangent_x(double u, unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, std::vector<double> knot_vector_);
+
+/*Funzioni di supporto all'algoritmo di suddivisione********************************************************************/
+extern  std::vector<double> nurbs_G6_new_control_point_nurbs1(double u, unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, std::vector<double> knot_vector_ );
+
+extern std::vector<double> nurbs_G6_new_control_point_nurbs2(double u, unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, std::vector<double> knot_vector_ );
+
+extern std::vector<double> nurbs_G6_knot_vector_new_creator_sgment(unsigned int k, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points);
+
+/* End of NURBS functions*/
+
 
 /* Canon calls */
 
-extern void NURBS_FEED(int lineno, std::vector<CONTROL_POINT> nurbs_control_points, unsigned int k);
+extern void NURBS_G5_FEED(int lineno, std::vector<NURBS_CONTROL_POINT> nurbs_control_points, unsigned int nurbs_order, int plane);
 /* Move at the feed rate along an approximation of a NURBS with a variable number
  * of control points
  */
+
+extern void NURBS_G6_FEED(int lineno, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, unsigned int k, double feedrate, int l, int plane);
+// this is for G6xx
+
+extern double alpha_finder(double dx, double dy);
+
+
+/********************************************************************************************************************/
 
 /* Move at existing feed rate so that at any time during the move,
 all axes have covered the same proportion of their required motion.
@@ -586,8 +671,9 @@ number of the selected tool. */
 extern void SELECT_TOOL(int tool);
 
 extern void CHANGE_TOOL_NUMBER(int number);
+extern void RELOAD_TOOLDATA(void);
 
-/* In extention to the comment above - for CHANGE_TOOL, sometimes on 
+/* In extension to the comment above - for CHANGE_TOOL, sometimes on 
 startup one would want to tell emc2 what tool it has loaded. As the last
 toolnumber before shutdown isn't currently written, there is no provision
 to allow emc2 to safely restart knowing what tool is in the spindle.

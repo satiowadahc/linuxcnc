@@ -3,15 +3,14 @@
 import sys
 import math
 
-import warnings
 
 # Set up logging
 from qtvcp import logger
 LOG = logger.getLogger(__name__)
 
-from PyQt5.QtCore import pyqtProperty, pyqtSignal, QPoint, QSize, Qt, QTimer
+from PyQt5.QtCore import pyqtProperty, pyqtSignal, QSize, Qt, QTimer
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMessageBox, QSlider,
+from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QSlider,
         QWidget)
 try:
     from PyQt5.QtOpenGL import QGLWidget
@@ -27,14 +26,13 @@ except ImportError:
     LIB_GOOD = False
 
 import _thread
-    
+
 import glnav
 from rs274 import glcanon
 from rs274 import interpret
 import linuxcnc
 import gcode
 
-import time
 import re
 import tempfile
 import shutil
@@ -49,7 +47,7 @@ class Window(QWidget):
     def __init__(self, inifile):
         super(Window, self).__init__()
         self.glWidget = Lcnc_3dGraphics()
-  
+
         self.xSlider = self.createSlider()
         self.ySlider = self.createSlider()
         self.zSlider = self.createSlider()
@@ -70,34 +68,34 @@ class Window(QWidget):
         mainLayout.addWidget(self.zSlider)
         mainLayout.addWidget(self.zoomSlider)
         self.setLayout(mainLayout)
-  
+
         self.xSlider.setValue(15 * 16)
         self.ySlider.setValue(345 * 16)
         self.zSlider.setValue(0 * 16)
         self.zSlider.setValue(10)
 
         self.setWindowTitle("Hello GL")
-  
+
     def createSlider(self):
         slider = QSlider(Qt.Vertical)
-  
+
         slider.setRange(0, 360 * 16)
         slider.setSingleStep(16)
         slider.setPageStep(15 * 16)
         slider.setTickInterval(15 * 16)
         slider.setTickPosition(QSlider.TicksRight)
-  
+
         return slider
 
     def createZoomSlider(self):
         slider = QSlider(Qt.Vertical)
-  
+
         slider.setRange(1, 1000000)
         slider.setSingleStep(1)
         slider.setPageStep(10)
         slider.setTickInterval(10)
         slider.setTickPosition(QSlider.TicksRight)
-  
+
         return slider
 
 #################
@@ -170,10 +168,14 @@ class StatCanon(glcanon.GLCanon, interpret.StatMixin):
     def next_line(self, st):
         glcanon.GLCanon.next_line(self, st)
         self.progress.update(self.lineno)
-        # not sure if this is used - copied from AXIS code
         if self.notify:
-            print("info",self.notify_message)
+            self.output_notify_message(self.notify_message)
             self.notify = 0
+
+    # this is class patched
+    # output the text from the magic comment eg: (PREVIEW,notify,The text)
+    def output_notify_message(self, message):
+        pass
 
 ###############################
 # widget for graphics plotting
@@ -193,7 +195,7 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
             a = self.colors[s + "_alpha"]
             s = self.colors[s]
             return [int(x * 255) for x in s + (a,)]
-        # requires linuxcnc running before laoding this widget
+        # requires linuxcnc running before loading this widget
         inifile = os.environ.get('INI_FILE_NAME', '/dev/null')
 
         # if status is not available then we are probably
@@ -202,11 +204,18 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
         try:
             stat.poll()
         except:
-            LOG.warning('linuxcnc staus failed, Assuming linuxcnc is not running so using fake status for a XYZ machine')
+            #LOG.warning('linuxcnc status failed, Assuming linuxcnc is not running so using fake status for a XYZ machine')
             stat = fakeStatus()
 
         self.inifile = linuxcnc.ini(inifile)
         self.foam_option = bool(self.inifile.find("DISPLAY", "FOAM"))
+        try:
+            trajcoordinates = self.inifile.find("TRAJ", "COORDINATES").lower().replace(" ","")
+        except:
+            trajcoordinates = "unknown"
+            #raise SystemExit("Missing [TRAJ]COORDINATES")
+        kinsmodule = self.inifile.find("KINS", "KINEMATICS")
+
         self.logger = linuxcnc.positionlogger(linuxcnc.stat(),
             C('backplotjog'),
             C('backplottraverse'),
@@ -219,8 +228,11 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
         # start tracking linuxcnc position so we can plot it
         _thread.start_new_thread(self.logger.start, (.01,))
         glcanon.GlCanonDraw.__init__(self, stat, self.logger)
+        glcanon.GlCanonDraw.init_glcanondraw(self,trajcoordinates=trajcoordinates,
+                              kinsmodule=kinsmodule)
 
         # set defaults
+        self.display_loaded = False
         self.current_view = 'p'
         self.fingerprint = ()
         self.select_primed = None
@@ -231,7 +243,7 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
         self._current_file = None
         self.highlight_line = None
         self.program_alpha = False
-        self.use_joints_mode = False
+        self.use_joints_mode = True
         self.use_commanded = True
         self.show_limits = True
         self.show_extents_option = True
@@ -254,6 +266,7 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
         self.enable_dro = False
         self.use_default_controls = True
         self.mouse_btn_mode = 0
+        self._mousemoved = False
         self.cancel_rotate = False
         self.use_gradient_background = False
         self.gradient_color1 = (0.0, 0.0, 1)
@@ -288,9 +301,16 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
         self.dro_vel = "   Vel:% 9.2F"
         self._font = 'monospace bold 16'
         self.addTimer()
+        self._buttonList = [Qt.LeftButton,
+                            Qt.MiddleButton,
+                            Qt.RightButton]
+        self._invertWheelZoom = False
+
+        # base units of config. updated by subclass (gcode_graphics)
+        self.mach_units = 'Metric'
 
     # add a 100ms timer to poll linuxcnc stats
-    # this may be overriden in sub widgets
+    # this may be overridden in sub widgets
     def addTimer(self):
         self.timer = QTimer()
         self.timer.timeout.connect(self.poll)
@@ -312,10 +332,12 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
             self.update()
         return True
 
-    # when shown make sure display is set to the default view
+    # when shown for the first time make sure display is set to the default view
     def showEvent(self, event):
-        super(Lcnc_3dGraphics ,self).showEvent(event)
-        self.set_current_view()
+        if not self.display_loaded:
+            super(Lcnc_3dGraphics ,self).showEvent(event)
+            self.set_current_view()
+            self.display_loaded = True
 
     def load(self,filename = None):
         s = self.stat
@@ -328,6 +350,7 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
 
         lines = open(filename).readlines()
         progress = Progress(2, len(lines))
+        # monkey patch function to call ours
         progress.emit_percent = self.emit_percent
 
         code = []
@@ -355,6 +378,8 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
                                 self.lathe_option,
                                 s, text, random, i,
                                 progress, arcdivision)
+            # monkey patched function to call ours
+            canon.output_notify_message = self.output_notify_message
             parameter = self.inifile.find("RS274NGC", "PARAMETER_FILE")
             temp_parameter = os.path.join(td, os.path.basename(parameter or "linuxcnc.var"))
             if parameter:
@@ -381,6 +406,11 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
                 pass
         self._redraw()
 
+    # monkey patched function from StatCanon class
+    def output_notify_message(self, message):
+        print("Preview Notify:", message)
+
+    # monkey patched function from Progress class
     def emit_percent(self, percent):
         self.percentLoaded.emit(percent)
 
@@ -428,17 +458,17 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
             lines = sum(1 for line in open(loaded_file))
             props['size'] = "%(size)s bytes\n%(lines)s gcode lines" % {'size': size, 'lines': lines}
 
-            if self.metric_units:
-                conv = 1
-                units = "mm"
-                fmt = "%.3f"
-            else:
-                conv = 1/25.4
+            # report props in gcode's units
+            if 200 in canon.state.gcodes:
                 units = "in"
                 fmt = "%.4f"
+                conv = 1/25
+            else:
+                units = "mm"
+                fmt = "%.3f"
+                conv = 1
 
             mf = max_speed
-            #print canon.traverse[0]
 
             g0 = sum(dist(l[1][:3], l[2][:3]) for l in canon.traverse)
             g1 = (sum(dist(l[1][:3], l[2][:3]) for l in canon.feed) +
@@ -448,34 +478,30 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
                 sum(dist(l[1][:3], l[2][:3])/mf  for l in canon.traverse) +
                 canon.dwell_time
                 )
- 
-            props['G0'] = "%f %s".replace("%f", fmt) % (self.from_internal_linear_unit(g0, conv), units)
-            props['G1'] = "%f %s".replace("%f", fmt) % (self.from_internal_linear_unit(g1, conv), units)
+
+            props['g0'] = "%f %s".replace("%f", fmt) % (self.from_internal_linear_unit(g0, conv), units)
+            props['g1'] = "%f %s".replace("%f", fmt) % (self.from_internal_linear_unit(g1, conv), units)
             if gt > 120:
-                props['Run'] = "%.1f Minutes" % (gt/60)
+                props['run'] = "%.1f Minutes" % (gt/60)
             else:
-                props['Run'] = "%d Seconds" % (int(gt))
+                props['run'] = "%d Seconds" % (int(gt))
+
+            props['toollist'] = canon.tool_list
 
             min_extents = from_internal_units(canon.min_extents, conv)
             max_extents = from_internal_units(canon.max_extents, conv)
-            for (i, c) in enumerate("XYZ"):
+            min_extents_zero_rxy = from_internal_units(canon.min_extents_zero_rxy, conv)
+            max_extents_zero_rxy = from_internal_units(canon.max_extents_zero_rxy, conv)
+            for (i, c) in enumerate("xyz"):
                 a = min_extents[i]
                 b = max_extents[i]
-                if a != b:
-                    props[c] = "%(a)f to %(b)f = %(diff)f %(units)s".replace("%f", fmt) % {'a': a, 'b': b, 'diff': b-a, 'units': units}
-            props['Units'] = units
+                d = min_extents_zero_rxy[i]
+                e = max_extents_zero_rxy[i]
+                props[c] = "%f to %f = %f %s".replace("%f", fmt) % (a, b, b-a, units)
+                props[c + '_zero_rxy'] = "%f to %f = %f %s".replace("%f", fmt) % ( d, e, e-d, units)
+            props['machine_unit_sys'] = self.mach_units
 
-            if self.metric_units:
-                if 200 in canon.state.gcodes:
-                    gcode_units = "in"
-                else:
-                    gcode_units = "mm"
-            else:
-                if 210 in canon.state.gcodes:
-                    gcode_units = "mm"
-                else:
-                    gcode_units = "in"
-            props['GCode Units'] = gcode_units
+            props['gcode_units'] = units
 
         self.gcode_properties = props
 
@@ -500,10 +526,11 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
         glcanon.GlCanonDraw.realize(self)
         if s.file: self.load()
 
-    # gettter / setters
+    # getter / setters
     def get_font_info(self):
         return self.font_charwidth, self.font_linespace, self.font_base
     def get_program_alpha(self): return self.program_alpha
+    def get_num_joints(self): return self.num_joints
     def get_joints_mode(self): return self.use_joints_mode
     def get_show_commanded(self): return self.use_commanded
     def get_show_extents(self): return self.show_extents_option
@@ -566,11 +593,30 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
     def _redraw(self):
         self.updateGL()
 
-    # This overrides glcannon.py method so we can change the DRO 
-    def dro_format(self,s,spd,dtg,limit,homed,positions,axisdtg,g5x_offset,g92_offset,tlo_offset):
-            if not self.enable_dro:
-                return limit, homed, [''], ['']
+    # This overrides glcannon.py method so we can change the joint DRO
+    # this is turned off because amending extra variables (posstrs and droposstrs)
+    # breaks the screen display somehow
+    # remove _OFF and re make to enable function
+    def joint_dro_format_OFF(self,s,spd,num_of_joints,limit, homed):
+        posstrs = ["  %s:% 9.4f" % i for i in
+            zip(list(range(num_of_joints)), s.joint_actual_position)]
+        droposstrs = posstrs
 
+        if self.get_show_machine_speed():
+            format = "% 6s:" + self.dro_in
+            diaformat = " " + format
+            if self.metric_units:
+                format = "% 6s:" + self.dro_mm
+                spd = spd * 25.4
+            spd = spd * 60
+            # adding this strangely breaks the DRO _after_ homing
+            posstrs.append(format % ("Vel", spd))
+            droposstrs.append(diaformat % ("Vel", spd))
+
+        return limit, homed, posstrs, droposstrs
+
+    # This overrides glcannon.py method so we can change the DRO
+    def dro_format(self,s,spd,dtg,limit,homed,positions,axisdtg,g5x_offset,g92_offset,tlo_offset):
             if self.metric_units:
                 format = "% 6s:" + self.dro_mm
                 if self.show_dtg:
@@ -655,6 +701,18 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
 
             if self.show_dtg:
                 posstrs.append(format % ("DTG", dtg))
+
+            # show extrajoints (if not showing offsets)
+            if (s.num_extrajoints >0 and (not self.get_show_offsets())):
+                posstrs.append("Extra Joints:")
+                for jno in range(self.get_num_joints() - s.num_extrajoints,
+                                 self.get_num_joints()):
+                    jval  = s.joint_actual_position[jno]
+                    jstr  =     "   EJ%d:% 9.4f" % (jno,jval)
+                    if jno >= 10:
+                        jstr  = "  EJ%2d:% 9.4f" % (jno,jval)
+                    posstrs.append(jstr)
+
             return limit, homed, posstrs, droposstrs
 
 
@@ -712,7 +770,7 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
         #GL.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0) # rotate on y
         #GL.glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0) # rotate on z
 
-        
+
         try:
             if self.perspective:
                 self.redraw_perspective()
@@ -935,9 +993,9 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
     def select_prime(self, x, y):
         self.select_primed = x, y
 
-    # TODO This return statement breaks segment picking on the screen but
-    # Also stop the display from pausing plotting update while searching
-    # probably needs a thread - strange that Tkinter and GTK don't suffer...
+    # If the hcode program is large the display pauses plotting update 
+    # while searching. probably needs a thread or compiled code.
+    # the actual opengl search is in glcanon.py, GlCanonDraw: select()
     def select_fire(self):
         if self.inhibit_selection: return
         if not self.select_primed: return
@@ -952,13 +1010,14 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
         # Use the mouse wheel to zoom in/out
         a = _event.angleDelta().y()/200
         if a < 0:
-            self.zoomout()
+            self.zoomin() if self._invertWheelZoom else self.zoomout()
         else:
-            self.zoomin()
+            self.zoomout() if self._invertWheelZoom else self.zoomin()
         _event.accept()
 
     def mousePressEvent(self, event):
-        if (event.buttons() & Qt.LeftButton):
+        self._mousemoved = False
+        if (event.buttons() & self._buttonList[0]):
             self.select_prime(event.pos().x(), event.pos().y())
             #print self.winfo_width()/2 - event.pos().x(), self.winfo_height()/2 - event.pos().y()
         self.recordMouse(event.pos().x(), event.pos().y())
@@ -967,24 +1026,29 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
     # event.buttons = current button state
     # event_button  = event causing button
     def mouseReleaseEvent(self, event):
-        if event.button() & Qt.LeftButton:
-            self.select_fire()
+        if event.button() & self._buttonList[0]:
+            if self._mousemoved == False:
+                # only search for the line if we 'clicked'
+                # rather then pressed and scrolled
+                # select fire starts the search through the gcode
+                self.select_fire()
 
     def mouseDoubleClickEvent(self, event):
-        if event.button() & Qt.RightButton:
+        if event.button() & self._buttonList[2]:
             self.logger.clear()
 
     def mouseMoveEvent(self, event):
+        self._mousemoved = True
         # move
-        if event.buttons() & Qt.LeftButton:
+        if event.buttons() & self._buttonList[0]:
             self.translateOrRotate(event.pos().x(), event.pos().y())
         # rotate
-        elif event.buttons() & Qt.RightButton:
+        elif event.buttons() & self._buttonList[2]:
             if not self.cancel_rotate:
                 self.set_prime(event.pos().x(), event.pos().y())
                 self.rotateOrTranslate(event.pos().x(), event.pos().y())
         # zoom
-        elif event.buttons() & Qt.MiddleButton:
+        elif event.buttons() & self._buttonList[1]:
             self.continueZoom(event.pos().y())
 
     def user_plot(self):
@@ -1002,7 +1066,7 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
 
         # set flag that presets are valid
         self._presetFlag = True
-        self._recordedView = self.current_view
+        self._recordedView = 'p' if self.perspective == True else self.current_view
         self._recordedDist = self.get_zoom_distance()
         self._recordedTransX,self._recordedTransY = self.get_total_translation()
         self._lat,self._lon = self.get_viewangle()
@@ -1024,7 +1088,8 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
         # if never been set - set it first
         if not self._presetFlag:
             self.recordCurrentViewSettings()
-        return self.current_view, self.get_zoom_distance(), \
+        return 'p' if self.perspective == True else self.current_view, \
+                self.get_zoom_distance(), \
                 self._recordedTransX, self._recordedTransY, \
                 self.get_viewangle()[0], self.get_viewangle()[1]
 
@@ -1050,7 +1115,7 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
     def makeObject(self):
         genList = GL.glGenLists(1)
         GL.glNewList(genList, GL.GL_COMPILE)
-  
+
         GL.glBegin(GL.GL_QUADS)
         factor = 4
         # Make a tee section
@@ -1078,9 +1143,9 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
         self.extrude(x3, y3, x4, y4, z= .05, color = self.Green)
         self.extrude(x4, y4, y4, x4, z= .05, color = self.Green)
         self.extrude(y4, x4, y3, x3, z= .05, color = self.Green)
-  
+
         NumSectors = 200
-  
+
         # Make a circle
         for i in range(NumSectors):
             angle1 = (i * 2 * math.pi) / NumSectors
@@ -1088,31 +1153,31 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
             y5 = 0.30 * math.cos(angle1) * factor
             x6 = 0.20 * math.sin(angle1) * factor
             y6 = 0.20 * math.cos(angle1) * factor
-  
+
             angle2 = ((i + 1) * 2 * math.pi) / NumSectors
             x7 = 0.20 * math.sin(angle2) * factor
             y7 = 0.20 * math.cos(angle2) * factor
             x8 = 0.30 * math.sin(angle2) * factor
             y8 = 0.30 * math.cos(angle2) * factor
-  
+
             self.quad(x5, y5, x6, y6, x7, y7, x8, y8, z= .05, color = self.Green)
-  
+
             self.extrude(x6, y6, x7, y7, z= .05, color = self.Green)
             self.extrude(x8, y8, x5, y5, z= .05, color = self.Green)
-  
+
         GL.glEnd()
         GL.glEndList()
-  
+
         return genList
-  
+
     def quad(self, x1, y1, x2, y2, x3, y3, x4, y4, z, color):
         self.qglColor(color)
-  
+
         GL.glVertex3d(x1, y1, -z)
         GL.glVertex3d(x2, y2, -z)
         GL.glVertex3d(x3, y3, -z)
         GL.glVertex3d(x4, y4, -z)
-  
+
         GL.glVertex3d(x4, y4, +z)
         GL.glVertex3d(x3, y3, +z)
         GL.glVertex3d(x2, y2, +z)
@@ -1120,7 +1185,7 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
 
     def lathe_quad(self, x1, x2, x3, x4, z1, z2, z3, z4, color):
         self.qglColor(color)
-  
+
         GL.glVertex3d(x1, 0, z1)
         GL.glVertex3d(x2, 0, z2)
         GL.glVertex3d(x3, 0, z3)
@@ -1134,7 +1199,7 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
 
     def extrude(self, x1, y1, x2, y2, z, color):
         self.qglColor(color)
-  
+
         GL.glVertex3d(x1, y1, +z)
         GL.glVertex3d(x2, y2, +z)
         GL.glVertex3d(x2, y2, -z)
@@ -1166,5 +1231,5 @@ if __name__ == '__main__':
     window = Window(inifilename)
     window.show()
     sys.exit(app.exec_())
-  
+
 

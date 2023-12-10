@@ -18,15 +18,16 @@
 import sys
 import os
 import json
-from PyQt5.QtCore import QProcess, QByteArray
+from PyQt5.QtCore import QProcess, QRegExp
 from PyQt5 import QtGui, QtWidgets, uic
 from qtvcp.widgets.widget_baseclass import _HalWidgetBase
-from qtvcp.core import Action, Status, Info
+from qtvcp.core import Action, Status, Info, Path
 from qtvcp import logger
 
 ACTION = Action()
 STATUS = Status()
 INFO = Info()
+PATH = Path()
 LOG = logger.getLogger(__name__)
 # Force the log level for this module
 #LOG.setLevel(logger.DEBUG) # One of DEBUG, INFO, WARNING, ERROR, CRITICAL
@@ -40,18 +41,18 @@ class BasicProbe(QtWidgets.QWidget, _HalWidgetBase):
         super(BasicProbe, self).__init__(parent)
         self.proc = None
         if INFO.MACHINE_IS_METRIC:
-            self.valid = QtGui.QDoubleValidator(-999.999, 999.999, 3)
+            self.valid = QtGui.QRegExpValidator(QRegExp('^[+-]?((\d+(\.\d{,4})?)|(\.\d{,4}))$'))
         else:
-            self.valid = QtGui.QDoubleValidator(-999.9999, 999.9999, 4)
+            self.valid = QtGui.QRegExpValidator(QRegExp('^[+-]?((\d+(\.\d{,3})?)|(\.\d{,3}))$'))
         self.setMinimumSize(600, 420)
         # load the widgets ui file
-        self.filename = os.path.join(INFO.LIB_PATH, 'widgets_ui', 'basic_probe.ui')
+        self.filename = PATH.find_widget_path('basic_probe.ui')
         try:
             self.instance = uic.loadUi(self.filename, self)
         except AttributeError as e:
             LOG.critical(e)
         # load the probe help file
-        self.filename = os.path.join(INFO.LIB_PATH, 'widgets_ui', 'basic_probe_help.ui')
+        self.filename = PATH.find_widget_path('basic_probe_help.ui')
         try:
             self.dialog = uic.loadUi(self.filename)
         except AttributeError as e:
@@ -102,9 +103,10 @@ class BasicProbe(QtWidgets.QWidget, _HalWidgetBase):
         self.cmb_probe_select.addItems(self.probe_list)
         self.stackedWidget_probe_buttons.setCurrentIndex(0)
         # define validators for all lineEdit widgets
+        self.lineEdit_probe_tool.setValidator(QtGui.QRegExpValidator(QRegExp('[0-9]{0,5}')))
         for i in self.parm_list:
             self['lineEdit_' + i].setValidator(self.valid)
-        
+
     def _hal_init(self):
         def homed_on_status():
             return (STATUS.machine_is_on() and (STATUS.is_all_homed() or INFO.NO_HOME_REQUIRED))
@@ -112,6 +114,9 @@ class BasicProbe(QtWidgets.QWidget, _HalWidgetBase):
         STATUS.connect('state_estop', lambda w: self.setEnabled(False))
         STATUS.connect('interp-idle', lambda w: self.setEnabled(homed_on_status()))
         STATUS.connect('all-homed', lambda w: self.setEnabled(True))
+
+        # must directly initialize
+        self.statuslabel_motiontype.hal_init()
 
         if self.PREFS_:
             self.lineEdit_probe_tool.setText(self.PREFS_.getpref('Probe tool', '0', str, 'PROBE OPTIONS'))
@@ -163,7 +168,7 @@ class BasicProbe(QtWidgets.QWidget, _HalWidgetBase):
         self.proc.readyReadStandardError.connect(self.read_stderror)
         self.proc.finished.connect(self.process_finished)
         self.proc.start('python3 {}'.format(SUBPROGRAM))
-            
+
     def start_probe(self, cmd):
         if self.proc is not None:
             LOG.info("Probe Routine processor is busy")
@@ -173,7 +178,8 @@ class BasicProbe(QtWidgets.QWidget, _HalWidgetBase):
             return
         self.start_process()
         string_to_send = cmd + '$' + json.dumps(self.send_dict) + '\n'
-#        print("String to send ", string_to_send)
+        #print("String to send ", string_to_send)
+        STATUS.block_error_polling()
         self.proc.writeData(bytes(string_to_send, 'utf-8'))
 
     def process_started(self):
@@ -192,17 +198,21 @@ class BasicProbe(QtWidgets.QWidget, _HalWidgetBase):
     def process_finished(self, exitCode, exitStatus):
         LOG.info(("Probe Process finished - exitCode {} exitStatus {}".format(exitCode, exitStatus)))
         self.proc = None
+        STATUS.unblock_error_polling()
 
     def parse_input(self, line):
         line = line.decode("utf-8")
         if "INFO" in line:
             print(line)
         elif "ERROR" in line:
-            print(line)
+            #print(line)
+            STATUS.unblock_error_polling()
+            ACTION.SET_ERROR_MESSAGE('Basic Probe process finished  in error')
         elif "DEBUG" in line:
             print(line)
         elif "COMPLETE" in line:
-            LOG.info("Probing routine completed without errors")
+            STATUS.unblock_error_polling()
+            LOG.info("Basic Probing routine completed without errors")
             return_data = line.rstrip().split('$')
             data = json.loads(return_data[1])
             self.show_results(data)
@@ -285,7 +295,7 @@ class BasicProbe(QtWidgets.QWidget, _HalWidgetBase):
         self.status_yp.setText('0')
         self.status_yc.setText('0')
         self.status_ly.setText('0')
-        
+
     def clear_all(self):
         self.clear_x()
         self.clear_y()
@@ -294,7 +304,7 @@ class BasicProbe(QtWidgets.QWidget, _HalWidgetBase):
         self.status_delta.setText('0')
         self.status_a.setText('0')
 
-# Helper functions       
+# Helper functions
     def get_parms(self):
         self.send_dict = {key: self['lineEdit_' + key].text() for key in (self.parm_list)}
         for key in ['allow_auto_zero', 'allow_auto_skew', 'cal_avg_error', 'cal_x_error', 'cal_y_error']:

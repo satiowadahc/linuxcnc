@@ -21,11 +21,11 @@
 extern "C" {
 #endif
 
-/* default name of EMC ini file */
+/* default name of EMC INI file */
 #define DEFAULT_EMC_INIFILE "emc.ini"
 
 /* default name of EMC NML file */
-#define DEFAULT_EMC_NMLFILE EMC2_DEFAULT_NMLFILE
+extern const char * DEFAULT_EMC_NMLFILE;
 
 /* cycle time for emctask, in seconds */
 #define DEFAULT_EMC_TASK_CYCLE_TIME 0.100

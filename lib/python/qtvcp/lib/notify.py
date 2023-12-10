@@ -1,4 +1,3 @@
-import sys
 # try to add a notify system so messages use the
 # nice integrated pop-ups
 # Ubuntu kinda wrecks this be not following the
@@ -170,6 +169,7 @@ class Notify:
             n.addAction('close_clicked', 'jogPause', self.jogPauseClicked)
         n.show()
         self.notify_list.append(n)
+        return n
 
     ################################################
     # callback mechanism
@@ -292,8 +292,6 @@ class Notify:
                     self.lastnum = 0
 
     def external_close(self):
-        for num, i in enumerate(self.alarmpage):
-            print(num, i)
         if self.critical_message is not None:
             n = self.critical_message
             n.body = ''
