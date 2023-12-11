@@ -154,19 +154,53 @@ void updateStatus(WINDOW *status){
       mvwprintw(status,2, 1, "ENABLED ");
       break;
     default:
-      mvwprintw(status,2, 1, "Unknown");
+      mvwprintw(status,2, 1, "Unknown ");
       break;
   }
 
   switch(emcStatus->task.execState){
-
+    case EMC_TASK_EXEC_ERROR:
+      mvwprintw(status,2, 10, "Error");
+      break;
+    case EMC_TASK_EXEC_DONE:
+      mvwprintw(status,2, 10, "Done");
+      break;
+    case EMC_TASK_EXEC_WAITING_FOR_MOTION:
+      mvwprintw(status,2, 10, "Waiting for Motion");
+      break;
+    case EMC_TASK_EXEC_WAITING_FOR_MOTION_QUEUE:
+      mvwprintw(status,2, 10, "Waiting for Motion Queue");
+      break;
+    case EMC_TASK_EXEC_WAITING_FOR_IO:
+      mvwprintw(status,2, 10, "Waiting for IO");
+      break;
+    case EMC_TASK_EXEC_WAITING_FOR_MOTION_AND_IO:
+      mvwprintw(status,2, 10, "Waiting for Motion and IO");
+      break;
+    case EMC_TASK_EXEC_WAITING_FOR_DELAY:
+      mvwprintw(status,2, 10, "Waiting for Delay");
+      break;
+    case EMC_TASK_EXEC_WAITING_FOR_SYSTEM_CMD:
+      mvwprintw(status,2, 10, "Waiting for System Command");
+      break;
+    case EMC_TASK_EXEC_WAITING_FOR_SPINDLE_ORIENTED:
+      mvwprintw(status,2, 10, "Waiting for Spindle Oriented");
+      break;
   }
   switch(emcStatus->task.interpState){
-
+    case EMC_TASK_INTERP_IDLE:
+      mvwprintw(status,2,40, "Idle");
+      break;
+    case EMC_TASK_INTERP_READING:
+      mvwprintw(status,2,40, "Reading");
+      break;
+    case EMC_TASK_INTERP_PAUSED:
+      mvwprintw(status,2,40, "Paused");
+      break;
+    case EMC_TASK_INTERP_WAITING:
+      mvwprintw(status,2,40, "Waiting");
+      break;
   }
-
-
-
 
   wrefresh(status);
 }
