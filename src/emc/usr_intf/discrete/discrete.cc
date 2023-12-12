@@ -48,7 +48,7 @@
 // <><><><><><><><><><><><><>
 WINDOW *w_dro;
 WINDOW *w_editor;
-WINDOW *w_messages;
+WINDOW *w_control;
 WINDOW *w_status;
 
 uint16_t mid_top_col, mid_bot_col;
@@ -56,6 +56,10 @@ uint16_t mid_left_lines, mid_right_lines;
 
 // Global windows
 uint16_t max_h, max_w;
+
+bool run = false;
+
+char status_messages[10][40];
 
 // <><><><><><><><><><><><><>
 //      Linuxcnc Update Functions
@@ -101,16 +105,16 @@ void init_screen(){
   w_dro = newwin(mid_right_lines, mid_top_col, 0, 0);
   w_editor = newwin(max_h-mid_right_lines, mid_bot_col, mid_right_lines, 0);
   w_status = newwin(mid_left_lines, max_w - mid_top_col, 0, mid_top_col);
-  w_messages = newwin(max_h - mid_left_lines, max_w - mid_bot_col, mid_left_lines, mid_bot_col);
+  w_control = newwin(max_h - mid_left_lines, max_w - mid_bot_col, mid_left_lines, mid_bot_col);
   box(w_dro, 0 , 0);
   box(w_editor, 0 , 0);
   box(w_status, 0 , 0);
-  box(w_messages, 0 , 0);
+  box(w_control, 0 , 0);
 
   nodelay(w_dro, true);
   nodelay(w_editor, true);
   nodelay(w_status, true);
-  nodelay(w_messages, true);
+  nodelay(w_control, true);
 
   // keypad(w_dro, true);
 }
@@ -133,6 +137,15 @@ void updateDRO(WINDOW *dro){
   mvwprintw(dro, 3,1,"Z:  %f  %f  %f", emcStatus->motion.traj.actualPosition.tran.z,0.123,0.123);
 
   wrefresh(dro);
+}
+
+void addMessage(char *message){
+  for(int i = 9; i > 0; i--){
+    strcpy(status_messages[i], status_messages[i-1]);
+    mvwprintw(w_status, 3+i, 1, status_messages[i]);
+  }
+  strcpy(status_messages[0], message);
+  mvwprintw(w_status, 3, 1, status_messages[0]);
 }
 
 void updateStatus(WINDOW *status){
@@ -187,18 +200,18 @@ void updateStatus(WINDOW *status){
       mvwprintw(status,2, 10, "Waiting for Spindle Oriented");
       break;
   }
-  switch(emcStatus->task.interpState){
+  switch(emcStatus->task.interpState) {
     case EMC_TASK_INTERP_IDLE:
-      mvwprintw(status,2,40, "Idle");
+      mvwprintw(status, 2, 40, "Idle");
       break;
     case EMC_TASK_INTERP_READING:
-      mvwprintw(status,2,40, "Reading");
+      mvwprintw(status, 2, 40, "Reading");
       break;
     case EMC_TASK_INTERP_PAUSED:
-      mvwprintw(status,2,40, "Paused");
+      mvwprintw(status, 2, 40, "Paused");
       break;
     case EMC_TASK_INTERP_WAITING:
-      mvwprintw(status,2,40, "Waiting");
+      mvwprintw(status, 2, 40, "Waiting");
       break;
   }
 
@@ -210,15 +223,35 @@ void updateEditor(WINDOW *editor, int line){
 
 }
 
-void updateEditor(WINDOW *editor){
-  updateEditor(editor, 0);
+void updateControl(WINDOW *control){
+  char ch = getch();
+  char buf[40];
+
+  switch (ch) {
+    case 'q':
+      run = false;
+      break;
+    case 'h': {
+      EMC_JOINT_HOME emc_joint_home_msg;
+      emc_joint_home_msg.joint = -1;
+      emcCommandSend(emc_joint_home_msg);
+      break;
+    }
+    case 't': {
+      sprintf(buf, "Testing");
+      addMessage(buf);
+      break;
+    }
+  }
+
+
 }
 
 // <><><><><><><><><><><><><>
 //      Main Function
 //  TODO Abstract all functions in here
 // <><><><><><><><><><><><><>
-int main() {
+int main(int argc, char *argv[]) {
 
   // Screen Initialization
   // These Can not be abstracted from main
@@ -240,8 +273,8 @@ int main() {
   wrefresh(w_editor);
   waddstr(w_status, "Status");
   wrefresh(w_status);
-  waddstr(w_messages, "Messages");
-  wrefresh(w_messages);
+  waddstr(w_control, "Control");
+  wrefresh(w_control);
 
   nodelay(stdscr, true);
   intrflush(stdscr, false);
@@ -253,19 +286,17 @@ int main() {
 // <><><><><><><><><><><><><>
   init_machine();
 
-  int ch;
+
 // <><><><><><><><><><><><><>
 //      Main Loop
 // <><><><><><><><><><><><><>
- bool run = true;
+  run = true;
   while(run){
-    ch = getch();
-    if(ch == 'q'){run = false;}
 
     updateDRO(w_dro);
     wrefresh(w_dro);
-
     updateStatus(w_status);
+    updateControl(w_control);
 
   }
   // Clean up
