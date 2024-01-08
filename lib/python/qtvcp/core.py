@@ -17,7 +17,7 @@ from . import logger
 log = logger.getLogger(__name__)
 # log.setLevel(logger.INFO) # One of DEBUG, INFO, WARNING, ERROR, CRITICAL, VERBOSE
 
-# The order of these classes is importanr, otherwise - cirular imports.
+# The order of these classes is importanr, otherwise - circular imports.
 # the some of the later classes reference the earlier classes
 
 ################################################################
@@ -39,6 +39,7 @@ INI = Info()
 class QPin(hal.Pin, QObject):
 
     value_changed = pyqtSignal('PyQt_PyObject')
+    pinValueChanged = pyqtSignal('PyQt_PyObject','PyQt_PyObject')
     REGISTRY = []
     UPDATE = False
 
@@ -54,6 +55,7 @@ class QPin(hal.Pin, QObject):
         tmp = self.get()
         if tmp != self._prev:
             self.value_changed.emit(tmp)
+            self.pinValueChanged.emit(self, tmp)
         self._prev = tmp
 
     def text(self):

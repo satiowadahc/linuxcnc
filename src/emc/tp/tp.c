@@ -464,8 +464,6 @@ int tpClear(TP_STRUCT * const tp)
     struct state_tag_t tag = {{0}};
     tp->execTag = tag;
     tp->motionType = 0;
-    tp->termCond = TC_TERM_COND_PARABOLIC;
-    tp->tolerance = 0.0;
     tp->done = 1;
     tp->depth = tp->activeDepth = 0;
     tp->aborting = 0;
@@ -515,6 +513,8 @@ int tpInit(TP_STRUCT * const tp)
     tp->spindle.waiting_for_atspeed = MOTION_INVALID_ID;
 
     tp->reverse_run = TC_DIR_FORWARD;
+    tp->termCond = TC_TERM_COND_PARABOLIC;
+    tp->tolerance = 0.0;
 
     ZERO_EMC_POSE(tp->currentPos);
 
@@ -1589,7 +1589,7 @@ int tpAddRigidTap(TP_STRUCT * const tp,
      * */
     tcInit(&tc,
             TC_RIGIDTAP,
-            0,
+            2,
             tp->cycleTime,
             enables,
             1);
@@ -1764,7 +1764,7 @@ STATIC int tpRunOptimization(TP_STRUCT * const tp) {
                 tp_debug_print("Found 2nd non-tangent segment, stopping optimization\n");
                 return TP_ERR_OK;
             } else  {
-                tp_debug_print("Found first non-tangent segment, contining\n");
+                tp_debug_print("Found first non-tangent segment, continuing\n");
                 hit_non_tangent = true;
                 continue;
             }

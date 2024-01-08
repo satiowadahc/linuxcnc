@@ -4,7 +4,7 @@
 motion \- accepts NML motion commands, interacts with HAL in realtime
 
 .SH SYNOPSIS
-\fBloadrt motmod [base_period_nsec=\fIperiod\fB] [base_thread_fp=\fI0 or 1\fB] [servo_period_nsec=\fIperiod\fB] [traj_period_nsec=\fIperiod\fB] [num_joints=\fI[1-16]\fB] [num_dio=\fI[1-64]\fB] [num_aio=\fI[1-64]\fB] [num_misc_error=\fI[0-64]\fB] [num_spindles=\fI[1-8]\fB]\fR  \fB[unlock_joints_mask=\fR\fIjointmask\fR\fB]\fR \fB[num_extrajoints=\fI[0-16]\fB]\fR
+\fBloadrt motmod [base_period_nsec=\fIperiod\fB] [base_thread_fp=\fI0 or 1\fB] [servo_period_nsec=\fIperiod\fB] [traj_period_nsec=\fIperiod\fB] [num_joints=\fI[1-16]\fB] [num_dio=\fI[1-64]\fB] [num_aio=\fI[1-64]\fB] [num_misc_error=\fI[0-64]\fB | names_misc_errors] [num_spindles=\fI[1-8]\fB]\fR  \fB[unlock_joints_mask=\fR\fIjointmask\fR\fB]\fR \fB[num_extrajoints=\fI[0-16]\fB]\fR
 
 The limits for the following items are compile-time settings:
 .br
@@ -23,6 +23,13 @@ The limits for the following items are compile-time settings:
 .ns
 .TP
 \fBnum_misc_error\fR: Maximum number of extra error inputs is set by EMCMOT_MAX_MISC_ERRORS.
+.br
+.ns
+.TP
+\fBnames_misc_errors\fR: A comma-separated list of names for extra error inputs.
+This parameter is mutually exclusive with num_misc_error.
+If using num_misc_error the additional error input pins will have names like \fBmotion.misc-error-00\fR whereas \fBnames_misc_errors=overtemp,undertemp\fR will
+create hal pins \fBmotion.err-overtemp\fR and \fBmotion.err-undertemp\fR
 .br
 .ns
 .TP
@@ -390,7 +397,7 @@ The velocity limit for the teleop planner.
 (\fBNote:\fR pins marked \fB(DEBUG)\fR serve as debugging aids and are subject to change or removal at any time.)
 
 .TP
-\fBjoint.\fIN\fB.joint\-acc\-cmd\fR OUT FLOAT \fB(DEBUG)\fR
+\fBjoint.\fIN\fB.acc\-cmd\fR OUT FLOAT \fB(DEBUG)\fR
 The joint's commanded acceleration.
 
 .TP
@@ -475,10 +482,8 @@ TRUE if the joint is using the "free planner" and has come to a stop.
 \fBjoint.\fIN\fB.index\-enable\fR IO BIT
 Should be attached to the index\-enable pin of the joint's encoder to enable homing to index pulse.
 
-.br
-.ns
-.TP
-\fBjoint.N.is\-unlocked\fR IN BIT
+.TQ
+\fBjoint.\fIN\fB.is\-unlocked\fR IN BIT
 Indicates joint is unlocked (see JOINT UNLOCK PINS).
 
 .TP
@@ -552,8 +557,8 @@ Should be driven TRUE if the positive limit switch for this joint is tripped.
 TRUE if the axis is a locked joint (typically a rotary) and a move is commanded (see JOINT UNLOCK PINS).
 
 .TP
-\fBjoint.\fIN\fB.joint\-vel\-cmd\fR OUT FLOAT \fB(DEBUG)\fR
-The joint's commanded velocity
+\fBjoint.\fIN\fB.vel\-cmd\fR OUT FLOAT \fB(DEBUG)\fR
+The joint's commanded velocity.
 
 .TP
 \fBjoint.\fIN\fB.wheel\-jog\-active\fR OUT BIT \fB(DEBUG)\fR

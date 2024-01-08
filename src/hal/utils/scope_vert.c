@@ -765,7 +765,7 @@ static void offset_changed(GtkEditable * editable, struct offset_data *data)
 
     /* maybe user typed something, save it in the buffer */
     text = gtk_entry_get_text(GTK_ENTRY(ctrl_usr->vert.offset_entry));
-    strncpy(data->buf, text, BUFLEN);
+    snprintf(data->buf, BUFLEN, "%s", text);
 }
 
 /*
@@ -1094,6 +1094,11 @@ void channel_changed(void)
     gtk_adjustment_set_lower(adj, chan->min_index);
     gtk_adjustment_set_upper(adj, chan->max_index);
     gtk_adjustment_set_value(adj, chan->scale_index);
+
+    // Call the `scale_changed()` callback once by hand to initialize
+    // the new channel's scale/gain.
+    scale_changed(adj, NULL);
+
     /* update the channel number and name display */
     snprintf(buf1, BUFLEN, "%2d", vert->selected);
     name = chan->name;

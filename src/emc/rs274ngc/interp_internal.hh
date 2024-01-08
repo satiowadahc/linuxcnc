@@ -87,8 +87,8 @@ Tighter tolerance down to a minimum of 1 micron +- also accepted.
 #define SPIRAL_RELATIVE_TOLERANCE 0.001
 
 /* angle threshold for concavity for cutter compensation, in radians */
-#define TOLERANCE_CONCAVE_CORNER 0.05  
-#define TOLERANCE_EQUAL 0.0001 /* two numbers compare EQ if the
+#define TOLERANCE_CONCAVE_CORNER 0.05
+#define TOLERANCE_EQUAL 1e-6 /* two numbers compare EQ if the
 				  difference is less than this */
 
 static inline bool equal(double a, double b)
@@ -642,7 +642,7 @@ and is not represented here
 
 */
 #define STACK_LEN 50
-#define STACK_ENTRY_LEN 80
+#define STACK_ENTRY_LEN 256
 #define MAX_SUB_DIRS 10
 
 struct setup

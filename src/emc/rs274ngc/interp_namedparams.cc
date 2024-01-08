@@ -217,8 +217,7 @@ int Interp::fetch_ini_param( const char *nameBuf, int *status, double *value)
 
 	char capName[LINELEN];
 
-	strncpy(capName, nameBuf, n);
-	capName[n] = '\0';
+	snprintf(capName, LINELEN, "%s", nameBuf);
 	for (char *p = capName; *p != 0; p++)
 	    *p = toupper(*p);
 	capName[closeBracket] = '\0';
@@ -842,7 +841,7 @@ int Interp::init_named_parameters()
   init_readonly_param("_line", NP_LINE, PA_USE_LOOKUP);
 
   // any of G1 G2 G3 G5.2 G73 G80 G82 G83 G86 G87 G88 G89
-  // value is number after 'G' mutiplied by 10 (10,20,30,52..)
+  // value is number after 'G' multiplied by 10 (10,20,30,52..)
 
   init_readonly_param("_motion_mode", NP_MOTION_MODE, PA_USE_LOOKUP);
 
