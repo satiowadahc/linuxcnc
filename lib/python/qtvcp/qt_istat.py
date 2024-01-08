@@ -1,6 +1,10 @@
 import os
 import linuxcnc
 import collections
+import configparser
+
+PARSER = configparser.RawConfigParser
+PARSER.optionxform = str
 
 # Set up logging
 from . import logger
@@ -37,6 +41,12 @@ class _IStat(object):
         self.LINUXCNC_VERSION = LINUXCNCVERSION
         self.INIPATH = INIPATH
         self.INI = linuxcnc.ini(INIPATH)
+        # use configParser so we can iter thru header
+        self.parser = PARSER(strict=False)
+        try:
+            self.parser.read(filenames=INIPATH)
+        except:
+            pass
         self.MDI_HISTORY_PATH = '~/.axis_mdi_history'
         self.QTVCP_LOG_HISTORY_PATH = '~/qtvcp.log'
         self.MACHINE_LOG_HISTORY_PATH = '~/.machine_log_history'
@@ -233,7 +243,7 @@ class _IStat(object):
         for j in range(jointcount):
             seq = self.INI.find("JOINT_" + str(j), "HOME_SEQUENCE")
             if seq is None:
-                seq = -1
+                seq = 0
                 self.HOME_ALL_FLAG = 0
             self.JOINT_SEQUENCE_LIST[j] = int(seq)
         # joint sequence/type
@@ -265,7 +275,7 @@ class _IStat(object):
             if flag:
                 templist.append(temp)
         # remove duplicates
-        self.JOINT_SYNCH_LIST = list(set(tuple(sorted(sub)) for sub in templist))
+        self.JOINT_SYNC_LIST = list(set(tuple(sorted(sub)) for sub in templist))
 
         # This is a list of joints that are related to a joint.
         #ie. JOINT_RELATIONS_LIST(0) will give a list of joints that go with joint 0
@@ -276,8 +286,12 @@ class _IStat(object):
         for j in range(jointcount):
             temp = []
             for hj, hs in list(self.JOINT_SEQUENCE_LIST.items()):
+                # the absolute numbers must be equal first
                 if abs(int(hs)) == abs(int(self.JOINT_SEQUENCE_LIST.get(j))):
-                    temp.append(hj)
+                    # theN one has to be negative to signal syncing
+                    if int(hs) <0 or int(self.JOINT_SEQUENCE_LIST.get(j)) < 0:
+                        temp.append(hj)
+            # If empty list: no synced joints, just add the jointcount number
             if temp == []:
                 temp.append(j)
             self.JOINT_RELATIONS_LIST[j] = temp
@@ -482,23 +496,53 @@ class _IStat(object):
         ################
         # users can specify a label for the MDI action button by adding ',Some\nText'
         # to the end of the MDI command
-        # here we separate them to two lists
+        # here we separate them to two lists (legacy) and one dict
         # action_button takes it from there.
-        self.MDI_COMMAND_LIST = []
-        self.MDI_COMMAND_LABEL_LIST = []
-        temp = (self.INI.findall("MDI_COMMAND_LIST", "MDI_COMMAND")) or None
-        if temp is None:
-            self.MDI_COMMAND_LABEL_LIST.append(None)
-            self.MDI_COMMAND_LABEL_LIST.append(None)
-        else:
-            for i in temp:
-                for num,k in enumerate(i.split(',')):
-                    if num == 0:
-                        self.MDI_COMMAND_LIST.append(k)
-                        if len(i.split(',')) <2:
+        self.MDI_COMMAND_DICT={}
+        # suppress error message is there is no section at all
+        if self.parser.has_section('MDI_COMMAND_LIST'):
+            try:
+                for key in self.parser['MDI_COMMAND_LIST']:
+
+                    # legacy way: list of repeat 'MDI_COMMAND=XXXX'
+                    # in this case order matters in the INI
+                    if key == 'MDI_COMMAND':
+                        log.warning("INI file's MDI_COMMAND_LIST is using legacy 'MDI_COMMAND =' entries")
+                        self.MDI_COMMAND_LIST = []
+                        self.MDI_COMMAND_LABEL_LIST = []
+                        temp = (self.INI.findall("MDI_COMMAND_LIST", "MDI_COMMAND")) or None
+                        if temp is None:
                             self.MDI_COMMAND_LABEL_LIST.append(None)
+                            self.MDI_COMMAND_LABEL_LIST.append(None)
+                        else:
+                            for i in temp:
+                                for num,k in enumerate(i.split(',')):
+                                    if num == 0:
+                                        self.MDI_COMMAND_LIST.append(k)
+                                        if len(i.split(',')) <2:
+                                            self.MDI_COMMAND_LABEL_LIST.append(None)
+                                    else:
+                                        self.MDI_COMMAND_LABEL_LIST.append(k)
+
+                    # new way: 'MDI_COMMAND_SSS = XXXX' (SSS being any string)
+                    # order of commands doesn't matter in the INI
                     else:
-                        self.MDI_COMMAND_LABEL_LIST.append(k)
+                        try:
+                            temp = self.INI.find("MDI_COMMAND_LIST",key)
+                            name = (key.replace('MDI_COMMAND_',''))
+                            mdidatadict = {}
+                            for num,k in enumerate(temp.split(',')):
+                                if num == 0:
+                                    mdidatadict['cmd'] = k
+                                    if len(temp.split(',')) <2:
+                                        mdidatadict['label'] = None
+                                else:
+                                    mdidatadict['label'] = k
+                            self.MDI_COMMAND_DICT[name] = mdidatadict
+                        except Exception as e:
+                            log.error('INI MDI command parse error:{}'.format(e))
+            except Exception as e:
+                log.error('INI MDI command parse error:{}'.format(e))
 
         self.TOOL_FILE_PATH = self.get_error_safe_setting("EMCIO", "TOOL_TABLE")
         self.POSTGUI_HALFILE_PATH = (self.INI.findall("HAL", "POSTGUI_HALFILE")) or None
@@ -514,7 +558,8 @@ class _IStat(object):
     ###################
     # helper functions
     ###################
-
+    # return a found string or else None by default, anything else by option
+    # since this is used in this file there are some workarounds for plasma machines
     def get_error_safe_setting(self, heading, detail, default=None):
         result = self.INI.find(heading, detail)
         if result:
@@ -525,6 +570,22 @@ class _IStat(object):
                 return default
             else:
                 log.warning('INI Parsing Error, No {} Entry in {}, Using: {}'.format(detail, heading, default))
+            return default
+
+    # return a found float or else None by default, anything else by option
+    def get_safe_float(self, heading, detail, default=None):
+        try:
+            result = float(self.INI.find(heading, detail))
+            return result
+        except:
+            return default
+
+    # return a found integer or else None by default, anything else by option
+    def get_safe_int(self, heading, detail, default=None):
+        try:
+            result = int(self.INI.find(heading, detail))
+            return result
+        except:
             return default
 
     def convert_machine_to_metric(self, data):
@@ -667,6 +728,42 @@ class _IStat(object):
         if self.check_known_paths(fname,prefix,sub,user_m) is None:
             return False
         return True
+
+    def get_ini_mdi_command(self, key):
+        """ returns A MDI command string from the INI heading [MDI_COMMAND_LIST] or None
+
+        key -- can be a integer or a string
+        using an integer is the legacy way to refer to the nth line.
+        using a string will refer to the specific command regardless what line 
+        it is on."""
+        try:
+            # should fail if not string
+            return self.MDI_COMMAND_DICT[key]['cmd']
+        except:
+            # fallback to legacy variable
+            try:
+                # should fail if not int
+                return self.MDI_COMMAND_LIST[key]
+            except:
+                return None
+
+    def get_ini_mdi_label(self, key):
+        """ returns A MDI label string from the INI heading [MDI_COMMAND_LIST] or None
+
+        key -- can be a integer or a string
+        Using an integer is the legacy way to refer to the nth line in the INI.
+        Using a string will refer to the specific command regardless of what line 
+        it is on."""
+        try:
+            # should fail if not string
+            return self.MDI_COMMAND_DICT[key]['label']
+        except:
+            # fallback to legacy variable
+            try:
+                # should fail if not int
+                return self.MDI_COMMAND_LABEL_LIST[key]
+            except:
+                return None
 
     def __getitem__(self, item):
         return getattr(self, item)

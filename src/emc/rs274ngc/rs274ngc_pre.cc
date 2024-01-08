@@ -833,12 +833,20 @@ int Interp::init()
   INIT_CANON();
 
   iniFileName = getenv("INI_FILE_NAME");
-
+  _setup.length_units = GET_EXTERNAL_LENGTH_UNIT_TYPE();
+  
   // the default log file
   _setup.loggingLevel = 0;
   _setup.tool_change_at_g30 = 0;
   _setup.tool_change_quill_up = 0;
   _setup.tool_change_with_spindle_on = 0;
+  if (_setup.length_units == CANON_UNITS_INCHES) {
+      _setup.parameter_g73_peck_clearance = .050;
+      _setup.parameter_g83_peck_clearance = .050;
+   } else{
+      _setup.parameter_g73_peck_clearance = 1;
+      _setup.parameter_g83_peck_clearance = 1;
+    }
   _setup.a_axis_wrapped = 0;
   _setup.b_axis_wrapped = 0;
   _setup.c_axis_wrapped = 0;
@@ -907,6 +915,8 @@ int Interp::init()
               _setup.c_indexer_jnum = atol(inistring);
           }
           inifile.Find(&_setup.orient_offset, "ORIENT_OFFSET", "RS274NGC");
+          inifile.Find(&_setup.parameter_g73_peck_clearance, "PARAMETER_G73_PECK_CLEARANCE", "RS274NGC");
+          inifile.Find(&_setup.parameter_g83_peck_clearance, "PARAMETER_G83_PECK_CLEARANCE", "RS274NGC");
 
           inifile.Find(&_setup.debugmask, "DEBUG", "EMC");
 
@@ -1075,7 +1085,6 @@ int Interp::init()
       }
   }
 
-  _setup.length_units = GET_EXTERNAL_LENGTH_UNIT_TYPE();
   USE_LENGTH_UNITS(_setup.length_units);
   GET_EXTERNAL_PARAMETER_FILE_NAME(filename, LINELEN);
   if (filename[0] == 0)
@@ -1163,12 +1172,12 @@ int Interp::init()
 //_setup.current_x set in Interp::synch
 //_setup.current_y set in Interp::synch
 //_setup.current_z set in Interp::synch
-  _setup.cutter_comp_side = false;
+  _setup.cutter_comp_side = CUTTER_COMP::OFF;
   _setup.arc_not_allowed = false;
   _setup.cycle_il_flag = false;
-  _setup.distance_mode = MODE_ABSOLUTE;
-  _setup.ijk_distance_mode = MODE_INCREMENTAL;  // backwards compatibility
-  _setup.feed_mode = UNITS_PER_MINUTE;
+  _setup.distance_mode = DISTANCE_MODE::ABSOLUTE;
+  _setup.ijk_distance_mode = DISTANCE_MODE::INCREMENTAL;  // backwards compatibility
+  _setup.feed_mode = FEED_MODE::UNITS_PER_MINUTE;
 //_setup.feed_override set in Interp::synch
 //_setup.feed_rate set in Interp::synch
   _setup.filename[0] = 0;
@@ -2048,7 +2057,7 @@ int Interp::synch()
 	  _setup.speed[s] = GET_EXTERNAL_SPEED(s);
 	  _setup.spindle_turning[s] = GET_EXTERNAL_SPINDLE(s);
 	  _setup.speed_override[s] = GET_EXTERNAL_SPINDLE_OVERRIDE_ENABLE(s);
-	  _setup.spindle_mode[s] = CONSTANT_RPM;
+	  _setup.spindle_mode[s] = SPINDLE_MODE::CONSTANT_RPM;
   }
   GET_EXTERNAL_PARAMETER_FILE_NAME(file_name, (LINELEN - 1));
   save_parameters(((file_name[0] ==

@@ -530,6 +530,18 @@ install with "sudo apt-get install libusb-1.0-0-dev" or disable with
 )
 
 
+
+#
+# check for libgpiod
+#
+AC_MSG_CHECKING([for libgpiod])
+AC_CHECK_LIB(gpiod, main,
+            [AC_DEFINE_UNQUOTED([LIBGPIOD_VER], `pkg-config libgpiod --modversion | awk -F. '{print ($1 * 100)+($2) }'`,
+            [libgpiod version, undefined if not present])
+            LDFLAGS="$LDFLAGS -lgpiod"
+            AC_SUBST([LIBGPIOD_VER], `pkg-config libgpiod --modversion | awk -F. '{print ($1 * 100)+($2) }'`)],
+            [AC_MSG_WARN([Could not find libgpiod, not building hal_gpio])])
+
 ##############################################################################
 # Subsection 3.2 - check for the kernel version, with RT patches             #
 #----------------------------------------------------------------------------#
@@ -736,6 +748,7 @@ AC_DEFINE_UNQUOTED([EMC2_PO_DIR], "$EMC2_PO_DIR", [Directory for po/mo translati
 AC_DEFINE_UNQUOTED([EMC2_NCFILES_DIR], "$EMC2_NCFILES_DIR", [Directory for nc files])
 AC_DEFINE_UNQUOTED([EMC2_IMAGE_DIR], "$EMC2_IMAGE_DIR", [Directory for images])
 
+AC_SUBST([EMC2_TMP_DIR])
 AC_SUBST([EMC2_BIN_DIR])
 AC_SUBST([EMC2_TCL_DIR])
 AC_SUBST([EMC2_TCL_LIB_DIR])
@@ -758,6 +771,14 @@ LINUXCNC_AUX_GLADEVCP=/usr/share/linuxcnc/aux_gladevcp
 LINUXCNC_AUX_EXAMPLES=/usr/share/linuxcnc/aux_examples
 AC_SUBST([LINUXCNC_AUX_GLADEVCP])
 AC_SUBST([LINUXCNC_AUX_EXAMPLES])
+
+# define temporary directory
+AC_ARG_WITH(tmpdir,
+   [  --with-tmpdir=PATH      Specify path for temporary files],
+   tmpdir="$withval",
+   tmpdir="/tmp")
+AC_DEFINE_UNQUOTED(EMC2_TMP_DIR, "$tmpdir/linuxcnc", [Temporary files directory])
+AC_SUBST(EMC2_TMP_DIR, [$tmpdir])
 
 ##############################################################################
 # Subsection 3.5 - check for GTK                                             #
@@ -959,7 +980,7 @@ AC_SUBST(YAPPS)
 ##############################################################################
 # Subsection 3.7 - check for programs needed to build documentation          #
 #                                                                            #
-# Check for LyX and other programs we need to build and install docs.        #
+# Check for programs we need to build and install docs.                      #
 # (Optional, if not present, just don't build the docs.)                     #
 ##############################################################################
 
@@ -1031,7 +1052,7 @@ if ( test "$BUILD_DOCS" = "yes" ) ; then
 :ascii-ids:
 
 ....
-umläut nuß
+Matúš hat Geläut am Fuß
 ....
 EOF
     if $A2X --dblatex-opts "-P latex.encoding=utf8" $temp_asciidoc > /dev/null 2>&1;
@@ -1517,7 +1538,8 @@ GPL-2 only) and Readline version 6 and greater (GPL-3 or later).])
             AC_MSG_ERROR(
 [To configure LinuxCNC in this way, you must
 invoke configure with "--enable-non-distributable=yes".  Note that on
-Debian-based systems, you may be able to use libreadline-gplv2-dev instead.])
+Debian-based systems, you may be able to use libeditreadline-dev or
+libreadline-gplv2-dev instead of libreadline-dev.])
         fi
 ])
 

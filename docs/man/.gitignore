@@ -6,6 +6,7 @@ cat1/
 cat3/
 cat9/
 
+man1/emccalib.tcl.1
 man1/halstreamer.1
 man1/hy_gt_vfd.1
 man1/linuxcnc.1
@@ -16,6 +17,9 @@ man1/svd-ps_vfd.1
 man1/thermistor.1
 man1/wj200_vfd.1
 man1/xhc-whb04b-6.1
+man1/emccalib.1
+
+man3/hm2_pktuart.3
 
 man9/abs.9
 man9/abs_s32.9
@@ -95,6 +99,7 @@ man9/demux.9
 man9/differential.9
 man9/div2.9
 man9/edge.9
+man9/enum.9
 man9/eoffset_per_angle.9
 man9/estop_latch.9
 man9/feedcomp.9
@@ -114,6 +119,7 @@ man9/knob2float.9
 man9/laserpower.9
 man9/latencybins.9
 man9/led_dim.9
+man9/limit_axis.9
 man9/limit1.9
 man9/limit2.9
 man9/limit3.9
@@ -152,6 +158,7 @@ man9/pluto_servo.9
 man9/pluto_step.9
 man9/raster.9
 man9/reset.9
+man9/safety_latch.9
 man9/sample_hold.9
 man9/scale.9
 man9/scaled_s32_sums.9
@@ -187,6 +194,8 @@ man9/xhc_hb04_util.9
 man9/xor2.9
 man9/xyzab_tdr_kins.9
 # Ignore po4a-generated files for other languages
+ar/*
+bg/*
 cs/*
 da/*
 de/*
@@ -196,10 +205,12 @@ hu/*
 it/*
 ka/*
 nb/*
+pl/*
 pt/*
 pt_BR/*
 ru/*
 sk/*
+sv/*
 tr/*
 uk/*
 vi/*

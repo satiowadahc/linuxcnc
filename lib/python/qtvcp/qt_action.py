@@ -20,7 +20,7 @@ from qtvcp.core import Status, Info, Path
 INFO = Info()
 STATUS = Status()
 PATH = Path()
-TOUCHPLATE_SUBPROGRAM = os.path.abspath(os.path.join(
+TOUCHOFF_SUBPROGRAM = os.path.abspath(os.path.join(
             os.path.dirname(__file__), 'lib/touchoff_subprogram.py'))
 
 
@@ -103,7 +103,7 @@ class _Lcnc_Action(object):
                     return
                 length = len(INFO.JOINT_SEQUENCE_LIST)
                 for num, j in enumerate(INFO.JOINT_SEQUENCE_LIST):
-                    print(j, num, len(INFO.JOINT_SEQUENCE_LIST))
+                    #print(j, num, len(INFO.JOINT_SEQUENCE_LIST))
                     # at the end so all homed
                     if num == length - 1:
                         self.home_all_warning_flag = False
@@ -213,14 +213,22 @@ class _Lcnc_Action(object):
             self.ensure_mode(premode)
         return 0
 
-    def CALL_INI_MDI(self, number):
+    def CALL_INI_MDI(self, key):
         try:
-            mdi = INFO.MDI_COMMAND_LIST[number]
+            # prefer named INI MDI commands
+            mdi = INFO.get_ini_mdi_command(key)
+            LOG.debug('COMMAND= {}'.format(mdi))
+            if mdi is None: raise Exception
         except:
-            msg = 'MDI_COMMAND= # {} Not found under [MDI_COMMAND_LIST] in INI file'.format(number)
-            LOG.error(msg)
-            self.SET_ERROR_MESSAGE(msg)
-            return
+            # fallback to legacy nth line
+            try:
+                mdi = INFO.MDI_COMMAND_LIST[key]
+            except:
+                msg = 'MDI_COMMAND_{} Not found under [MDI_COMMAND_LIST] in INI file'.format(key)
+                LOG.error(msg)
+                self.SET_ERROR_MESSAGE(msg)
+                return
+
         mdi_list = mdi.split(';')
         self.ensure_mode(linuxcnc.MODE_MDI)
         for code in (mdi_list):
@@ -633,7 +641,8 @@ class _Lcnc_Action(object):
                             'overlay-offsets-on', 'overlay-offsets-off',
                             'inhibit-selection-on', 'inhibit-selection-off',
                             'alpha-mode-on', 'alpha-mode-off', 'dimensions-on',
-                            'dimensions-off', 'record-view', 'set-recorded-view'):
+                            'dimensions-off', 'record-view', 'set-recorded-view',
+                            'set-large-dro','set-small-dro'):
             STATUS.emit('graphics-view-changed', view, None)
 
     def SET_GRAPHICS_GRID_SIZE(self, size):
@@ -754,7 +763,11 @@ class _Lcnc_Action(object):
         STATUS.emit('error', STATUS.TEMPARARY_MESSAGE, msg)
 
     def TOUCHPLATE_TOUCHOFF(self, search_vel, probe_vel, max_probe,
-            z_offset, retract_distance, z_safe_travel):
+            z_offset, retract_distance, z_safe_travel, rtn_method=None, error_rtn=None):
+        # if not none will be called with returned data
+        self._touchoff_return = rtn_method
+        self._touchoff_error_return = error_rtn
+
         if self.proc is not None:
             return 0
         self.proc = QProcess()
@@ -763,7 +776,7 @@ class _Lcnc_Action(object):
         self.proc.readyReadStandardOutput.connect(self.read_stdout)
         self.proc.readyReadStandardError.connect(self.read_stderror)
         self.proc.finished.connect(self.touchoff_finished)
-        self.proc.start('python3 {}'.format(TOUCHPLATE_SUBPROGRAM))
+        self.proc.start('python3 {}'.format(TOUCHOFF_SUBPROGRAM))
         # probe
         string_to_send = "touchoff${}${}${}${}${}${}\n".format(str(search_vel),
                                         str(probe_vel),
@@ -772,6 +785,26 @@ class _Lcnc_Action(object):
                                         str(z_safe_travel),
                                         str(z_offset))
         #print(string_to_send)
+        # block polling here, the sub program will poll now
+        STATUS.block_error_polling()
+        self.proc.writeData(bytes(string_to_send, 'utf-8'))
+        return 1
+
+    def AUTO_HEIGHT(self, string_to_send, rtn_method=None, error_rtn=None):
+        # if not None, return with returned data
+        self._touchoff_return = rtn_method
+        self._touchoff_error_return = error_rtn
+
+        if self.proc is not None:
+            return 0
+        self.proc = QProcess()
+        self.proc.setReadChannel(QProcess.StandardOutput)
+        self.proc.started.connect(self.touchoff_started)
+        self.proc.readyReadStandardOutput.connect(self.read_stdout)
+        self.proc.readyReadStandardError.connect(self.read_stderror)
+        self.proc.finished.connect(self.touchoff_finished)
+        self.proc.start('python3 {}'.format(TOUCHOFF_SUBPROGRAM))
+        # block polling here, the sub program will poll now
         STATUS.block_error_polling()
         self.proc.writeData(bytes(string_to_send, 'utf-8'))
         return 1
@@ -849,7 +882,7 @@ class _Lcnc_Action(object):
     # Action Helper functions
     ######################################
 
-    # adjust the jog rate by one aproximate division of the
+    # adjust the jog rate by one approximate division of the
     # min/max range on an exponential scale.
     # cut off at the upper and lower jog rates as per the INI
     def _step_jograte(self, jograte, minrate, maxrate, inc, divs):
@@ -973,28 +1006,37 @@ class _Lcnc_Action(object):
     def parse_line(self, line):
         line = line.decode("utf-8")
         if "COMPLETE" in line:
-            STATUS.unblock_error_polling()
-            self.SET_DISPLAY_MESSAGE("Touchplate touchoff routine returned successfully")
-        elif "DEBUG" in line: # must set DEBUG level on LOG in top of this file
-            LOG.debug(line[line.find('DEBUG')+6:])
+            # did we get a return method to send return data to?
+            if self._touchoff_return is None:
+                self.SET_DISPLAY_MESSAGE("Touchoff routine returned successfully")
+            else:
+                # strip ugly text
+                s = line[line.find('COMPLETE')+9:]
+                self._touchoff_return(s)
+
         # This also gets error text sent from logging of ACTION library in the subprogram
         elif "ERROR" in line:
-            STATUS.unblock_error_polling()
-            # remove preceding text
+            # remove preceding text 'ERROR'
             s = line[line.find('ERROR')+6:]
             s = s[s.find(']')+1:]
-            # remove (possible)trailing debug info
-            d = s.find('(')
-            if not d == -1:
-                s = s[:d]
-            self.SET_ERROR_MESSAGE(s)
+            if self._touchoff_error_return is None:
+                self.SET_ERROR_MESSAGE(s)
+            else:
+                self._touchoff_error_return(s)
+
+        elif "DEBUG" in line: # must set DEBUG level on LOG in top of this file
+            LOG.debug(line[line.find('DEBUG')+6:])
 
     def touchoff_started(self):
-        LOG.debug("Touchplate touchOff subprogram started with PID {}\n".format(self.proc.processId()))
+        LOG.debug("TouchOff subprogram started with PID {}\n".format(self.proc.processId()))
 
     def touchoff_finished(self, exitCode, exitStatus):
-        LOG.debug("Touchplate touchoff Process finished - exitCode {} exitStatus {}".format(exitCode, exitStatus))
+        LOG.debug("Touchoff Process finished - exitCode {} exitStatus {}".format(exitCode, exitStatus))
         self.proc = None
+        STATUS.unblock_error_polling()
+        # clean up return method variable
+        self._touchoff_return = None
+        self._touchoff_error_return = None
 
     #------- boiler code
 

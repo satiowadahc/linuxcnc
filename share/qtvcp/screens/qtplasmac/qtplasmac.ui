@@ -7,8 +7,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1386</width>
-    <height>905</height>
+    <width>1348</width>
+    <height>866</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -252,7 +252,7 @@
           <enum>QTabWidget::South</enum>
          </property>
          <property name="currentIndex">
-          <number>4</number>
+          <number>0</number>
          </property>
          <property name="usesScrollButtons">
           <bool>false</bool>
@@ -1553,6 +1553,172 @@ EDGE</string>
                     <property name="text_dialog_code_string" stdset="0">
                      <string/>
                     </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+                <widget class="QWidget" name="webview_page">
+                 <layout class="QVBoxLayout" name="verticalLayout_60">
+                  <property name="spacing">
+                   <number>0</number>
+                  </property>
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
+                  <item>
+                   <widget class="QFrame" name="webview_frame">
+                    <property name="frameShape">
+                     <enum>QFrame::NoFrame</enum>
+                    </property>
+                    <property name="frameShadow">
+                     <enum>QFrame::Plain</enum>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_61" stretch="0,1">
+                     <property name="spacing">
+                      <number>2</number>
+                     </property>
+                     <property name="leftMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>2</number>
+                     </property>
+                     <item>
+                      <widget class="QFrame" name="webview_buttons">
+                       <property name="maximumSize">
+                        <size>
+                         <width>16777215</width>
+                         <height>16777215</height>
+                        </size>
+                       </property>
+                       <property name="frameShape">
+                        <enum>QFrame::NoFrame</enum>
+                       </property>
+                       <property name="frameShadow">
+                        <enum>QFrame::Plain</enum>
+                       </property>
+                       <layout class="QHBoxLayout" name="horizontalLayout_10">
+                        <property name="spacing">
+                         <number>1</number>
+                        </property>
+                        <property name="leftMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="topMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="rightMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="bottomMargin">
+                         <number>0</number>
+                        </property>
+                        <item>
+                         <widget class="QPushButton" name="webview_back">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
+                          <property name="maximumSize">
+                           <size>
+                            <width>16777215</width>
+                            <height>16</height>
+                           </size>
+                          </property>
+                          <property name="text">
+                           <string>BACK</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QPushButton" name="webview_reload">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
+                          <property name="maximumSize">
+                           <size>
+                            <width>16777215</width>
+                            <height>16</height>
+                           </size>
+                          </property>
+                          <property name="text">
+                           <string>RELOAD</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QPushButton" name="webview_forward">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
+                          <property name="maximumSize">
+                           <size>
+                            <width>16777215</width>
+                            <height>16</height>
+                           </size>
+                          </property>
+                          <property name="text">
+                           <string>FORWARD</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QFrame" name="webview_place">
+                       <property name="frameShape">
+                        <enum>QFrame::StyledPanel</enum>
+                       </property>
+                       <property name="frameShadow">
+                        <enum>QFrame::Raised</enum>
+                       </property>
+                       <layout class="QHBoxLayout" name="horizontalLayout_40" stretch="0">
+                        <property name="spacing">
+                         <number>2</number>
+                        </property>
+                        <property name="leftMargin">
+                         <number>2</number>
+                        </property>
+                        <property name="topMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="rightMargin">
+                         <number>2</number>
+                        </property>
+                        <property name="bottomMargin">
+                         <number>0</number>
+                        </property>
+                        <item>
+                         <widget class="WebWidget" name="webview"/>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                    </layout>
                    </widget>
                   </item>
                  </layout>
@@ -8010,6 +8176,9 @@ HOME ALL</string>
                       <property name="text">
                        <string notr="true">0</string>
                       </property>
+                      <property name="popupMode">
+                       <enum>QToolButton::InstantPopup</enum>
+                      </property>
                       <property name="joint_number" stdset="0">
                        <number>4</number>
                       </property>
@@ -8983,7 +9152,7 @@ HOME ALL</string>
                   <number>4</number>
                  </property>
                  <property name="bottomMargin">
-                  <number>4</number>
+                  <number>0</number>
                  </property>
                  <item>
                   <widget class="QFrame" name="frame_12">
@@ -9080,7 +9249,7 @@ HOME ALL</string>
                            <number>4</number>
                           </property>
                           <property name="verticalSpacing">
-                           <number>8</number>
+                           <number>7</number>
                           </property>
                           <item row="0" column="0">
                            <widget class="DoubleScale" name="arc_fail_delay">
@@ -9727,7 +9896,7 @@ HOME ALL</string>
                            <number>4</number>
                           </property>
                           <property name="verticalSpacing">
-                           <number>8</number>
+                           <number>7</number>
                           </property>
                           <item row="4" column="1">
                            <widget class="QLabel" name="thc_sample_threshold_lbl">
@@ -10390,7 +10559,7 @@ HOME ALL</string>
                       <property name="sizeHint" stdset="0">
                        <size>
                         <width>20</width>
-                        <height>40</height>
+                        <height>5</height>
                        </size>
                       </property>
                      </spacer>
@@ -10493,10 +10662,10 @@ HOME ALL</string>
                            <number>4</number>
                           </property>
                           <property name="verticalSpacing">
-                           <number>8</number>
+                           <number>7</number>
                           </property>
-                          <item row="0" column="0">
-                           <widget class="DoubleScale" name="float_switch_travel">
+                          <item row="5" column="0">
+                           <widget class="DoubleScale" name="skip_ihs_distance">
                             <property name="sizePolicy">
                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                               <horstretch>0</horstretch>
@@ -10515,9 +10684,6 @@ HOME ALL</string>
                               <height>16777215</height>
                              </size>
                             </property>
-                            <property name="layoutDirection">
-                             <enum>Qt::LeftToRight</enum>
-                            </property>
                             <property name="wrapping">
                              <bool>true</bool>
                             </property>
@@ -10531,44 +10697,13 @@ HOME ALL</string>
                              <bool>true</bool>
                             </property>
                             <property name="decimals">
-                             <number>2</number>
-                            </property>
-                            <property name="minimum">
-                             <double>-25.000000000000000</double>
+                             <number>0</number>
                             </property>
                             <property name="maximum">
-                             <double>25.000000000000000</double>
-                            </property>
-                            <property name="singleStep">
-                             <double>0.010000000000000</double>
+                             <double>999.000000000000000</double>
                             </property>
                             <property name="value">
                              <double>0.000000000000000</double>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="0" column="1">
-                           <widget class="QLabel" name="label_2">
-                            <property name="sizePolicy">
-                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-                              <horstretch>0</horstretch>
-                              <verstretch>0</verstretch>
-                             </sizepolicy>
-                            </property>
-                            <property name="minimumSize">
-                             <size>
-                              <width>90</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                            <property name="maximumSize">
-                             <size>
-                              <width>130</width>
-                              <height>16777215</height>
-                             </size>
-                            </property>
-                            <property name="text">
-                             <string>Float Travel</string>
                             </property>
                            </widget>
                           </item>
@@ -10612,99 +10747,6 @@ HOME ALL</string>
                             </property>
                             <property name="maximum">
                              <double>100.000000000000000</double>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="1" column="1">
-                           <widget class="QLabel" name="label_14">
-                            <property name="sizePolicy">
-                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-                              <horstretch>0</horstretch>
-                              <verstretch>0</verstretch>
-                             </sizepolicy>
-                            </property>
-                            <property name="minimumSize">
-                             <size>
-                              <width>90</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                            <property name="maximumSize">
-                             <size>
-                              <width>130</width>
-                              <height>16777215</height>
-                             </size>
-                            </property>
-                            <property name="text">
-                             <string>Probe Speed</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="2" column="0">
-                           <widget class="DoubleScale" name="probe_start_height">
-                            <property name="sizePolicy">
-                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                              <horstretch>0</horstretch>
-                              <verstretch>0</verstretch>
-                             </sizepolicy>
-                            </property>
-                            <property name="minimumSize">
-                             <size>
-                              <width>120</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                            <property name="maximumSize">
-                             <size>
-                              <width>160</width>
-                              <height>16777215</height>
-                             </size>
-                            </property>
-                            <property name="wrapping">
-                             <bool>true</bool>
-                            </property>
-                            <property name="alignment">
-                             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                            </property>
-                            <property name="buttonSymbols">
-                             <enum>QAbstractSpinBox::PlusMinus</enum>
-                            </property>
-                            <property name="accelerated">
-                             <bool>true</bool>
-                            </property>
-                            <property name="decimals">
-                             <number>0</number>
-                            </property>
-                            <property name="minimum">
-                             <double>1.000000000000000</double>
-                            </property>
-                            <property name="maximum">
-                             <double>100.000000000000000</double>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="2" column="1">
-                           <widget class="QLabel" name="label_15">
-                            <property name="sizePolicy">
-                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-                              <horstretch>0</horstretch>
-                              <verstretch>0</verstretch>
-                             </sizepolicy>
-                            </property>
-                            <property name="minimumSize">
-                             <size>
-                              <width>90</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                            <property name="maximumSize">
-                             <size>
-                              <width>130</width>
-                              <height>16777215</height>
-                             </size>
-                            </property>
-                            <property name="text">
-                             <string>Probe Height</string>
                             </property>
                            </widget>
                           </item>
@@ -10782,6 +10824,176 @@ HOME ALL</string>
                             </property>
                            </widget>
                           </item>
+                          <item row="4" column="1">
+                           <widget class="QLabel" name="label_17">
+                            <property name="sizePolicy">
+                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                              <horstretch>0</horstretch>
+                              <verstretch>0</verstretch>
+                             </sizepolicy>
+                            </property>
+                            <property name="minimumSize">
+                             <size>
+                              <width>90</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="maximumSize">
+                             <size>
+                              <width>130</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
+                            <property name="text">
+                             <string>Ohmic Retries</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="0" column="0">
+                           <widget class="DoubleScale" name="float_switch_travel">
+                            <property name="sizePolicy">
+                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                              <horstretch>0</horstretch>
+                              <verstretch>0</verstretch>
+                             </sizepolicy>
+                            </property>
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="maximumSize">
+                             <size>
+                              <width>160</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
+                            <property name="layoutDirection">
+                             <enum>Qt::LeftToRight</enum>
+                            </property>
+                            <property name="wrapping">
+                             <bool>true</bool>
+                            </property>
+                            <property name="alignment">
+                             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                            </property>
+                            <property name="buttonSymbols">
+                             <enum>QAbstractSpinBox::PlusMinus</enum>
+                            </property>
+                            <property name="accelerated">
+                             <bool>true</bool>
+                            </property>
+                            <property name="decimals">
+                             <number>2</number>
+                            </property>
+                            <property name="minimum">
+                             <double>-25.000000000000000</double>
+                            </property>
+                            <property name="maximum">
+                             <double>25.000000000000000</double>
+                            </property>
+                            <property name="singleStep">
+                             <double>0.010000000000000</double>
+                            </property>
+                            <property name="value">
+                             <double>0.000000000000000</double>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="0" column="1">
+                           <widget class="QLabel" name="label_2">
+                            <property name="sizePolicy">
+                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                              <horstretch>0</horstretch>
+                              <verstretch>0</verstretch>
+                             </sizepolicy>
+                            </property>
+                            <property name="minimumSize">
+                             <size>
+                              <width>90</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="maximumSize">
+                             <size>
+                              <width>130</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
+                            <property name="text">
+                             <string>Float Travel</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="2" column="0">
+                           <widget class="DoubleScale" name="probe_start_height">
+                            <property name="sizePolicy">
+                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                              <horstretch>0</horstretch>
+                              <verstretch>0</verstretch>
+                             </sizepolicy>
+                            </property>
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="maximumSize">
+                             <size>
+                              <width>160</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
+                            <property name="wrapping">
+                             <bool>true</bool>
+                            </property>
+                            <property name="alignment">
+                             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                            </property>
+                            <property name="buttonSymbols">
+                             <enum>QAbstractSpinBox::PlusMinus</enum>
+                            </property>
+                            <property name="accelerated">
+                             <bool>true</bool>
+                            </property>
+                            <property name="decimals">
+                             <number>0</number>
+                            </property>
+                            <property name="minimum">
+                             <double>1.000000000000000</double>
+                            </property>
+                            <property name="maximum">
+                             <double>100.000000000000000</double>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="2" column="1">
+                           <widget class="QLabel" name="label_15">
+                            <property name="sizePolicy">
+                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                              <horstretch>0</horstretch>
+                              <verstretch>0</verstretch>
+                             </sizepolicy>
+                            </property>
+                            <property name="minimumSize">
+                             <size>
+                              <width>90</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="maximumSize">
+                             <size>
+                              <width>130</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
+                            <property name="text">
+                             <string>Probe Height</string>
+                            </property>
+                           </widget>
+                          </item>
                           <item row="4" column="0">
                            <widget class="DoubleScale" name="ohmic_max_attempts">
                             <property name="sizePolicy">
@@ -10825,8 +11037,8 @@ HOME ALL</string>
                             </property>
                            </widget>
                           </item>
-                          <item row="4" column="1">
-                           <widget class="QLabel" name="label_17">
+                          <item row="1" column="1">
+                           <widget class="QLabel" name="label_14">
                             <property name="sizePolicy">
                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
                               <horstretch>0</horstretch>
@@ -10846,12 +11058,37 @@ HOME ALL</string>
                              </size>
                             </property>
                             <property name="text">
-                             <string>Ohmic Retries</string>
+                             <string>Probe Speed</string>
                             </property>
                            </widget>
                           </item>
-                          <item row="5" column="0">
-                           <widget class="DoubleScale" name="skip_ihs_distance">
+                          <item row="5" column="1">
+                           <widget class="QLabel" name="label_18">
+                            <property name="sizePolicy">
+                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                              <horstretch>0</horstretch>
+                              <verstretch>0</verstretch>
+                             </sizepolicy>
+                            </property>
+                            <property name="minimumSize">
+                             <size>
+                              <width>90</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="maximumSize">
+                             <size>
+                              <width>130</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
+                            <property name="text">
+                             <string>Skip IHS</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="6" column="0">
+                           <widget class="DoubleScale" name="offset_feed_rate">
                             <property name="sizePolicy">
                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                               <horstretch>0</horstretch>
@@ -10885,16 +11122,13 @@ HOME ALL</string>
                             <property name="decimals">
                              <number>0</number>
                             </property>
-                            <property name="maximum">
-                             <double>999.000000000000000</double>
-                            </property>
-                            <property name="value">
-                             <double>0.000000000000000</double>
+                            <property name="minimum">
+                             <double>100.000000000000000</double>
                             </property>
                            </widget>
                           </item>
-                          <item row="5" column="1">
-                           <widget class="QLabel" name="label_18">
+                          <item row="6" column="1">
+                           <widget class="QLabel" name="offset_feed_rate_lbl">
                             <property name="sizePolicy">
                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
                               <horstretch>0</horstretch>
@@ -10914,7 +11148,7 @@ HOME ALL</string>
                              </size>
                             </property>
                             <property name="text">
-                             <string>Skip IHS</string>
+                             <string>Offset Speed</string>
                             </property>
                            </widget>
                           </item>
@@ -10995,7 +11229,7 @@ HOME ALL</string>
                            <number>4</number>
                           </property>
                           <property name="verticalSpacing">
-                           <number>8</number>
+                           <number>7</number>
                           </property>
                           <item row="0" column="0">
                            <widget class="DoubleScale" name="safe_height">
@@ -11142,7 +11376,7 @@ HOME ALL</string>
                            <number>4</number>
                           </property>
                           <property name="verticalSpacing">
-                           <number>8</number>
+                           <number>7</number>
                           </property>
                           <item row="0" column="0">
                            <widget class="DoubleScale" name="scribe_arm_delay">
@@ -11363,7 +11597,7 @@ HOME ALL</string>
                            <number>4</number>
                           </property>
                           <property name="verticalSpacing">
-                           <number>8</number>
+                           <number>7</number>
                           </property>
                           <item row="0" column="0">
                            <widget class="DoubleScale" name="spotting_threshold">
@@ -11514,6 +11748,236 @@ HOME ALL</string>
                      </widget>
                     </item>
                     <item>
+                     <widget class="QFrame" name="pierce_config">
+                      <property name="minimumSize">
+                       <size>
+                        <width>0</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="frameShape">
+                       <enum>QFrame::NoFrame</enum>
+                      </property>
+                      <property name="frameShadow">
+                       <enum>QFrame::Raised</enum>
+                      </property>
+                      <layout class="QVBoxLayout" name="verticalLayout_62">
+                       <property name="spacing">
+                        <number>4</number>
+                       </property>
+                       <property name="leftMargin">
+                        <number>0</number>
+                       </property>
+                       <property name="topMargin">
+                        <number>0</number>
+                       </property>
+                       <property name="rightMargin">
+                        <number>0</number>
+                       </property>
+                       <property name="bottomMargin">
+                        <number>4</number>
+                       </property>
+                       <item>
+                        <widget class="QLabel" name="pierce_conf_lbl">
+                         <property name="minimumSize">
+                          <size>
+                           <width>0</width>
+                           <height>16</height>
+                          </size>
+                         </property>
+                         <property name="maximumSize">
+                          <size>
+                           <width>16777215</width>
+                           <height>16</height>
+                          </size>
+                         </property>
+                         <property name="text">
+                          <string>PIERCE ONLY</string>
+                         </property>
+                         <property name="alignment">
+                          <set>Qt::AlignCenter</set>
+                         </property>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QFrame" name="pierce_grid">
+                         <property name="frameShape">
+                          <enum>QFrame::NoFrame</enum>
+                         </property>
+                         <property name="frameShadow">
+                          <enum>QFrame::Raised</enum>
+                         </property>
+                         <layout class="QGridLayout" name="gridLayout_16">
+                          <property name="leftMargin">
+                           <number>4</number>
+                          </property>
+                          <property name="topMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="rightMargin">
+                           <number>4</number>
+                          </property>
+                          <property name="bottomMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="horizontalSpacing">
+                           <number>4</number>
+                          </property>
+                          <property name="verticalSpacing">
+                           <number>7</number>
+                          </property>
+                          <item row="0" column="0">
+                           <widget class="DoubleScale" name="x_pierce_offset">
+                            <property name="sizePolicy">
+                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                              <horstretch>0</horstretch>
+                              <verstretch>0</verstretch>
+                             </sizepolicy>
+                            </property>
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="maximumSize">
+                             <size>
+                              <width>160</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
+                            <property name="wrapping">
+                             <bool>true</bool>
+                            </property>
+                            <property name="alignment">
+                             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                            </property>
+                            <property name="buttonSymbols">
+                             <enum>QAbstractSpinBox::PlusMinus</enum>
+                            </property>
+                            <property name="accelerated">
+                             <bool>true</bool>
+                            </property>
+                            <property name="decimals">
+                             <number>1</number>
+                            </property>
+                            <property name="minimum">
+                             <double>-5.000000000000000</double>
+                            </property>
+                            <property name="maximum">
+                             <double>5.000000000000000</double>
+                            </property>
+                            <property name="singleStep">
+                             <double>0.100000000000000</double>
+                            </property>
+                            <property name="value">
+                             <double>1.600000000000000</double>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="0" column="1">
+                           <widget class="QLabel" name="label_63">
+                            <property name="sizePolicy">
+                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                              <horstretch>0</horstretch>
+                              <verstretch>0</verstretch>
+                             </sizepolicy>
+                            </property>
+                            <property name="minimumSize">
+                             <size>
+                              <width>90</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="maximumSize">
+                             <size>
+                              <width>130</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
+                            <property name="text">
+                             <string>X Offset</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="1" column="0">
+                           <widget class="DoubleScale" name="y_pierce_offset">
+                            <property name="sizePolicy">
+                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                              <horstretch>0</horstretch>
+                              <verstretch>0</verstretch>
+                             </sizepolicy>
+                            </property>
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="maximumSize">
+                             <size>
+                              <width>160</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
+                            <property name="wrapping">
+                             <bool>true</bool>
+                            </property>
+                            <property name="alignment">
+                             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                            </property>
+                            <property name="buttonSymbols">
+                             <enum>QAbstractSpinBox::PlusMinus</enum>
+                            </property>
+                            <property name="decimals">
+                             <number>1</number>
+                            </property>
+                            <property name="minimum">
+                             <double>-5.000000000000000</double>
+                            </property>
+                            <property name="maximum">
+                             <double>5.000000000000000</double>
+                            </property>
+                            <property name="singleStep">
+                             <double>0.100000000000000</double>
+                            </property>
+                            <property name="value">
+                             <double>0.000000000000000</double>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="1" column="1">
+                           <widget class="QLabel" name="label_66">
+                            <property name="sizePolicy">
+                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                              <horstretch>0</horstretch>
+                              <verstretch>0</verstretch>
+                             </sizepolicy>
+                            </property>
+                            <property name="minimumSize">
+                             <size>
+                              <width>90</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="maximumSize">
+                             <size>
+                              <width>130</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
+                            <property name="text">
+                             <string>Y Offset</string>
+                            </property>
+                           </widget>
+                          </item>
+                         </layout>
+                        </widget>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                    <item>
                      <widget class="QFrame" name="motion_config">
                       <property name="frameShape">
                        <enum>QFrame::NoFrame</enum>
@@ -11539,6 +12003,18 @@ HOME ALL</string>
                        </property>
                        <item>
                         <widget class="QLabel" name="motion_conf_lbl">
+                         <property name="minimumSize">
+                          <size>
+                           <width>0</width>
+                           <height>16</height>
+                          </size>
+                         </property>
+                         <property name="maximumSize">
+                          <size>
+                           <width>16777215</width>
+                           <height>16</height>
+                          </size>
+                         </property>
                          <property name="text">
                           <string>MOTION</string>
                          </property>
@@ -11572,9 +12048,9 @@ HOME ALL</string>
                            <number>4</number>
                           </property>
                           <property name="verticalSpacing">
-                           <number>8</number>
+                           <number>7</number>
                           </property>
-                          <item row="1" column="0">
+                          <item row="0" column="0">
                            <widget class="DoubleScale" name="setup_feed_rate">
                             <property name="sizePolicy">
                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -11620,32 +12096,7 @@ HOME ALL</string>
                             </property>
                            </widget>
                           </item>
-                          <item row="0" column="1">
-                           <widget class="QLabel" name="label_62">
-                            <property name="sizePolicy">
-                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-                              <horstretch>0</horstretch>
-                              <verstretch>0</verstretch>
-                             </sizepolicy>
-                            </property>
-                            <property name="minimumSize">
-                             <size>
-                              <width>90</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                            <property name="maximumSize">
-                             <size>
-                              <width>130</width>
-                              <height>16777215</height>
-                             </size>
-                            </property>
-                            <property name="text">
-                             <string>Max. Speed</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="1" column="1">
+                          <item row="0" column="2">
                            <widget class="QLabel" name="label_61">
                             <property name="sizePolicy">
                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
@@ -11670,28 +12121,6 @@ HOME ALL</string>
                             </property>
                            </widget>
                           </item>
-                          <item row="0" column="0">
-                           <widget class="QLabel" name="max_offset_velocity_in">
-                            <property name="minimumSize">
-                             <size>
-                              <width>128</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                            <property name="maximumSize">
-                             <size>
-                              <width>128</width>
-                              <height>16777215</height>
-                             </size>
-                            </property>
-                            <property name="text">
-                             <string/>
-                            </property>
-                            <property name="alignment">
-                             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                            </property>
-                           </widget>
-                          </item>
                          </layout>
                         </widget>
                        </item>
@@ -11706,7 +12135,7 @@ HOME ALL</string>
                       <property name="sizeHint" stdset="0">
                        <size>
                         <width>20</width>
-                        <height>40</height>
+                        <height>4</height>
                        </size>
                       </property>
                      </spacer>
@@ -13772,6 +14201,20 @@ HOME ALL</string>
                  <property name="verticalSpacing">
                   <number>10</number>
                  </property>
+                 <item row="0" column="1">
+                  <widget class="QLabel" name="label_13">
+                   <property name="text">
+                    <string>Grid Size</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="4" column="1">
+                  <widget class="QLabel" name="label_40">
+                   <property name="text">
+                    <string>Table Zoom</string>
+                   </property>
+                  </widget>
+                 </item>
                  <item row="0" column="0">
                   <widget class="DoubleScale" name="grid_size">
                    <property name="sizePolicy">
@@ -13818,10 +14261,55 @@ HOME ALL</string>
                    </property>
                   </widget>
                  </item>
-                 <item row="0" column="1">
-                  <widget class="QLabel" name="label_13">
-                   <property name="text">
-                    <string>Grid Size</string>
+                 <item row="4" column="0">
+                  <widget class="DoubleScale" name="table_zoom_scale">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>120</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>120</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="wrapping">
+                    <bool>true</bool>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                   <property name="buttonSymbols">
+                    <enum>QAbstractSpinBox::PlusMinus</enum>
+                   </property>
+                   <property name="accelerated">
+                    <bool>true</bool>
+                   </property>
+                   <property name="suffix">
+                    <string/>
+                   </property>
+                   <property name="decimals">
+                    <number>2</number>
+                   </property>
+                   <property name="minimum">
+                    <double>0.100000000000000</double>
+                   </property>
+                   <property name="maximum">
+                    <double>10.000000000000000</double>
+                   </property>
+                   <property name="singleStep">
+                    <double>0.010000000000000</double>
+                   </property>
+                   <property name="value">
+                    <double>0.500000000000000</double>
                    </property>
                   </widget>
                  </item>
@@ -13884,8 +14372,8 @@ HOME ALL</string>
                    </property>
                   </widget>
                  </item>
-                 <item row="2" column="0">
-                  <widget class="DoubleScale" name="table_zoom_scale">
+                 <item row="5" column="0">
+                  <widget class="QComboBox" name="default_material">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                      <horstretch>0</horstretch>
@@ -13904,42 +14392,12 @@ HOME ALL</string>
                      <height>16777215</height>
                     </size>
                    </property>
-                   <property name="wrapping">
-                    <bool>true</bool>
-                   </property>
-                   <property name="alignment">
-                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                   </property>
-                   <property name="buttonSymbols">
-                    <enum>QAbstractSpinBox::PlusMinus</enum>
-                   </property>
-                   <property name="accelerated">
-                    <bool>true</bool>
-                   </property>
-                   <property name="suffix">
-                    <string/>
-                   </property>
-                   <property name="decimals">
-                    <number>2</number>
-                   </property>
-                   <property name="minimum">
-                    <double>0.100000000000000</double>
-                   </property>
-                   <property name="maximum">
-                    <double>10.000000000000000</double>
-                   </property>
-                   <property name="singleStep">
-                    <double>0.010000000000000</double>
-                   </property>
-                   <property name="value">
-                    <double>0.500000000000000</double>
-                   </property>
                   </widget>
                  </item>
-                 <item row="2" column="1">
-                  <widget class="QLabel" name="label_40">
+                 <item row="5" column="1">
+                  <widget class="QLabel" name="label_51">
                    <property name="text">
-                    <string>Table Zoom</string>
+                    <string>Default Material</string>
                    </property>
                   </widget>
                  </item>
@@ -14286,7 +14744,7 @@ HOME ALL</string>
                       <x>0</x>
                       <y>0</y>
                       <width>720</width>
-                      <height>706</height>
+                      <height>695</height>
                      </rect>
                     </property>
                     <property name="sizePolicy">
@@ -17057,6 +17515,11 @@ CONFIG</string>
    <class>HALLabel</class>
    <extends>QLabel</extends>
    <header>qtvcp.widgets.hal_label</header>
+  </customwidget>
+  <customwidget>
+   <class>WebWidget</class>
+   <extends>QWidget</extends>
+   <header>qtvcp.widgets.web_widget</header>
   </customwidget>
   <customwidget>
    <class>GCodeGraphics</class>
