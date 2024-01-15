@@ -151,7 +151,8 @@ void addMessage(char *message){
   mvwprintw(w_status, 3, 1, status_messages[0]);
 }
 
-void updateStatus(WINDOW *status){
+void updateStatusWindow(WINDOW *status){
+  updateStatus();
   struct timespec current_timespec;
   clock_gettime(CLOCK_REALTIME_COARSE, &current_timespec);
   char time_str[21];
@@ -176,28 +177,28 @@ void updateStatus(WINDOW *status){
 
   switch(emcStatus->task.execState){
     case EMC_TASK_EXEC::ERROR:
-      mvwprintw(status,2, 10, "Error");
+      mvwprintw(status,2, 10, "Error                       ");
       break;
     case EMC_TASK_EXEC::DONE:
-      mvwprintw(status,2, 10, "Done");
+      mvwprintw(status,2, 10, "Done                        ");
       break;
     case EMC_TASK_EXEC::WAITING_FOR_MOTION:
-      mvwprintw(status,2, 10, "Waiting for Motion");
+      mvwprintw(status,2, 10, "Waiting for Motion          ");
       break;
     case EMC_TASK_EXEC::WAITING_FOR_MOTION_QUEUE:
-      mvwprintw(status,2, 10, "Waiting for Motion Queue");
+      mvwprintw(status,2, 10, "Waiting for Motion Queue    ");
       break;
     case EMC_TASK_EXEC::WAITING_FOR_IO:
-      mvwprintw(status,2, 10, "Waiting for IO");
+      mvwprintw(status,2, 10, "Waiting for IO              ");
       break;
     case EMC_TASK_EXEC::WAITING_FOR_MOTION_AND_IO:
-      mvwprintw(status,2, 10, "Waiting for Motion and IO");
+      mvwprintw(status,2, 10, "Waiting for Motion and IO   ");
       break;
     case EMC_TASK_EXEC::WAITING_FOR_DELAY:
-      mvwprintw(status,2, 10, "Waiting for Delay");
+      mvwprintw(status,2, 10, "Waiting for Delay           ");
       break;
     case EMC_TASK_EXEC::WAITING_FOR_SYSTEM_CMD:
-      mvwprintw(status,2, 10, "Waiting for System Command");
+      mvwprintw(status,2, 10, "Waiting for System Command  ");
       break;
     case EMC_TASK_EXEC::WAITING_FOR_SPINDLE_ORIENTED:
       mvwprintw(status,2, 10, "Waiting for Spindle Oriented");
@@ -250,6 +251,62 @@ void updateControl(WINDOW *control){
 
 }
 
+void updateMenu(WINDOW *menu){
+
+
+  mvwprintw(w_menu, 0, 0, "F1 Reset estop");
+  mvwprintw(w_menu, 0, 15, "| F2 Load File");
+  mvwprintw(w_menu, 0, 30, "| F3 Offsets");
+  mvwprintw(w_menu, 0, 45, "| F4 Editor");
+  mvwprintw(w_menu, 0, 60, "| F5 Quit");
+  wrefresh(w_menu);
+
+  char ch = getch();
+  char buf[40];
+  /*
+   * TODO: Deside on hotkeys.
+   *  I kinda like function keys for this
+   *  CTRL + key is also an option - This could be CTRL makes focus to this window.
+   *  Could make hal pins to connect to dedicated HMI buttons - That would be cool but then sim?
+   *  I would prefer to hide hotkeys but HCI then is not existent until muscle memory is learned.
+   */
+
+  switch (ch) {
+    case 'q':
+      run = false;
+      break;
+    case 'r': {
+      if(emcStatus->task.state == EMC_TASK_STATE::ESTOP) {
+        sendEstopReset();
+        addMessage("Estop Reset");
+      }
+      else if(emcStatus->task.state == EMC_TASK_STATE::ESTOP_RESET ||
+              emcStatus->task.state == EMC_TASK_STATE::OFF) {
+        sendMachineOn();
+        addMessage("Machine On");
+      }
+      break;
+    }
+    case 'f': {
+      sprintf(buf, "TODO: Load File Interface");
+      addMessage(buf);
+      break;
+    }
+    case 'o': {
+      sprintf(buf, "TODO: Offsets Interface");
+      addMessage(buf);
+      break;
+    }
+    case 'e': {
+      sprintf(buf, "TODO: Editor Interface, Maybe scrap?");
+      addMessage(buf);
+      break;
+    }
+
+  }
+
+}
+
 // <><><><><><><><><><><><><>
 //      Main Function
 //  TODO Abstract all functions in here
@@ -278,8 +335,6 @@ int main(int argc, char *argv[]) {
   wrefresh(w_status);
   waddstr(w_control, "Control");
   wrefresh(w_control);
-  mvwprintw(w_menu, 0, 0, "Quit: q");
-  wrefresh(w_menu);
 
   nodelay(stdscr, true);
   intrflush(stdscr, false);
@@ -300,8 +355,10 @@ int main(int argc, char *argv[]) {
 
     updateDRO(w_dro);
     wrefresh(w_dro);
-    updateStatus(w_status);
+    updateStatusWindow(w_status);
+    updateMenu(w_menu);
     updateControl(w_control);
+
 
   }
   // Clean up
