@@ -156,14 +156,14 @@ void updateStatus(WINDOW *status){
            localtime(&current_timespec.tv_sec));
   mvwprintw(status,1, 1, "Current time: %s", time_str);
   switch (emcStatus->task.state) {
-    case EMC_TASK_STATE_ESTOP:
+    case EMC_TASK_STATE::ESTOP:
       mvwprintw(status,2, 1, "ESTOP   ");
       break;
-    case EMC_TASK_STATE_OFF:
-    case EMC_TASK_STATE_ESTOP_RESET:
+    case EMC_TASK_STATE::OFF:
+    case EMC_TASK_STATE::ESTOP_RESET:
       mvwprintw(status,2, 1, "DISABLED");
       break;
-    case EMC_TASK_STATE_ON:
+    case EMC_TASK_STATE::ON:
       mvwprintw(status,2, 1, "ENABLED ");
       break;
     default:
@@ -172,45 +172,45 @@ void updateStatus(WINDOW *status){
   }
 
   switch(emcStatus->task.execState){
-    case EMC_TASK_EXEC_ERROR:
+    case EMC_TASK_EXEC::ERROR:
       mvwprintw(status,2, 10, "Error");
       break;
-    case EMC_TASK_EXEC_DONE:
+    case EMC_TASK_EXEC::DONE:
       mvwprintw(status,2, 10, "Done");
       break;
-    case EMC_TASK_EXEC_WAITING_FOR_MOTION:
+    case EMC_TASK_EXEC::WAITING_FOR_MOTION:
       mvwprintw(status,2, 10, "Waiting for Motion");
       break;
-    case EMC_TASK_EXEC_WAITING_FOR_MOTION_QUEUE:
+    case EMC_TASK_EXEC::WAITING_FOR_MOTION_QUEUE:
       mvwprintw(status,2, 10, "Waiting for Motion Queue");
       break;
-    case EMC_TASK_EXEC_WAITING_FOR_IO:
+    case EMC_TASK_EXEC::WAITING_FOR_IO:
       mvwprintw(status,2, 10, "Waiting for IO");
       break;
-    case EMC_TASK_EXEC_WAITING_FOR_MOTION_AND_IO:
+    case EMC_TASK_EXEC::WAITING_FOR_MOTION_AND_IO:
       mvwprintw(status,2, 10, "Waiting for Motion and IO");
       break;
-    case EMC_TASK_EXEC_WAITING_FOR_DELAY:
+    case EMC_TASK_EXEC::WAITING_FOR_DELAY:
       mvwprintw(status,2, 10, "Waiting for Delay");
       break;
-    case EMC_TASK_EXEC_WAITING_FOR_SYSTEM_CMD:
+    case EMC_TASK_EXEC::WAITING_FOR_SYSTEM_CMD:
       mvwprintw(status,2, 10, "Waiting for System Command");
       break;
-    case EMC_TASK_EXEC_WAITING_FOR_SPINDLE_ORIENTED:
+    case EMC_TASK_EXEC::WAITING_FOR_SPINDLE_ORIENTED:
       mvwprintw(status,2, 10, "Waiting for Spindle Oriented");
       break;
   }
   switch(emcStatus->task.interpState) {
-    case EMC_TASK_INTERP_IDLE:
+    case EMC_TASK_INTERP::IDLE:
       mvwprintw(status, 2, 40, "Idle");
       break;
-    case EMC_TASK_INTERP_READING:
+    case EMC_TASK_INTERP::READING:
       mvwprintw(status, 2, 40, "Reading");
       break;
-    case EMC_TASK_INTERP_PAUSED:
+    case EMC_TASK_INTERP::PAUSED:
       mvwprintw(status, 2, 40, "Paused");
       break;
-    case EMC_TASK_INTERP_WAITING:
+    case EMC_TASK_INTERP::WAITING:
       mvwprintw(status, 2, 40, "Waiting");
       break;
   }
