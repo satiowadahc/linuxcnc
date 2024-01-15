@@ -50,6 +50,7 @@ WINDOW *w_dro;
 WINDOW *w_editor;
 WINDOW *w_control;
 WINDOW *w_status;
+WINDOW *w_menu;
 
 uint16_t mid_top_col, mid_bot_col;
 uint16_t mid_left_lines, mid_right_lines;
@@ -99,13 +100,14 @@ void init_screen(){
 
   mid_top_col = max_w/2;
   mid_bot_col = max_w/2;
-  mid_right_lines = max_h/2;
-  mid_left_lines = max_h/2;
+  mid_right_lines = (max_h/2)-1;
+  mid_left_lines  = (max_h/2)-1;
   refresh();
   w_dro = newwin(mid_right_lines, mid_top_col, 0, 0);
-  w_editor = newwin(max_h-mid_right_lines, mid_bot_col, mid_right_lines, 0);
+  w_editor = newwin(max_h - mid_right_lines - 1, mid_bot_col, mid_right_lines, 0);
   w_status = newwin(mid_left_lines, max_w - mid_top_col, 0, mid_top_col);
-  w_control = newwin(max_h - mid_left_lines, max_w - mid_bot_col, mid_left_lines, mid_bot_col);
+  w_control = newwin(max_h - mid_left_lines - 1, max_w - mid_bot_col, mid_left_lines, mid_bot_col);
+  w_menu = newwin(1, max_w, max_h-1, 0);
   box(w_dro, 0 , 0);
   box(w_editor, 0 , 0);
   box(w_status, 0 , 0);
@@ -115,6 +117,7 @@ void init_screen(){
   nodelay(w_editor, true);
   nodelay(w_status, true);
   nodelay(w_control, true);
+  nodelay(w_menu, true);
 
   // keypad(w_dro, true);
 }
@@ -275,6 +278,8 @@ int main(int argc, char *argv[]) {
   wrefresh(w_status);
   waddstr(w_control, "Control");
   wrefresh(w_control);
+  mvwprintw(w_menu, 0, 0, "Quit: q");
+  wrefresh(w_menu);
 
   nodelay(stdscr, true);
   intrflush(stdscr, false);
