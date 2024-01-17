@@ -11,7 +11,7 @@ $(call TOOBJSDEPS, $(DISCRETESRCS)) : Makefile.inc
 #USERSRCS += $(emc/usr_intf/discrete/discrete.cpp)
 #TARGETS += ../bin/discrete
 
-USERSRCS += $(DISCRETESRCS)
+
 
 ../bin/discrete-dro: $(call TOOBJS, $(DISCRETESRCS)) ../lib/librs274.so.0 ../lib/liblinuxcnc.a \
                      ../lib/libnml.so.0 ../lib/liblinuxcncini.so.0 ../lib/libposemath.so.0 \
@@ -21,5 +21,5 @@ USERSRCS += $(DISCRETESRCS)
 	$(ECHO) Linking $(notdir $@)
 	$(CXX) -o $@ $^ -lcurses $(LDFLAGS) -lm $(ULFLAGS)
 
-
+USERSRCS += $(DISCRETESRCS)
 TARGETS += ../bin/discrete-dro
