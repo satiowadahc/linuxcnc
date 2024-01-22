@@ -22,23 +22,20 @@
 
 
 
-#include "rs274ngc.hh"
-#include "rs274ngc_interp.hh"
 
-#include "kinematics.h"
+#include "canon.hh"		// CANON_UNITS, CANON_UNITS_INCHES,MM,CM
 #include "config.h"
-#include "inifile.hh"
-#include "rcs_print.hh"
-#include "rcs.hh"
-#include "posemath.h"		// PM_POSE, TO_RAD
 #include "emc.hh"		// EMC NML
 #include "emc_nml.hh"
-#include "canon.hh"		// CANON_UNITS, CANON_UNITS_INCHES,MM,CM
 #include "emcglb.h"		// EMC_NMLFILE, TRAJ_MAX_VELOCITY, etc.
 #include "emccfg.h"		// DEFAULT_TRAJ_MAX_VELOCITY
-#include "inifile.hh"		// INIFILE
-#include "config.h"		// Standard path definitions
+#include "inifile.hh"
+#include "kinematics.h"
+#include "posemath.h"		// PM_POSE, TO_RAD
 #include "rcs_print.hh"
+#include "rcs.hh"
+#include "rs274ngc.hh"
+#include "rs274ngc_interp.hh"
 #include "emc/usr_intf/shcom.hh"
 #include <rtapi_string.h>
 
