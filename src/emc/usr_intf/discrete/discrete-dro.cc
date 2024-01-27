@@ -62,12 +62,12 @@ void init_screen(){
 
 int init_machine(){
 
-//  iniLoad(emc_inifile);
-//  if (tryNml() != 0) {
-//    rcs_print_error("can't connect to emc\n");
-//    exit(1);
-//  }
-//
+  iniLoad(emc_inifile);
+
+  if (tryNml() != 0) {
+    rcs_print_error("can't connect to emc\n");
+    exit(1);
+  }
 
   EmcIniFile ini_file;
   int num_axes = 0;
@@ -92,13 +92,13 @@ int init_machine(){
 
 void update_screen(){
 
-
+  updateStatus();
   for(int i=0; i<10;i++){
     switch (display_axis[i]) {
       case 1: {
         mvwprintw(w_dro, i+1, 1,
                   "X:  %f  %f  %f",
-                  0.123,
+                  emcStatus->motion.traj.actualPosition.tran.x,
                   0.123,
                   0.123);
         break;
@@ -106,7 +106,7 @@ void update_screen(){
       case 2: {
         mvwprintw(w_dro, i+1, 1,
                   "Y:  %f  %f  %f",
-                  0.123,
+                  emcStatus->motion.traj.actualPosition.tran.y,
                   0.123,
                   0.123);
         break;
@@ -114,7 +114,7 @@ void update_screen(){
       case 3: {
         mvwprintw(w_dro, i+1, 1,
                   "Z:  %f  %f  %f",
-                  0.123,
+                  emcStatus->motion.traj.actualPosition.tran.z,
                   0.123,
                   0.123);
         break;

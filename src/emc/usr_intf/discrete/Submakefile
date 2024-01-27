@@ -1,25 +1,24 @@
-DISCRETESRCS := emc/usr_intf/discrete/discrete-dro.cc
+DISCRETEDROSRCS := emc/usr_intf/discrete/discrete-dro.cc emc/usr_intf/shcom.cc
+DISCRETESRCS := emc/usr_intf/discrete/discrete.cc emc/usr_intf/shcom.cc
 
+
+$(call TOOBJSDEPS, $(DISCRETEDROSRCS)) : EXTRAFLAGS = $(ULFLAGS)
+$(call TOOBJSDEPS, $(DISCRETEDROSRCS)) : Makefile.inc
 $(call TOOBJSDEPS, $(DISCRETESRCS)) : EXTRAFLAGS = $(ULFLAGS)
 $(call TOOBJSDEPS, $(DISCRETESRCS)) : Makefile.inc
 
 
-#../bin/discrete: $(call TOOBJS, $(DISCRETESRCS)) ../lib/liblinuxcnchal.so.0 ../lib/liblinuxcnc.a ../lib/libnml.so.0 ../lib/liblinuxcncini.so.0
-#	$(ECHO) Linking $(notdir $@)
-#	$(CXX) $(LDFLAGS) -o $@  $(ULFLAGS)  $^ -lm -lcurses
-
-#USERSRCS += $(emc/usr_intf/discrete/discrete.cpp)
-#TARGETS += ../bin/discrete
-
-
-
-../bin/discrete-dro: $(call TOOBJS, $(DISCRETESRCS)) ../lib/librs274.so.0 ../lib/liblinuxcnc.a \
-                     ../lib/libnml.so.0 ../lib/liblinuxcncini.so.0 ../lib/libposemath.so.0 \
-                     ../lib/liblinuxcnchal.so.0 ../lib/libpyplugin.so.0 \
-                     ../lib/libtooldata.so.0
-
+../bin/discrete: $(call TOOBJS, $(DISCRETESRCS)) ../lib/liblinuxcnchal.so.0 ../lib/liblinuxcnc.a ../lib/libnml.so.0 ../lib/liblinuxcncini.so.0
 	$(ECHO) Linking $(notdir $@)
-	$(CXX) -o $@ $^ -lcurses $(LDFLAGS) -lm $(ULFLAGS)
+	$(CXX) $(LDFLAGS) -o $@  $(ULFLAGS)  $^ -lm -lcurses -lepoxy
 
 USERSRCS += $(DISCRETESRCS)
+TARGETS += ../bin/discrete
+
+
+../bin/discrete-dro: $(call TOOBJS, $(DISCRETEDROSRCS)) ../lib/liblinuxcnchal.so.0 ../lib/liblinuxcnc.a ../lib/libnml.so.0 ../lib/liblinuxcncini.so.0
+	$(ECHO) Linking $(notdir $@)
+	$(CXX) $(LDFLAGS) -o $@  $(ULFLAGS)  $^ -lm -lcurses -lepoxy
+
+USERSRCS += $(DISCRETEDROSRCS)
 TARGETS += ../bin/discrete-dro
