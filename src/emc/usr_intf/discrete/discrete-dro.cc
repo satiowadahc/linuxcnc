@@ -56,13 +56,13 @@ void init_screen(){
   box(w_dro, 0, 0);
   nodelay(w_dro, TRUE);
 
-  mvwprintw(w_dro, 0,5  ,"Machine   Program   Offset");
+  mvwprintw(w_dro, 0,5  ,"Machine   Program   Velocity");
   wrefresh(w_dro);
 }
 
-int init_machine(){
+int init_machine(char *inifilename) {
 
-  iniLoad(emc_inifile);
+  iniLoad(inifilename);
 
   if (tryNml() != 0) {
     rcs_print_error("can't connect to emc\n");
@@ -72,7 +72,7 @@ int init_machine(){
   EmcIniFile ini_file;
   int num_axes = 0;
 
-  ini_file.Open("/home/chad/linuxcnc/configs/sim-rmd-rtr/sim-rmd-rtr.ini");
+  ini_file.Open(inifilename);
   const char *coord = ini_file.Find("COORDINATES", "TRAJ");
 
   if (coord) {
@@ -99,15 +99,15 @@ void update_screen(){
         mvwprintw(w_dro, i+1, 1,
                   "X:  %f  %f  %f",
                   emcStatus->motion.traj.actualPosition.tran.x,
-                  0.123,
-                  0.123);
+                  emcStatus->motion.traj.position.tran.x - emcStatus->task.g5x_offset.tran.x,
+                  00);
         break;
       }
       case 2: {
         mvwprintw(w_dro, i+1, 1,
                   "Y:  %f  %f  %f",
                   emcStatus->motion.traj.actualPosition.tran.y,
-                  0.123,
+                  emcStatus->motion.traj.position.tran.y - emcStatus->task.g5x_offset.tran.y,
                   0.123);
         break;
       }
@@ -115,55 +115,55 @@ void update_screen(){
         mvwprintw(w_dro, i+1, 1,
                   "Z:  %f  %f  %f",
                   emcStatus->motion.traj.actualPosition.tran.z,
-                  0.123,
+                  emcStatus->motion.traj.position.tran.z - emcStatus->task.g5x_offset.tran.z,
                   0.123);
         break;
       }
       case 4: {
         mvwprintw(w_dro, i+1, 1,
                   "A:  %f  %f  %f",
-                  0.123,
-                  0.123,
+                  emcStatus->motion.traj.actualPosition.a,
+                  emcStatus->motion.traj.actualPosition.a - emcStatus->task.g5x_offset.a,
                   0.123);
         break;
       }
       case 5: {
         mvwprintw(w_dro, i+1, 1,
                   "B:  %f  %f  %f",
-                  0.123,
-                  0.123,
+                  emcStatus->motion.traj.actualPosition.b,
+                  emcStatus->motion.traj.actualPosition.b - emcStatus->task.g5x_offset.b,
                   0.123);
         break;
       }
       case 6: {
         mvwprintw(w_dro, i+1, 1,
                   "C:  %f  %f  %f",
-                  0.123,
-                  0.123,
+                  emcStatus->motion.traj.actualPosition.c,
+                  emcStatus->motion.traj.actualPosition.c - emcStatus->task.g5x_offset.c,
                   0.123);
         break;
       }
       case 7: {
         mvwprintw(w_dro, i+1, 1,
                   "U:  %f  %f  %f",
-                  0.123,
-                  0.123,
+                  emcStatus->motion.traj.actualPosition.u,
+                  emcStatus->motion.traj.actualPosition.u - emcStatus->task.g5x_offset.u,
                   0.123);
         break;
       }
       case 8: {
         mvwprintw(w_dro, i+1, 1,
                   "V:  %f  %f  %f",
-                  0.123,
-                  0.123,
+                  emcStatus->motion.traj.actualPosition.v,
+                  emcStatus->motion.traj.actualPosition.v - emcStatus->task.g5x_offset.v,
                   0.123);
         break;
       }
       case 9: {
         mvwprintw(w_dro, i+1, 1,
                   "W:  %f  %f  %f",
-                  0.123,
-                  0.123,
+                  emcStatus->motion.traj.actualPosition.w,
+                  emcStatus->motion.traj.actualPosition.w - emcStatus->task.g5x_offset.w,
                   0.123);
         break;
       }
@@ -180,7 +180,7 @@ void update_screen(){
 // <><><><><><><><><><><><><>
 int main(int argc, char *argv[]) {
 
-  init_machine();
+  init_machine(argv[1]);
 
   // Screen Initialization
   // These Can not be abstracted from main
