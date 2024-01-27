@@ -13,6 +13,16 @@
  *
  */
 
+/*
+ * Outstanding Issues:
+ * - Need a way to add velocity
+ * - Manual configure which columns to show
+ * - Show offsets?
+ * - Show tool number, S, F, etc.
+ * - Abstract generic functions
+ * - Close signal? thinking a hal signal between components could be useful
+ */
+
 
 #include <curses.h>
 #include <unistd.h>
