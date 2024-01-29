@@ -20,6 +20,7 @@
 #include "emcIniFile.hh" // emcIniFile
 #include "canon.hh"		// CANON_UNITS, CANON_UNITS_INCHES,MM,CM
 #include "config.h"
+#include "discrete-functions.h"
 #include "emc.hh"		// EMC NML
 #include "emc_nml.hh"
 #include "emcglb.h"		// EMC_NMLFILE, TRAJ_MAX_VELOCITY, etc.
@@ -38,16 +39,18 @@ WINDOW *w_jogger;
 WINDOW *w_jog_settings;
 WINDOW *w_controls;
 
-int init_screen(){
-  refresh();
-  mid_top_col = max_w/2;
-  mid_bot_col = max_w/2;
-  mid_left_lines = max_h/2;
-  mid_right_lines = max_h/2;
+int display_axis[] = {-1, -1, -1, -1, -1,
+                      -1, -1, -1, -1, -1};
 
-  w_jogger = newwin(mid_left_lines, mid_top_col, 0, 0);
-  w_jog_settings = newwin(mid_left_lines, mid_bot_col, 0, mid_top_col);
-  w_controls = newwin(mid_right_lines, max_w, mid_left_lines, 0);
+int max_w, max_h;
+
+void init_screen(){
+  refresh();
+
+
+  w_jogger = newwin(3, max_w, 0, 0);
+  w_jog_settings = newwin(4, max_w, 3, 0);
+  w_controls = newwin(max_h-6, max_w, 7, 0);
 
   box(w_jogger, 0, 0);
   box(w_jog_settings, 0, 0);
@@ -57,12 +60,20 @@ int init_screen(){
   wrefresh(w_jog_settings);
   wrefresh(w_controls);
 
-  return 0;
 }
 
 int init_jogger(){
   wclear(w_jogger);
   box(w_jogger, 0, 0);
+
+  mvwprintw(w_jogger, 0, 1, "Jogging");
+  int j = 1;
+  for(int i=0 ; i<9 ; i++){
+    if (display_axis[i] != -1) {
+      mvwprintw(w_jogger, 1, j++, get_axis_letter(display_axis[i]));
+      mvwprintw(w_jogger, 1, j++, " ");
+    }
+  }
 
   // Thought process
   // 1 Select Axis
@@ -78,10 +89,22 @@ int init_jog_settings(){
   wclear(w_jog_settings);
   box(w_jog_settings, 0, 0);
 
+  mvwprintw(w_jog_settings, 1, 1, "Jog Incr.:");
+  mvwprintw(w_jog_settings, 2, 1, "Jog Speed:");
+
+  mvwprintw(w_jog_settings, 1, 12, "0.001");
+  mvwprintw(w_jog_settings, 1, 18, "0.010");
+  mvwprintw(w_jog_settings, 1, 24, "0.100");
+  mvwprintw(w_jog_settings, 1, 30, "Cont.");
+
+  mvwprintw(w_jog_settings, 2, 12, "Slow");
+  mvwprintw(w_jog_settings, 2, 17, "Medium");
+  mvwprintw(w_jog_settings, 2, 24, "Fast");
+
   // Thought process
-  // Hotkey for incr up
+  // Hotkey for incr up i to toggle?
   // Hotkey for incr down
-  // Hotkey for jog speed up
+  // Hotkey for jog speed up s to toggle?
   // Hotkey for jog speed down
   // Need to highlight selections
   wrefresh(w_jog_settings);
@@ -92,6 +115,17 @@ int init_controls(){
   wclear(w_controls);
   box(w_controls, 0, 0);
 
+  mvwprintw(w_controls, 1, 1, "Controls");
+  mvwprintw(w_controls, 2, 1, "Home All");
+
+  mvwprintw(w_controls, 4, 1, "Spindle On/Off");
+
+  // TODO: Config setting for Wood/Metal/Neither
+  //    Turn these to mist/flood vs vaccum table/dust collection
+  mvwprintw(w_controls, 5, 1, "Coolant On/Off");
+  mvwprintw(w_controls, 6, 1, "Mist On/Off");
+
+  // TODO: Get from config how many hal pins we want to toggle?
   // Thought Process
   // Hotkey for homing
   // Hotkey for touch off
@@ -160,6 +194,9 @@ int main(int argc, char *argv[]) {
 
   init_screen();
 
+  init_jogger();
+  init_jog_settings();
+  init_controls();
 
   nodelay(stdscr, true);
   intrflush(stdscr, false);
@@ -169,7 +206,7 @@ int main(int argc, char *argv[]) {
   char ch;
   bool run = true;
   while(run) {
-    update_screen();
+    // update_screen();
     ch = getch();
     if (ch == 'q') {
       run = false;

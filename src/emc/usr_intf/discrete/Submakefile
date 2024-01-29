@@ -1,11 +1,15 @@
 DISCRETEDROSRCS := emc/usr_intf/discrete/discrete-dro.cc emc/usr_intf/shcom.cc
+DISCRETEMANSRCS := emc/usr_intf/discrete/discrete-manual.cc emc/usr_intf/shcom.cc
 DISCRETESRCS := emc/usr_intf/discrete/discrete.cc emc/usr_intf/shcom.cc
+
 
 
 $(call TOOBJSDEPS, $(DISCRETEDROSRCS)) : EXTRAFLAGS = $(ULFLAGS)
 $(call TOOBJSDEPS, $(DISCRETEDROSRCS)) : Makefile.inc
 $(call TOOBJSDEPS, $(DISCRETESRCS)) : EXTRAFLAGS = $(ULFLAGS)
 $(call TOOBJSDEPS, $(DISCRETESRCS)) : Makefile.inc
+$(call TOOBJSDEPS, $(DISCRETEMANSRCS)) : EXTRAFLAGS = $(ULFLAGS)
+$(call TOOBJSDEPS, $(DISCRETEMANSRCS)) : Makefile.inc
 
 
 ../bin/discrete: $(call TOOBJS, $(DISCRETESRCS)) ../lib/liblinuxcnchal.so.0 ../lib/liblinuxcnc.a ../lib/libnml.so.0 ../lib/liblinuxcncini.so.0
@@ -22,3 +26,10 @@ TARGETS += ../bin/discrete
 
 USERSRCS += $(DISCRETEDROSRCS)
 TARGETS += ../bin/discrete-dro
+
+../bin/discrete-manual: $(call TOOBJS, $(DISCRETEMANSRCS)) ../lib/liblinuxcnchal.so.0 ../lib/liblinuxcnc.a ../lib/libnml.so.0 ../lib/liblinuxcncini.so.0
+	$(ECHO) Linking $(notdir $@)
+	$(CXX) $(LDFLAGS) -o $@  $(ULFLAGS)  $^ -lm -lcurses -lepoxy
+
+USERSRCS += $(DISCRETEMANSRCS)
+TARGETS += ../bin/discrete-manual
